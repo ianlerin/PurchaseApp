@@ -1,0 +1,70 @@
+﻿@page "/radzen-upload-preview"
+@using PurchaseBlazorApp2.Components.Data
+@using Radzen
+@using Radzen.Blazor
+@using Microsoft.AspNetCore.Components.Forms
+
+<h3>Upload Images (Radzen)</h3>
+
+<RadzenUpload ChooseText="Upload Picture"
+Multiple="true"
+Accept="image/*"
+Change="OnUploadChange"
+Style="margin-bottom: 10px;" />
+
+@if (UploadedImages.Count > 0)
+{
+    <div class="d-flex flex-wrap gap-3">
+        @foreach (var image in UploadedImages)
+        {
+            <div class="border p-2 position-relative" style="width: 150px;">
+                <img src="@GetImageSrc(image)" class="img-thumbnail" style="width: 100%; height: auto;" />
+                <button class="btn btn-sm btn-danger position-absolute top-0 end-0"
+                @onclick="@(() => RemoveImage(image))">
+                    ✕
+                </button>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <p>No images uploaded yet.</p>
+}
+
+@code {
+    [Parameter]
+    public List<ImageUploadInfo> UploadedImages { get; set; } = new();
+
+    private async Task OnUploadChange(UploadChangeEventArgs args)
+    {
+        foreach (var file in args.Files)
+        {
+            using var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            var buffer = ms.ToArray();
+
+            if (UploadedImages == null)
+                UploadedImages = new List<ImageUploadInfo>();
+
+            ImageUploadInfo uploadInfo = new ImageUploadInfo();
+            uploadInfo.Data=buffer;
+            uploadInfo.DataFormat = file.ContentType;
+            UploadedImages.Add(uploadInfo);
+        }
+
+        StateHasChanged();
+    }
+
+    private void RemoveImage(ImageUploadInfo UploadInfo)
+    {
+        UploadedImages.Remove(UploadInfo);
+    }
+
+    private string GetImageSrc(ImageUploadInfo UploadInfo)
+    {
+        var base64 = Convert.ToBase64String(UploadInfo.Data);
+        return $"data:image/{UploadInfo.DataFormat};base64,{base64}";
+    }
+}

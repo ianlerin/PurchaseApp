@@ -1,0 +1,83 @@
+## Build results
+bin/
+obj/
+**/bin/
+**/obj/
+
+## User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## IDEs and editors
+.vscode/
+.idea/
+*.code-workspace
+
+## ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+## ASP.NET secrets
+secrets.json
+
+## Publish directory
+wwwroot/dist/
+dist/
+publish/
+**/publish/
+
+## npm packages (if you use them)
+node_modules/
+
+## Logs and temp
+*.log
+*.tlog
+*.vspscc
+*.vssscc
+*.tmp
+*.bak
+
+## Rider
+.idea/
+
+## Visual Studio
+.vs/
+
+## JetBrains Rider
+.idea/
+
+## DotNet CLI
+.project
+*.dbmdl
+
+## Others
+*.ncrunch*
+_ReSharper*/
+*.vsconfig
+
+## Certificate files (development only)
+*.pfx
+*.p12
+*.key
+*.cer
+*.crt
+
+## Coverage reports
+coverage/
+*.coverage
+*.coveragexml
+
+## SQLite
+*.db
+*.sqlite
+
+## System files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+## OS generated files
+.DS_Store
+Icon?

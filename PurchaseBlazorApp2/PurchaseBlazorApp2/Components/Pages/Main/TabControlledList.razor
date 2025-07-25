@@ -1,0 +1,44 @@
+﻿@page "/MainList"
+<h3>TabControlledList</h3>
+
+<div class="tabs">
+    <button class="tab-button @(activeTab == "PR" ? "active" : "")" @onclick="@(() => activeTab = "PR")">PR</button>
+    <button class="tab-button @(activeTab == "PO" ? "active" : "")" @onclick="@(() => activeTab = "PO")">PO</button>
+</div>
+
+<div class="tab-content mt-3">
+    @if (activeTab == "PR")
+    {
+        <PurchaseBlazorApp2.Components.Pages.PurchaseRequisition.PurchaseRequisitionList />
+    }
+    else if (activeTab == "PO")
+    {
+        <PurchaseBlazorApp2.Components.Pages.PO.POList />
+    }
+</div>
+
+<style>
+    .tabs {
+        display: flex;
+        gap: 1rem;
+        border-bottom: 1px solid #ccc;
+    }
+
+    .tab-button {
+        background: none;
+        border: none;
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+        .tab-button.active {
+            border-bottom: 2px solid blue;
+            color: blue;
+        }
+</style>
+
+
+@code {
+    private string activeTab = "PR";
+}

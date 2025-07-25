@@ -1,0 +1,195 @@
+﻿@page "/purchaserequisitionrecords/create/{RequisitionNumber}"
+@page "/purchaserequisitionrecords/create"
+@using PurchaseBlazorApp2.Components.Data
+@using PurchaseBlazorApp2.Components.Global
+@using PurchaseBlazorApp2.Components.Repository
+@using Radzen
+@using Radzen.Blazor
+@inject GlobalVar GlobalVar
+@inject StateStorage StateStorage
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer
+
+<PageTitle>Create</PageTitle>
+
+<h1>Create</h1>
+
+<h2>PurchaseRequisitionRecord</h2>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <EditForm Model="PurchaseRequisitionRecord" OnValidSubmit="AddPurchaseRequisitionRecord" FormName="create" Enhance>
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" role="alert" />
+            <div class ="mb-3">
+                @if (!string.IsNullOrEmpty(PurchaseRequisitionRecord.RequisitionNumber))
+                {
+                    <label for="ID" class="form-label">ID:</label>
+                    <InputText id="ID" @bind-Value="PurchaseRequisitionRecord.RequisitionNumber" class="form-control" />
+                    <ValidationMessage For="() => PurchaseRequisitionRecord.RequisitionNumber" class="text-danger" />
+                }
+            </div>
+            <div class="mb-3">
+                <label for="requestdate" class="form-label">RequestDate:</label>
+                <InputDate id="requestdate" @bind-Value="PurchaseRequisitionRecord.RequestDate" class="form-control" />
+                <ValidationMessage For="() => PurchaseRequisitionRecord.RequestDate" class="text-danger" />
+            </div>
+
+            <div class="mb-3">
+                <label for="purpose" class="form-label">Purpose:</label>
+                <InputText id="purpose" @bind-Value="PurchaseRequisitionRecord.Purpose" class="form-control" />
+                <ValidationMessage For="() => PurchaseRequisitionRecord.Purpose" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Item Requested:</label>
+
+                @foreach (var item in PurchaseRequisitionRecord.ItemRequested)
+                {
+                    var index = PurchaseRequisitionRecord.ItemRequested.IndexOf(item);
+
+                    <div class="mb-3 border p-3 rounded">
+                        <div class="row mb-2">
+                            <div class="col-md-4">
+                                <label class="form-label">Item</label>
+                                <InputText @bind-Value="item.RequestItem" class="form-control" />
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">UnitPrice</label>
+                                <InputNumber @bind-Value="item.UnitPrice" class="form-control" />
+                                <ValidationMessage For="@(() => item.UnitPrice)" class="text-danger" />
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Quantity</label>
+                                <InputNumber @bind-Value="item.Quantity" class="form-control" />
+                                <ValidationMessage For="@(() => item.Quantity)" class="text-danger" />
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">TotalPrice</label>
+                                <InputNumber @bind-Value="item.TotalPrice" class="form-control" />
+                                <ValidationMessage For="@(() => item.TotalPrice)" class="text-danger" />
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="button" class="btn btn-danger w-100" @onclick="() => RemoveItem(index)">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <button type="button" class="btn btn-primary" @onclick="AddItem">Add Item</button>
+            </div>
+            <div class="mb-3">
+                <label for="department" class="form-label">Department:</label>
+                <PurchaseBlazorApp2.Components.Helper.EnumDropDownBox @bind-Value="PurchaseRequisitionRecord.Department" TEnum="PurchaseBlazorApp2.Components.Data.EDepartment"></PurchaseBlazorApp2.Components.Helper.EnumDropDownBox>
+                <ValidationMessage For="() => PurchaseRequisitionRecord.Department" class="text-danger" />
+            </div>
+
+            <div class="mb-3">
+                <label for="tasktype" class="form-label">TaskType:</label>
+                <PurchaseBlazorApp2.Components.Helper.EnumDropDownBox @bind-Value="PurchaseRequisitionRecord.TaskType" TEnum="PurchaseBlazorApp2.Components.Data.ETask"></PurchaseBlazorApp2.Components.Helper.EnumDropDownBox>
+                <ValidationMessage For="() => PurchaseRequisitionRecord.TaskType" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <PurchaseBlazorApp2.Components.Helper.ApprovalArea Approvals="PurchaseRequisitionRecord.Approvals" MyGlobalVar="GlobalVar" OnApprovalChanged="OnCheckboxChanged"></PurchaseBlazorApp2.Components.Helper.ApprovalArea>
+
+            </div>
+
+            <PurchaseBlazorApp2.Components.Helper.UploadImageHelper UploadedImages="PurchaseRequisitionRecord.SupportDocuments"></PurchaseBlazorApp2.Components.Helper.UploadImageHelper>
+            <button type="submit" class="btn btn-primary">Create</button>
+        </EditForm>
+
+
+    </div>
+</div>
+
+<div>
+    <button @onclick="OnPrintPDF">Print PDF</button>
+</div>
+
+
+@code {
+    private Guid inputFileKey = Guid.NewGuid();
+    [Parameter] public string RequisitionNumber { get; set; }
+
+    [SupplyParameterFromForm]
+    private PurchaseRequisitionRecord PurchaseRequisitionRecord { get; set; } = new();
+    [Inject] IJSRuntime JS { get; set; }
+    // To protect from overposting attacks, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task AddPurchaseRequisitionRecord()
+    {
+        PurchaseRequisitionRecord.Requestor = GlobalVar?.UserName.Name ?? "";
+        PRRepository pRRepository= new PRRepository();
+        bool success = await pRRepository.SubmitAsync(new List<PurchaseRequisitionRecord> { PurchaseRequisitionRecord });
+        if (success)
+        {
+            await JS.InvokeVoidAsync("alert", "Submission successful!");
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("alert", "Submission failed.");
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+
+
+        if (!string.IsNullOrEmpty(RequisitionNumber))
+        {
+            var FoundPRRecord = StateStorage.Get<PurchaseRequisitionRecord>("PR");
+            if (FoundPRRecord!=null&&FoundPRRecord.RequisitionNumber == RequisitionNumber)
+            {
+                PurchaseRequisitionRecord = FoundPRRecord;
+            }
+            else
+            {
+                var repo = new PRRepository();
+                List<PurchaseRequisitionRecord> FoundList = await repo.GetRecordsAsync(new List<string> { RequisitionNumber });
+                if (FoundList.Count > 0)
+                {
+                    PurchaseRequisitionRecord = FoundList[0];
+                }
+            }
+        }
+        stopwatch.Stop();
+        Console.WriteLine($"OnInitializedAsync took {stopwatch.ElapsedMilliseconds} ms");
+    }
+
+    private Task OnInputChange(ChangeEventArgs args, ApprovalInfo approval)
+    {
+        bool isChecked = (bool)args.Value;
+
+        if (isChecked)
+            approval.UserName = GlobalVar?.UserName.Name ?? "";
+        else
+            approval.UserName = "";
+
+        return Task.CompletedTask;
+    }
+
+    private Task OnCheckboxChanged((bool NewValue, ApprovalInfo Approval) args)
+    {
+        PurchaseRequisitionRecord.OnApprovalChanged();
+        return Task.CompletedTask;
+    }
+
+    private Task AddItem(MouseEventArgs args)
+    {
+        RequestItemInfo ItemInfo = new RequestItemInfo();
+        PurchaseRequisitionRecord.ItemRequested.Add(ItemInfo);
+        return Task.CompletedTask;
+    }
+
+    private Task RemoveItem(int i)
+    {
+        PurchaseRequisitionRecord.ItemRequested.RemoveAt(i);
+        return Task.CompletedTask;
+    }
+    private void OnPrintPDF()
+    {
+        StateStorage.Set("PR", PurchaseRequisitionRecord);
+        NavigationManager.NavigateTo($"/purchaserequisitionrecords/print/{PurchaseRequisitionRecord.RequisitionNumber}");
+      
+    }
+}
