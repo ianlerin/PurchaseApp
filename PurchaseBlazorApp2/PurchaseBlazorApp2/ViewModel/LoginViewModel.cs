@@ -32,7 +32,7 @@ namespace PurchaseBlazorApp2.ViewModel
                 string Key = System.Text.Json.JsonSerializer.Serialize(ToUse);
                 if (JS is not null)
                 {
-                    await JS.InvokeVoidAsync("setCookie", "userKey", Key, 7);
+                    //await JS.InvokeVoidAsync("setCookie", "userKey", Key, 7);
                 }
                 globalVar.SetUser(ToUse);
                 //loginCookieService.SetCookie(ToUse);

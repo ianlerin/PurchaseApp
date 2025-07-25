@@ -1,0 +1,75 @@
+﻿@using PurchaseBlazorApp2.Components.Global
+@using Radzen.Blazor
+@inject ClientGlobalVar GlobalVar
+@inject IJSRuntime JS
+@inherits LayoutComponentBase
+
+
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="top-row px-4">
+            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+        </div>
+
+        <article class="content px-4">
+            @Body
+        </article>
+
+    </main>
+</div>
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
+
+<RadzenComponents />
+
+
+@code {
+    bool bIsLoggedIn{ get; set; }
+    bool _initialized{ get; set; }
+    protected override void OnInitialized()
+    {
+        GlobalVar.OnLoginStateChanged += HandleStateChanged; 
+     
+    }
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("console.log", "Loading CookieHelper manually");
+            await JS.InvokeVoidAsync("eval", "import('/js/CookieHelper.js')");
+            await JS.InvokeVoidAsync("eval", "import('/js/GeneratePDFHelper.js')");
+        }
+
+        var cookieValue = await JS.InvokeAsync<string>("getCookie", "userKey");
+
+        if (!string.IsNullOrEmpty(cookieValue))
+        {
+            var user = System.Text.Json.JsonSerializer.Deserialize<UserName>(cookieValue);
+            GlobalVar.SetUser(user);
+        }
+
+        StateHasChanged(); // If needed to update UI
+    }
+    private void HandleStateChanged()
+    {
+        bIsLoggedIn = true;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        GlobalVar.OnLoginStateChanged -= HandleStateChanged;
+    }
+   
+}
