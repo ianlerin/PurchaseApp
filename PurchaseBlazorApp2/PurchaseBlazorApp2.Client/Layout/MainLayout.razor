@@ -1,27 +1,32 @@
-﻿@using PurchaseBlazorApp2.Components.Global
+﻿@using PurchaseBlazorApp2.Client.Components.Pages.Login
+@using PurchaseBlazorApp2.Components.Global
 @using Radzen.Blazor
 @inject ClientGlobalVar GlobalVar
 @inject IJSRuntime JS
 @inherits LayoutComponentBase
 
 
-
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
-
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+@if (!GlobalVar.IsLoggedIn)
+{
+    <MainLogin />
+}
+else
+{
+    <div class="layout-container">
+        <div class="sidebar">
+            <NavMenu />
         </div>
 
-        <article class="content px-4">
-            @Body
-        </article>
-
-    </main>
-</div>
+        <main class="main-content">
+            <div class="top-row px-4">
+                <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            </div>
+            <article class="content px-4">
+                @Body
+            </article>
+        </main>
+    </div>
+}
 
 <div id="blazor-error-ui">
     An unhandled error has occurred.
@@ -30,7 +35,6 @@
 </div>
 
 <RadzenComponents />
-
 
 @code {
     bool bIsLoggedIn{ get; set; }
@@ -59,7 +63,6 @@
             GlobalVar.SetUser(user);
         }
 
-        StateHasChanged(); // If needed to update UI
     }
     private void HandleStateChanged()
     {

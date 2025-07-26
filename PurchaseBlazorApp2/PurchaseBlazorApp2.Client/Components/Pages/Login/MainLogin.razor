@@ -1,0 +1,74 @@
+﻿
+@page "/login"
+@using System.ComponentModel.DataAnnotations
+@using PurchaseBlazorApp2.Components.Global
+@using PurchaseBlazorApp2.Client.Components.Helper
+@using PurchaseBlazorApp2.ViewModel
+@inject ClientGlobalVar GlobalVar
+@inject IJSRuntime JS
+@inject NavigationManager NavigationManager
+@inject HttpClient Http
+@rendermode InteractiveAuto
+
+
+<h3>MainLogin</h3>
+<EditForm Model="MyUserName" OnValidSubmit="HandleLogin" FormName="LoginForm">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group mb-3">
+        <label for="username">Username</label>
+        <InputText id="MyUserName.Name" class="form-control" @bind-Value="MyUserName.Name"/>
+        <ValidationMessage For="@(() => MyUserName.Name)" />
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="password">Password</label>
+        <InputText id="MyUserName.Password" type="password" class="form-control" @bind-Value="MyUserName.Password"/>
+        <ValidationMessage For="@(() => MyUserName.Password)" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Login</button>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="text-danger mt-3">@errorMessage</div>
+    }
+</EditForm>
+
+
+@code {
+
+    public UserName MyUserName { get; set; } = new UserName("","");
+    private string? errorMessage;
+    protected override void OnInitialized()
+    {
+        loginModel = new LoginModel(GlobalVar, JS);
+    }
+    private void HandleLoginSuccess()
+    {
+        InvokeAsync(StateHasChanged); 
+    }
+
+    public async Task HandleLogin()
+    {
+       
+        var response = await Http.PostAsJsonAsync(
+        NavigationManager.ToAbsoluteUri("api/login/submit"), MyUserName);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string Key = System.Text.Json.JsonSerializer.Serialize(MyUserName);
+            if (JS is not null)
+            {
+                await JS.InvokeVoidAsync("setCookie", "userKey", Key, 7);
+            }
+            GlobalVar.SetUser(MyUserName);
+
+            HandleLoginSuccess();
+        }
+
+    }
+    private LoginModel? loginModel;
+    
+}

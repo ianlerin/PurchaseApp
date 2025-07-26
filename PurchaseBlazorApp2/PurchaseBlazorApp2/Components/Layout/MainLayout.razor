@@ -1,6 +1,5 @@
 ﻿@using PurchaseBlazorApp2.Components.Global
 @using PurchaseBlazorApp2.Components.Helper
-@using PurchaseBlazorApp2.Components.Pages.Login
 @using Radzen.Blazor
 @inject GlobalVar GlobalVar
 @inject IJSRuntime JS
@@ -12,8 +11,7 @@
 <div class="page">
     @if (!bIsLoggedIn)
     {
-
-        <MainLogin></MainLogin>
+        <div>SERVER</div>
     }
     else
     {

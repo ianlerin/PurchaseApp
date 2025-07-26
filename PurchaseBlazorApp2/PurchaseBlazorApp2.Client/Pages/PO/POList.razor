@@ -1,0 +1,82 @@
+﻿@page "/PO/list"
+@using PurchaseBlazorApp2.Components.Data
+@using PurchaseBlazorApp2.Components.Global
+@using Radzen.Blazor
+@inject NavigationManager NavigationManager
+@inject ClientStateStorage StateStorage
+@inject HttpClient Http
+
+@rendermode InteractiveAuto
+<h3>PO List</h3>
+
+<div class="container mt-4 mb-4">
+    <div class="row">
+        <div class="col-md-12">
+            <RadzenDataGrid Data="@Records" TItem="PurchaseOrderRecord" AllowSorting="true"
+            Class="shadow-sm border rounded p-3">
+                <Columns>
+                    <RadzenDataGridColumn TItem="PurchaseOrderRecord" Property="PO_ID" Title="Requisition " />
+                    <RadzenDataGridColumn TItem="PurchaseOrderRecord" Property="PR_ID" Title="PR" />
+                    <RadzenDataGridColumn TItem="PurchaseOrderRecord" Title="Status">
+                        <Template Context="data">
+                            @data.PoStatus.ToString()
+                        </Template>
+                    </RadzenDataGridColumn>
+
+                    <RadzenDataGridColumn TItem="PurchaseOrderRecord" Property="Date" Title="Purpose" />
+                    <RadzenDataGridColumn TItem="PurchaseOrderRecord" Title="Actions">
+                        <Template Context="record">
+                            <RadzenButton Text="View" Icon="visibility"
+                            Click="@(() => OnViewClicked(record))" />
+                            <RadzenButton Text="Delete" Icon="delete"
+                            Click="@(() => OnDeleteClicked(record))" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </div>
+    </div>
+</div>
+@code {
+    private List<PurchaseOrderRecord> Records = new();
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+       
+        var response = await Http.PostAsJsonAsync(
+            NavigationManager.ToAbsoluteUri("api/po/get"), new List<string>());
+        if (response.IsSuccessStatusCode)
+        {
+            try
+            {
+                Records = await response.Content.ReadFromJsonAsync<List<PurchaseOrderRecord>>();
+               
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deserializing response: {ex.Message}");
+
+            }
+        }
+    }
+
+    private void RemoveRecord(PurchaseOrderRecord record)
+    {
+        Records.Remove(record);
+    }
+
+    private void OnViewClicked(PurchaseOrderRecord record)
+    {
+        StateStorage.Set("PO", record);
+        NavigationManager.NavigateTo($"/purchaseorder_client/print/{record.PR_ID}");
+
+    }
+
+    private void OnDeleteClicked(PurchaseOrderRecord record)
+    {
+      
+    }
+}

@@ -1,4 +1,5 @@
 ﻿@page "/purchaserequisitionrecords_client/create"
+@page "/purchaserequisitionrecords_client/create/{RequisitionNumber}"
 @page "/"
 @using PurchaseBlazorApp2.Components.Data
 @using PurchaseBlazorApp2.Components.Global
@@ -114,8 +115,7 @@
     [Inject] IJSRuntime JS { get; set; }
     private async Task AddPurchaseRequisitionRecord()
     {
-        bool isWebAssembly = OperatingSystem.IsBrowser();
-        Console.WriteLine($"[DEBUG] Is WebAssembly: {OperatingSystem.IsBrowser()}");
+
         PurchaseRequisitionRecord.Requestor = GlobalVar?.UserName.Name ?? "";
         Console.WriteLine(NavigationManager.ToAbsoluteUri("api/pr/submit"));
         var response = await Http.PostAsJsonAsync(
@@ -133,15 +133,12 @@
 
             await JS.InvokeVoidAsync("alert", message);
         }
-      
+
     }
 
     protected override async Task OnInitializedAsync()
     {
-        /*
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-
-
 
         if (!string.IsNullOrEmpty(RequisitionNumber))
         {
@@ -152,17 +149,30 @@
             }
             else
             {
-                var repo = new PRRepository();
-                List<PurchaseRequisitionRecord> FoundList = await repo.GetRecordsAsync(new List<string> { RequisitionNumber });
-                if (FoundList.Count > 0)
+                var response = await Http.PostAsJsonAsync(
+                NavigationManager.ToAbsoluteUri("api/pr/get-detail"), new List<string> { RequisitionNumber });
+                if (response.IsSuccessStatusCode)
                 {
-                    PurchaseRequisitionRecord = FoundList[0];
+                    try
+                    {
+                        var Lists = await response.Content.ReadFromJsonAsync<List<PurchaseRequisitionRecord>>();
+                        if(Lists.Count>0)
+                        {
+                            PurchaseRequisitionRecord = Lists[0];
+                        }
+
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error deserializing response: {ex.Message}");
+                      
+                    }
                 }
             }
         }
         stopwatch.Stop();
         Console.WriteLine($"OnInitializedAsync took {stopwatch.ElapsedMilliseconds} ms");
-        */
+        
     }
 
     private Task OnInputChange(ChangeEventArgs args, ApprovalInfo approval)
@@ -198,7 +208,7 @@
     private void OnPrintPDF()
     {
         StateStorage.Set("PR", PurchaseRequisitionRecord);
-        NavigationManager.NavigateTo($"/purchaserequisitionrecords/print/{PurchaseRequisitionRecord.RequisitionNumber}");
+        NavigationManager.NavigateTo($"/purchaseorder_client/print/{PurchaseRequisitionRecord.RequisitionNumber}");
       
     }
 }

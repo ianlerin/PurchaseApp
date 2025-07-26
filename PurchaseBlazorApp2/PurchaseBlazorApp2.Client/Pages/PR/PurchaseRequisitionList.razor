@@ -1,0 +1,102 @@
+﻿@page "/purchaserequisitionrecords_client/list"
+@using PurchaseBlazorApp2.Components.Data
+@inject HttpClient Http
+@using Radzen.Blazor
+@inject NavigationManager NavigationManager
+
+@rendermode InteractiveAuto
+<h3>PurchaseRequisitionList</h3>
+
+<div class="container mt-4 mb-4">
+    <div class="row">
+        <div class="col-md-12">
+            <RadzenDataGrid Data="@Records" TItem="PurchaseRequisitionRecord" AllowSorting="true"
+            Class="shadow-sm border rounded p-3">
+                <Columns>
+                    <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Property="RequisitionNumber" Title="Requisition " />
+                    <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Property="Requestor" Title="Requestor" />
+                    <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Title="Status">
+                        <Template Context="data">
+                            @data.prstatus.ToString()
+                        </Template>
+                    </RadzenDataGridColumn>
+
+                    <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Property="Purpose" Title="Purpose" />
+                    <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Title="Actions">
+                        <Template Context="record">
+                            <RadzenButton Text="View" Icon="visibility"
+                            Click="@(() => OnViewClicked(record))" />
+                            <RadzenButton Text="Delete" Icon="delete"
+                            Click="@(() => OnDeleteClicked(record))" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </div>
+    </div>
+</div>
+@code {
+    private List<PurchaseRequisitionRecord> Records = new();
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        var response = await Http.PostAsJsonAsync(
+            NavigationManager.ToAbsoluteUri("api/pr/get-list-partial"), new List<PurchaseRequisitionRecord>());
+
+        if (response.IsSuccessStatusCode)
+        {
+            try
+            {
+                var records = await response.Content.ReadFromJsonAsync<List<PurchaseRequisitionRecord>>();
+
+                if (records is not null)
+                {
+                    Records = records;
+                }
+                else
+                {
+                    Console.WriteLine("Warning: Received null when deserializing PurchaseRequisitionRecord list.");
+                    Records = new List<PurchaseRequisitionRecord>(); // fallback to empty list
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deserializing response: {ex.Message}");
+                Records = new List<PurchaseRequisitionRecord>(); // fallback to empty list
+            }
+        }
+        else
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"HTTP error {response.StatusCode}: {error}");
+            Records = new List<PurchaseRequisitionRecord>(); // fallback on HTTP error
+        }
+       
+    }
+
+    private void AddNewRecord()
+    {
+        Console.WriteLine($"AddNewRecord");
+        //Records.Add(new PurchaseRequisitionRecord());
+    }
+
+    private void RemoveRecord(PurchaseRequisitionRecord record)
+    {
+        Records.Remove(record);
+    }
+
+    private void OnViewClicked(PurchaseRequisitionRecord record)
+    {
+        NavigationManager.NavigateTo($"/purchaserequisitionrecords_client/create/{record.RequisitionNumber}");
+      
+    }
+
+    private void OnDeleteClicked(PurchaseRequisitionRecord record)
+    {
+     
+        Console.WriteLine($"View: {record.RequisitionNumber}");
+    }
+}
