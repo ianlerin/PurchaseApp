@@ -23,7 +23,7 @@ namespace PurchaseBlazorApp2.Controller
         }
 
         [HttpPost("submit")]
-        public async Task<ActionResult<List<PurchaseOrderRecord>>> SubmitAsync([FromBody] IEnumerable<PurchaseOrderRecord> InfoList)
+        public async Task<ActionResult<POSubmitResponse>> SubmitAsync([FromBody] IEnumerable<PurchaseOrderRecord> InfoList)
         {
             var allRecords = await PORepository.SubmitAsync(InfoList);
             return Ok(allRecords);

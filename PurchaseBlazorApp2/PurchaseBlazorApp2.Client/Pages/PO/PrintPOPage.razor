@@ -90,8 +90,8 @@
 
         <div class="d-flex align-items-center gap-3 mb-2">
             <PurchaseBlazorApp2.Client.Components.Helper.ApprovalArea Approvals="purchaseOrderRecord.ApprovalInfo"
-                                                                      MyGlobalVar="GlobalVar"
-                                                                      OnApprovalChanged="OnCheckboxChanged" />
+            MyGlobalVar="GlobalVar"
+            OnApprovalChanged="OnCheckboxChanged" />
         </div>
     </div>
 }
@@ -164,12 +164,12 @@
     {
 
         var response = await Http.PostAsJsonAsync(
-            NavigationManager.ToAbsoluteUri("api/po/submit"), new List<string>());
+            NavigationManager.ToAbsoluteUri("api/po/submit"), new List<PurchaseOrderRecord>{ purchaseOrderRecord });
         if (response.IsSuccessStatusCode)
         {
             try
             {
-                var TupleResponse = await response.Content.ReadFromJsonAsync<(bool bSuccess, List<string> IDs)>();
+                var TupleResponse = await response.Content.ReadFromJsonAsync<POSubmitResponse>();
                 if (TupleResponse.bSuccess)
                 {
                     purchaseOrderRecord.PO_ID = TupleResponse.IDs[0];

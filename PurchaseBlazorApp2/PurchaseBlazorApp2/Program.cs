@@ -21,8 +21,6 @@ builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<TooltipService>();
 builder.Services.AddScoped<ContextMenuService>();
 builder.Services.AddScoped<LoginCookieService>();
-builder.Services.AddScoped<GlobalVar>();
-builder.Services.AddScoped<StateStorage>();
 builder.Services.AddScoped<ClientStateStorage>();
 builder.Services.AddScoped<ClientGlobalVar>();
 builder.Services.AddHttpContextAccessor();
