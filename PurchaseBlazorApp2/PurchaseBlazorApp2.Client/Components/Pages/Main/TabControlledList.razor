@@ -1,4 +1,4 @@
-﻿@page "/MainList"
+﻿@page "/MainList_Client"
 <h3>TabControlledList</h3>
 
 <div class="tabs">
@@ -9,11 +9,11 @@
 <div class="tab-content mt-3">
     @if (activeTab == "PR")
     {
-        <PurchaseBlazorApp2.Components.Pages.PurchaseRequisition.PurchaseRequisitionList />
+        <PurchaseBlazorApp2.Client.Pages.PR.PurchaseRequisitionList />
     }
     else if (activeTab == "PO")
     {
-        <PurchaseBlazorApp2.Components.Pages.PO.POList />
+        <PurchaseBlazorApp2.Client.Pages.PO.POList />
     }
 </div>
 

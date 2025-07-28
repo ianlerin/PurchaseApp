@@ -133,10 +133,9 @@ namespace PurchaseBlazorApp2.Components.Repository
             }
         }
 
-        public async Task<(bool Success, List<string> IDs)> SubmitAsync(IEnumerable<PurchaseOrderRecord> InfoList)
+        public async Task<POSubmitResponse> SubmitAsync(IEnumerable<PurchaseOrderRecord> InfoList)
         {
-            List<string> CreatedIDs=new List<string>();
-            bool bSuccess = false;
+            POSubmitResponse MySubmitResponse = new POSubmitResponse();
             try
             {
                 await Connection.OpenAsync();
@@ -228,14 +227,14 @@ namespace PurchaseBlazorApp2.Components.Repository
                                 int rowsAffected = await command.ExecuteNonQueryAsync();
                                 if (rowsAffected > 0)
                                 {
-                                    bSuccess = true;
-                                    CreatedIDs.Add(SID);
+                                    MySubmitResponse.bSuccess = true;
+                                    MySubmitResponse.IDs.Add(SID);
                                 }
                             }
                         }
                     }
 
-                    if (bSuccess)
+                    if (MySubmitResponse.bSuccess)
                         await transaction.CommitAsync();
                     else
                         await transaction.RollbackAsync();
@@ -246,10 +245,10 @@ namespace PurchaseBlazorApp2.Components.Repository
             catch (Exception ex)
             {
                 Console.WriteLine($"SubmitAsync Exception: {ex.Message}");
-                return (false, CreatedIDs);
+                return MySubmitResponse;
             }
 
-            return (bSuccess, CreatedIDs);
+            return MySubmitResponse;
         }
 
     }

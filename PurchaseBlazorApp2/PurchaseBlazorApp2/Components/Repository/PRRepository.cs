@@ -210,7 +210,7 @@ namespace PurchaseBlazorApp2.Components.Repository
             return ToReturn;
         }
 
-        public async Task<List<ImageUploadInfo>> GetImagesByRequisitionNumber(string requisitionNumber, NpgsqlTransaction? externalTransaction = null)
+        private async Task<List<ImageUploadInfo>> GetImagesByRequisitionNumber(string requisitionNumber, NpgsqlTransaction? externalTransaction = null)
         {
             var images = new List<ImageUploadInfo>();
             bool shouldCloseConnection = false;
@@ -248,7 +248,7 @@ namespace PurchaseBlazorApp2.Components.Repository
             }
         }
 
-        public async Task<List<RequestItemInfo>> GetRequestedItemByRequisitionNumber(string requisitionNumber, NpgsqlTransaction? externalTransaction = null)
+        private async Task<List<RequestItemInfo>> GetRequestedItemByRequisitionNumber(string requisitionNumber, NpgsqlTransaction? externalTransaction = null)
         {
             var Items = new List<RequestItemInfo>();
             var MyConnection = GetConnection();
@@ -342,7 +342,7 @@ namespace PurchaseBlazorApp2.Components.Repository
             return RecordsFound;
         }
 
-        public async Task<bool> InsertImage(PurchaseRequisitionRecord info, NpgsqlTransaction? externalTransaction = null)
+        private async Task<bool> InsertImage(PurchaseRequisitionRecord info, NpgsqlTransaction? externalTransaction = null)
         {
             bool shouldCloseConnection = false;
             bool shouldDisposeTransaction = false;
@@ -408,7 +408,7 @@ namespace PurchaseBlazorApp2.Components.Repository
         }
 
 
-        public async Task<bool> InsertPRItems(PurchaseRequisitionRecord info, NpgsqlTransaction? externalTransaction = null)
+        private async Task<bool> InsertPRItems(PurchaseRequisitionRecord info, NpgsqlTransaction? externalTransaction = null)
         {
             bool shouldCloseConnection = false;
             bool shouldDisposeTransaction = false;
@@ -477,7 +477,7 @@ namespace PurchaseBlazorApp2.Components.Repository
 
 
 
-        public async Task<bool> InsertApproval(PurchaseRequisitionRecord info, NpgsqlTransaction? externalTransaction = null)
+        private async Task<bool> InsertApproval(PurchaseRequisitionRecord info, NpgsqlTransaction? externalTransaction = null)
         {
             bool shouldCloseConnection = false;
             bool shouldDisposeTransaction = false;

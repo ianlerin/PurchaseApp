@@ -2,7 +2,7 @@
 
 namespace PurchaseBlazorApp2.Components.Global
 {
-    public class StateStorage
+    public class ClientStateStorage
     {
         public Dictionary<string, object> _stateMap = new Dictionary<string, object>();
 

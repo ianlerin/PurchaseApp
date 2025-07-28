@@ -1,10 +1,10 @@
-﻿@page "/purchaserequisitionrecords/list"
+﻿@page "/purchaserequisitionrecords_client/list"
 @using PurchaseBlazorApp2.Components.Data
-@using PurchaseBlazorApp2.Components.Repository
+@inject HttpClient Http
 @using Radzen.Blazor
 @inject NavigationManager NavigationManager
 
-@rendermode InteractiveServer
+@rendermode InteractiveAuto
 <h3>PurchaseRequisitionList</h3>
 
 <div class="container mt-4 mb-4">
@@ -43,11 +43,38 @@
     protected override async Task OnInitializedAsync()
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        var response = await Http.PostAsJsonAsync(
+            NavigationManager.ToAbsoluteUri("api/pr/get-list-partial"), new List<PurchaseRequisitionRecord>());
 
-        var repo = new PRRepository();
-        Records = await repo.GetRecordsForListAsync();
-        stopwatch.Stop();
-        Console.WriteLine($"OnInitializedAsync took {stopwatch.ElapsedMilliseconds} ms");
+        if (response.IsSuccessStatusCode)
+        {
+            try
+            {
+                var records = await response.Content.ReadFromJsonAsync<List<PurchaseRequisitionRecord>>();
+
+                if (records is not null)
+                {
+                    Records = records;
+                }
+                else
+                {
+                    Console.WriteLine("Warning: Received null when deserializing PurchaseRequisitionRecord list.");
+                    Records = new List<PurchaseRequisitionRecord>(); // fallback to empty list
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deserializing response: {ex.Message}");
+                Records = new List<PurchaseRequisitionRecord>(); // fallback to empty list
+            }
+        }
+        else
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"HTTP error {response.StatusCode}: {error}");
+            Records = new List<PurchaseRequisitionRecord>(); // fallback on HTTP error
+        }
+       
     }
 
     private void AddNewRecord()
@@ -63,7 +90,7 @@
 
     private void OnViewClicked(PurchaseRequisitionRecord record)
     {
-        NavigationManager.NavigateTo($"/purchaserequisitionrecords/create/{record.RequisitionNumber}");
+        NavigationManager.NavigateTo($"/purchaserequisitionrecords_client/create/{record.RequisitionNumber}");
       
     }
 

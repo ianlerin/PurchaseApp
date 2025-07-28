@@ -3,7 +3,7 @@ using System.Text.Json;
 
 namespace PurchaseBlazorApp2.Components.Global
 {
-    public struct UserName
+    public class UserName
     {
         public string Name { get; set; }
         public string Password { get; set; }
@@ -12,33 +12,27 @@ namespace PurchaseBlazorApp2.Components.Global
             Name = _Name;
             Password = _Password;   
         }
+        public UserName()
+        {
+
+        }
         public EDepartment Role { get; set; }
     }
 
-    public class GlobalVar
+    public class ClientGlobalVar
     {
         public event Action? OnLoginStateChanged;
         public UserName UserName { get; set; }
         public bool IsLoggedIn { get; set; } = false;
         public void SetUser(UserName ToSet)
         {
-            UserName = ToSet;
-            IsLoggedIn = true;
-
-         
-
-            /*
-            HttpContext.Response.Cookies.Append("UserInfo", json, new CookieOptions
+            if (UserName == null|| ToSet.Name!= UserName.Name)
             {
-                Expires = DateTimeOffset.UtcNow.AddDays(7),
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Lax
-            });
-            */
-            OnLoginStateChanged?.Invoke();
-
-
+                UserName = ToSet;
+                IsLoggedIn = true;
+                OnLoginStateChanged?.Invoke();
+            }
+     
 
         }
     }

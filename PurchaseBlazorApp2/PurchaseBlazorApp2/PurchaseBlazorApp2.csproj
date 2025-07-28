@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <Folder Include="Components\Data\" />
+    <Folder Include="Components\Pages\Login\" />
   </ItemGroup>
 
 </Project>

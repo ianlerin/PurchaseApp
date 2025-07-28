@@ -32,7 +32,11 @@ namespace PurchaseBlazorApp2.Components.Data
         Close
     }
 
-
+    public class POSubmitResponse
+    {
+        public bool bSuccess { get; set; }
+        public List<string> IDs { get; set; } = new List<string>();
+    }
 
     public class ApprovalInfo
     {
@@ -82,7 +86,7 @@ namespace PurchaseBlazorApp2.Components.Data
     public class PurchaseOrderRecord
     {
         [Key]
-        public string PO_ID { get; set; }
+        public string? PO_ID { get; set; }
         public string PR_ID { get; set; }
         public DateTime Date { get; set; }=DateTime.Now;
         public List<ApprovalInfo> ApprovalInfo { get; set; }= new List<ApprovalInfo> { };
@@ -112,7 +116,7 @@ namespace PurchaseBlazorApp2.Components.Data
     public class PurchaseRequisitionRecord
     {
         [Key]
-        public string RequisitionNumber { get; set; } 
+        public string? RequisitionNumber { get; set; } 
         public DateTime RequestDate { get; set; } = DateTime.Now;
         public string Requestor { get; set; }
 

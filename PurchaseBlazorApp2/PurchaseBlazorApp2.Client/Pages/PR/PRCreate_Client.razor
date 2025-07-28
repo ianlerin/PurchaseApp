@@ -1,14 +1,15 @@
-﻿@page "/purchaserequisitionrecords/create/{RequisitionNumber}"
-@page "/purchaserequisitionrecords/create"
+﻿@page "/purchaserequisitionrecords_client/create"
+@page "/purchaserequisitionrecords_client/create/{RequisitionNumber}"
+@page "/"
 @using PurchaseBlazorApp2.Components.Data
 @using PurchaseBlazorApp2.Components.Global
-@using PurchaseBlazorApp2.Components.Repository
 @using Radzen
 @using Radzen.Blazor
-@inject GlobalVar GlobalVar
-@inject StateStorage StateStorage
+@inject ClientGlobalVar GlobalVar
+@inject HttpClient Http
+@inject ClientStateStorage StateStorage
 @inject NavigationManager NavigationManager
-@rendermode InteractiveServer
+@rendermode InteractiveAuto
 
 <PageTitle>Create</PageTitle>
 
@@ -26,7 +27,6 @@
                 {
                     <label for="ID" class="form-label">ID:</label>
                     <InputText id="ID" @bind-Value="PurchaseRequisitionRecord.RequisitionNumber" class="form-control" />
-                    <ValidationMessage For="() => PurchaseRequisitionRecord.RequisitionNumber" class="text-danger" />
                 }
             </div>
             <div class="mb-3">
@@ -79,21 +79,21 @@
             </div>
             <div class="mb-3">
                 <label for="department" class="form-label">Department:</label>
-                <PurchaseBlazorApp2.Components.Helper.EnumDropDownBox @bind-Value="PurchaseRequisitionRecord.Department" TEnum="PurchaseBlazorApp2.Components.Data.EDepartment"></PurchaseBlazorApp2.Components.Helper.EnumDropDownBox>
+                <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="PurchaseRequisitionRecord.Department" TEnum="PurchaseBlazorApp2.Components.Data.EDepartment"></PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox>
                 <ValidationMessage For="() => PurchaseRequisitionRecord.Department" class="text-danger" />
             </div>
 
             <div class="mb-3">
                 <label for="tasktype" class="form-label">TaskType:</label>
-                <PurchaseBlazorApp2.Components.Helper.EnumDropDownBox @bind-Value="PurchaseRequisitionRecord.TaskType" TEnum="PurchaseBlazorApp2.Components.Data.ETask"></PurchaseBlazorApp2.Components.Helper.EnumDropDownBox>
+                <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="PurchaseRequisitionRecord.TaskType" TEnum="PurchaseBlazorApp2.Components.Data.ETask"></PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox>
                 <ValidationMessage For="() => PurchaseRequisitionRecord.TaskType" class="text-danger" />
             </div>
             <div class="mb-3">
-                <PurchaseBlazorApp2.Components.Helper.ApprovalArea Approvals="PurchaseRequisitionRecord.Approvals" MyGlobalVar="GlobalVar" OnApprovalChanged="OnCheckboxChanged"></PurchaseBlazorApp2.Components.Helper.ApprovalArea>
+                <PurchaseBlazorApp2.Client.Components.Helper.ApprovalArea Approvals="PurchaseRequisitionRecord.Approvals" MyGlobalVar="GlobalVar" OnApprovalChanged="OnCheckboxChanged"></PurchaseBlazorApp2.Client.Components.Helper.ApprovalArea>
 
             </div>
 
-            <PurchaseBlazorApp2.Components.Helper.UploadImageHelper UploadedImages="PurchaseRequisitionRecord.SupportDocuments"></PurchaseBlazorApp2.Components.Helper.UploadImageHelper>
+            <PurchaseBlazorApp2.Client.Components.Helper.UploadImageHelper UploadedImages="PurchaseRequisitionRecord.SupportDocuments"></PurchaseBlazorApp2.Client.Components.Helper.UploadImageHelper>
             <button type="submit" class="btn btn-primary">Create</button>
         </EditForm>
 
@@ -113,27 +113,32 @@
     [SupplyParameterFromForm]
     private PurchaseRequisitionRecord PurchaseRequisitionRecord { get; set; } = new();
     [Inject] IJSRuntime JS { get; set; }
-    // To protect from overposting attacks, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
     private async Task AddPurchaseRequisitionRecord()
     {
+
         PurchaseRequisitionRecord.Requestor = GlobalVar?.UserName.Name ?? "";
-        PRRepository pRRepository= new PRRepository();
-        bool success = await pRRepository.SubmitAsync(new List<PurchaseRequisitionRecord> { PurchaseRequisitionRecord });
-        if (success)
+        Console.WriteLine(NavigationManager.ToAbsoluteUri("api/pr/submit"));
+        var response = await Http.PostAsJsonAsync(
+            NavigationManager.ToAbsoluteUri("api/pr/submit"),
+            new List<PurchaseRequisitionRecord> { PurchaseRequisitionRecord });
+
+        if (response.IsSuccessStatusCode)
         {
             await JS.InvokeVoidAsync("alert", "Submission successful!");
         }
         else
         {
-            await JS.InvokeVoidAsync("alert", "Submission failed.");
+            string errorDetails = await response.Content.ReadAsStringAsync();
+            string message = $"Submission failed. Status Code: {(int)response.StatusCode} - {response.ReasonPhrase}\nDetails: {errorDetails}";
+
+            await JS.InvokeVoidAsync("alert", message);
         }
+
     }
 
     protected override async Task OnInitializedAsync()
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-
-
 
         if (!string.IsNullOrEmpty(RequisitionNumber))
         {
@@ -144,16 +149,30 @@
             }
             else
             {
-                var repo = new PRRepository();
-                List<PurchaseRequisitionRecord> FoundList = await repo.GetRecordsAsync(new List<string> { RequisitionNumber });
-                if (FoundList.Count > 0)
+                var response = await Http.PostAsJsonAsync(
+                NavigationManager.ToAbsoluteUri("api/pr/get-detail"), new List<string> { RequisitionNumber });
+                if (response.IsSuccessStatusCode)
                 {
-                    PurchaseRequisitionRecord = FoundList[0];
+                    try
+                    {
+                        var Lists = await response.Content.ReadFromJsonAsync<List<PurchaseRequisitionRecord>>();
+                        if(Lists.Count>0)
+                        {
+                            PurchaseRequisitionRecord = Lists[0];
+                        }
+
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error deserializing response: {ex.Message}");
+                      
+                    }
                 }
             }
         }
         stopwatch.Stop();
         Console.WriteLine($"OnInitializedAsync took {stopwatch.ElapsedMilliseconds} ms");
+        
     }
 
     private Task OnInputChange(ChangeEventArgs args, ApprovalInfo approval)
@@ -189,7 +208,7 @@
     private void OnPrintPDF()
     {
         StateStorage.Set("PR", PurchaseRequisitionRecord);
-        NavigationManager.NavigateTo($"/purchaserequisitionrecords/print/{PurchaseRequisitionRecord.RequisitionNumber}");
+        NavigationManager.NavigateTo($"/purchaseorder_client/print/{PurchaseRequisitionRecord.RequisitionNumber}");
       
     }
 }

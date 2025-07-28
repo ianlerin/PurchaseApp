@@ -9,17 +9,35 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
+    .AddHubOptions(options =>
+    {
+        options.EnableDetailedErrors = true;
+    })
     .AddInteractiveWebAssemblyComponents();
+builder.Services.AddControllers();
+
 builder.Services.AddScoped<DialogService>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<TooltipService>();
 builder.Services.AddScoped<ContextMenuService>();
 builder.Services.AddScoped<LoginCookieService>();
-builder.Services.AddScoped<GlobalVar>();
-builder.Services.AddScoped<StateStorage>();
+builder.Services.AddScoped<ClientStateStorage>();
+builder.Services.AddScoped<ClientGlobalVar>();
 builder.Services.AddHttpContextAccessor();
-var app = builder.Build();
+builder.Services.AddHttpClient();
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.WithOrigins("https://localhost:7129") 
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
 
+
+var app = builder.Build();
+app.MapControllers();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
