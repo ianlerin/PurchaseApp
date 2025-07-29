@@ -17,10 +17,20 @@ namespace PurchaseBlazorApp2.Controller
         }
 
         [HttpPost("submit")]
-        public async Task<ActionResult<bool>> SubmitPRs([FromBody] UserName info)
+        public async Task<ActionResult<CredentialSubmitResponse>> SubmitPRs([FromBody] UserName info)
         {
-            bool Result = await CredentialRepository.TryLoginAsync(info);
-            return Ok(Result);
+            CredentialSubmitResponse FoundUserName = await CredentialRepository.TryLoginAsync(info);
+            return Ok(FoundUserName);
         }
+
+        [HttpPost("register")]
+        public async Task<ActionResult<bool>> Register([FromBody] UserName info)
+        {
+            bool bSuccess = await CredentialRepository.RegisterAsync(info);
+            return Ok(bSuccess);
+        }
+
+
+
     }
 }

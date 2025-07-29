@@ -1,0 +1,97 @@
+﻿@page "/register"
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+@inject ClientGlobalVar GlobalVar
+@using System.ComponentModel.DataAnnotations
+@using PurchaseBlazorApp2.Components.Data
+@using PurchaseBlazorApp2.Components.Global
+<h3>MainRegister</h3>
+
+<h3>Register</h3>
+
+<EditForm Model="RegisterModel" OnValidSubmit="HandleRegister" FormName="RegisterForm">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group mb-3">
+        <label for="username">Username</label>
+        <InputText id="RegisterModel.UserName" class="form-control" @bind-Value="RegisterModel.UserName" />
+        <ValidationMessage For="@(() => RegisterModel.UserName)" />
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="password">Password</label>
+        <InputText id="RegisterModel.Password" type="password" class="form-control" @bind-Value="RegisterModel.Password" />
+        <ValidationMessage For="@(() => RegisterModel.Password)" />
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="confirmPassword">Confirm Password</label>
+        <InputText id="RegisterModel.ConfirmPassword" type="password" class="form-control" @bind-Value="RegisterModel.ConfirmPassword" />
+        <ValidationMessage For="@(() => RegisterModel.ConfirmPassword)" />
+    </div>
+
+    <div class="mb-3">
+        <label for="department" class="form-label">Department:</label>
+        <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="RegisterModel.Role" TEnum="PurchaseBlazorApp2.Components.Data.EDepartment"></PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox>
+        <ValidationMessage For="() => RegisterModel.Role" class="text-danger" />
+    </div>
+
+    <button type="submit" class="btn btn-success">Register</button>
+
+    @if (!string.IsNullOrEmpty(registerErrorMessage))
+    {
+        <div class="text-danger mt-3">@registerErrorMessage</div>
+    }
+</EditForm>
+@code {
+    private RegisterUserModel RegisterModel = new();
+    private string? registerErrorMessage;
+
+    private async Task HandleRegister()
+    {
+        UserName MyUserName = new UserName(RegisterModel.UserName, RegisterModel.Password);
+        MyUserName.Role = RegisterModel.Role;
+        if (MyUserName.Password != RegisterModel.ConfirmPassword)
+        {
+            registerErrorMessage = "Passwords do not match.";
+            return;
+        }
+
+        var response = await Http.PostAsJsonAsync(
+       NavigationManager.ToAbsoluteUri("api/login/register"), MyUserName);
+
+        if (response.IsSuccessStatusCode)
+        {
+            bool bSuccess = await response.Content.ReadFromJsonAsync<bool>();
+            if (bSuccess)
+            {
+                await JS.InvokeVoidAsync("alert", $"Register {RegisterModel.UserName} successful!");
+
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("alert", "Submission fail!");
+            }
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("alert", "Submission fail!");
+        }
+    }
+
+    public class RegisterUserModel
+    {
+        public EDepartment Role { get; set; }
+        [Required]
+        public string UserName { get; set; } = string.Empty;
+
+        [Required]
+        public string Password { get; set; } = string.Empty;
+
+        [Required]
+        [Compare(nameof(Password), ErrorMessage = "Passwords do not match.")]
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+}

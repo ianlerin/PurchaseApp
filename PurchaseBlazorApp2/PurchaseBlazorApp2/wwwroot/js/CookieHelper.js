@@ -18,3 +18,4 @@ window.getCookie = function (name) {
     }
     return null;
 }
+

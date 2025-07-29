@@ -52,20 +52,29 @@
 
     public async Task HandleLogin()
     {
-       
+
         var response = await Http.PostAsJsonAsync(
         NavigationManager.ToAbsoluteUri("api/login/submit"), MyUserName);
 
         if (response.IsSuccessStatusCode)
         {
-            string Key = System.Text.Json.JsonSerializer.Serialize(MyUserName);
-            if (JS is not null)
+            CredentialSubmitResponse FoundUserName = await response.Content.ReadFromJsonAsync<CredentialSubmitResponse>();
+            if (FoundUserName.bSuccess)
             {
-                await JS.InvokeVoidAsync("setCookie", "userKey", Key, 7);
-            }
-            GlobalVar.SetUser(MyUserName);
+                string Key = System.Text.Json.JsonSerializer.Serialize(FoundUserName.MyName);
+                if (JS is not null)
+                {
+                    await JS.InvokeVoidAsync("setCookie", "userKey", Key, 7);
+                }
+                GlobalVar.SetUser(FoundUserName.MyName);
 
-            HandleLoginSuccess();
+                HandleLoginSuccess();
+            }
+
+        }
+        else
+        {
+            Console.WriteLine("Fail!");
         }
 
     }

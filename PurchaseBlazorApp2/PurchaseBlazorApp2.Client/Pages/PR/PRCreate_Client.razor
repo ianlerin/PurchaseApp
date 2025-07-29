@@ -100,10 +100,13 @@
 
     </div>
 </div>
+@if (bCanOpenPO)
+{
+    <div>
+        <button @onclick="OnPrintPDF">Print PDF</button>
+    </div>
+}
 
-<div>
-    <button @onclick="OnPrintPDF">Print PDF</button>
-</div>
 
 
 @code {
@@ -113,6 +116,11 @@
     [SupplyParameterFromForm]
     private PurchaseRequisitionRecord PurchaseRequisitionRecord { get; set; } = new();
     [Inject] IJSRuntime JS { get; set; }
+
+    private bool bCanOpenPO;
+
+
+
     private async Task AddPurchaseRequisitionRecord()
     {
 
@@ -172,7 +180,7 @@
         }
         stopwatch.Stop();
         Console.WriteLine($"OnInitializedAsync took {stopwatch.ElapsedMilliseconds} ms");
-        
+        bCanOpenPO = (PurchaseRequisitionRecord.prstatus == EPRStatus.Close);
     }
 
     private Task OnInputChange(ChangeEventArgs args, ApprovalInfo approval)

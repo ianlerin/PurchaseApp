@@ -13,6 +13,7 @@ namespace PurchaseBlazorApp2.Components.Data
         ManagingDirector,
         AccountsSecurity,
         AccountsHQ,
+        Admin
        
     }
 
@@ -32,7 +33,9 @@ namespace PurchaseBlazorApp2.Components.Data
         Close
     }
 
-    public class POSubmitResponse
+
+
+        public class POSubmitResponse
     {
         public bool bSuccess { get; set; }
         public List<string> IDs { get; set; } = new List<string>();

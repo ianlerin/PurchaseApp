@@ -5,14 +5,15 @@
 @for (int i = 0; i < Approvals.Count; i++)
 {
     var approval = Approvals[i];
-
+    bool canApprove = approval.CanApprove(MyGlobalVar.UserName.Role);
+    Console.WriteLine("Can Approve" + canApprove);
     <div class="d-flex align-items-center gap-3 mb-2">
         <!-- Checkbox -->
         <InputCheckbox Value="approval.IsApproved"
         ValueChanged="@((bool val) => OnCheckboxChanged(val, approval))"
         ValueExpression="@(() => approval.IsApproved)"
         class="form-check-input"
-        Disabled="!approval.CanApprove(GlobalVar.UserName.Role)" />
+        disabled="@(!canApprove)" />
 
         <span>Department: @string.Join(", ", approval.Departments)</span>
 
@@ -27,6 +28,7 @@
     [Parameter] public List<ApprovalInfo> Approvals{ get; set; } = new List<ApprovalInfo>();
     [Parameter] public ClientGlobalVar MyGlobalVar { get; set; }
     [Parameter] public EventCallback<(bool NewValue, ApprovalInfo Approval)> OnApprovalChanged { get; set; }
+ 
     private async Task OnCheckboxChanged(bool newValue, ApprovalInfo approval)
     {
         approval.IsApproved = newValue;

@@ -16,6 +16,61 @@ namespace PurchaseBlazorApp2.Components.Repository
             return new NpgsqlConnection($"Server=einvoice.cdnonchautom.ap-southeast-1.rds.amazonaws.com;Port=5432; User Id=postgres; Password=password; Database=purchase");
         }
 
+        public async Task<List<PurchaseOrderRecord>> GetRecordsAsyncWithPR(List<string> requisitionNumbers = null)
+        {
+            List<PurchaseOrderRecord> ToReturn = new List<PurchaseOrderRecord>();
+
+            try
+            {
+                await Connection.OpenAsync();
+
+                string query = "SELECT * FROM potable";
+
+                var command = new NpgsqlCommand();
+                command.Connection = Connection;
+
+                if (requisitionNumbers != null && requisitionNumbers.Count > 0)
+                {
+                    var paramNames = new List<string>();
+                    for (int i = 0; i < requisitionNumbers.Count; i++)
+                    {
+                        string paramName = $"@id{i}";
+                        paramNames.Add(paramName);
+                        command.Parameters.AddWithValue(paramName, requisitionNumbers[i]);
+                    }
+
+                    string inClause = string.Join(", ", paramNames);
+                    query += $" WHERE pr_id IN ({inClause})";
+                }
+
+                command.CommandText = query;
+
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        PurchaseOrderRecord MainInfo = new PurchaseOrderRecord();
+                        InsertInfoOfBasicInfo(MainInfo, reader);
+                        MainInfo.ApprovalInfo[0].UserName = reader["approvedby"]?.ToString() ?? string.Empty;
+                        MainInfo.ApprovalInfo[0].IsApproved = (bool)reader["isapproved"];
+                        ToReturn.Add(MainInfo);
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"GetRecordsAsync Exception: {ex.Message}");
+                return ToReturn;
+            }
+            finally
+            {
+                await Connection.CloseAsync();
+            }
+            return ToReturn;
+        }
+
+
         public async Task<List<PurchaseOrderRecord>> GetRecordsAsync(List<string> requisitionNumbers = null)
         {
             List<PurchaseOrderRecord> ToReturn = new List<PurchaseOrderRecord>();

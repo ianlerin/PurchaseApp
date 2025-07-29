@@ -43,7 +43,6 @@
             <thead>
                 <tr>
                     <th>No.</th>
-                    <th>Description of Goods/Services</th>
                     <th>Quantity</th>
                     <th>Unit Price (RM)</th>
                     <th>Total Price (RM)</th>
@@ -83,10 +82,10 @@
     <h5>To be Filled By Purchasing Department</h5>
     <div>
         <label>Purchase Order:</label>
-        <InputText class="form-control" @bind-Value="purchaseOrderRecord.PO_ID" />
+        <InputText class="form-control" @bind-Value="purchaseOrderRecord.PO_ID" readonly />
 
         <label>Date:</label>
-        <InputDate class="form-control" @bind-Value="purchaseOrderRecord.Date" />
+        <InputDate class="form-control" @bind-Value="purchaseOrderRecord.Date" readonly />
 
         <div class="d-flex align-items-center gap-3 mb-2">
             <PurchaseBlazorApp2.Client.Components.Helper.ApprovalArea Approvals="purchaseOrderRecord.ApprovalInfo"
@@ -137,7 +136,25 @@
         {
             purchaseOrderRecord = new PurchaseOrderRecord();
             purchaseOrderRecord.PR_ID = PRRecord.RequisitionNumber;
+            var response = await Http.PostAsJsonAsync(
+             NavigationManager.ToAbsoluteUri("api/po/get_pr"), new List<string> { PRRecord.RequisitionNumber });
+            if (response.IsSuccessStatusCode)
+            {
+                try
+                {
+                    var Lists = await response.Content.ReadFromJsonAsync<List<PurchaseOrderRecord>>();
+                    if (Lists.Count > 0)
+                    {
+                        purchaseOrderRecord = Lists[0];
+                    }
 
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error deserializing response: {ex.Message}");
+
+                }
+            }
         }
     }
 

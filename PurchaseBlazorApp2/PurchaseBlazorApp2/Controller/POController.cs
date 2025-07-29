@@ -30,5 +30,12 @@ namespace PurchaseBlazorApp2.Controller
 
         }
 
+        [HttpPost("get_pr")]
+        public async Task<ActionResult<List<PurchaseOrderRecord>>> GetRecordsAsyncWithPR([FromBody] List<string> requisitionNumbers)
+        {
+            var allRecords = await PORepository.GetRecordsAsyncWithPR(requisitionNumbers);
+            return Ok(allRecords);
+
+        }
     }
 }

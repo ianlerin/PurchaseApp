@@ -1,8 +1,15 @@
 ﻿using PurchaseBlazorApp2.Components.Data;
+using System.Collections.Generic;
 using System.Text.Json;
 
 namespace PurchaseBlazorApp2.Components.Global
 {
+    public class CredentialSubmitResponse
+    {
+        public bool bSuccess { get; set; }
+        public UserName MyName { get; set; }= new UserName();
+    }
+
     public class UserName
     {
         public string Name { get; set; }
@@ -34,6 +41,13 @@ namespace PurchaseBlazorApp2.Components.Global
             }
      
 
+        }
+        public void Logout()
+        {
+            UserName = new UserName();
+            IsLoggedIn = false;
+           
+            OnLoginStateChanged?.Invoke();
         }
     }
 
