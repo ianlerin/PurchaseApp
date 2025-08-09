@@ -32,8 +32,8 @@
 
         public TableOrder()
         {
-            table = null;
-            col = null;
+            table = "";
+            col = "";
             bAsc = true;
 
             return;
@@ -48,7 +48,7 @@
 
         public ParamSearch()
         {
-            dictFilter = null;
+            dictFilter = new Dictionary<string, object>();
             firstRowIndex = 0;
             tableOrder = new TableOrder();
 

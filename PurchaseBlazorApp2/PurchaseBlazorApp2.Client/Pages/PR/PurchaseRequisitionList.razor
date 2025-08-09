@@ -108,8 +108,9 @@
             Console.WriteLine($"HTTP error {response.StatusCode}: {error}");
             Records = new List<PurchaseRequisitionRecord>(); // fallback on HTTP error
         }
-        
+
         HttpResponseMessage resContentTable = Http.PostAsJsonAsync(NavigationManager.ToAbsoluteUri("api/table/searchFilter"), paramSearch).Result;
+        Console.WriteLine($"debug1 {resContentTable.Content.ReadAsStringAsync().Result}");
 
         if (resContentTable.IsSuccessStatusCode)
         {
