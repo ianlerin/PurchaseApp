@@ -1,0 +1,25 @@
+﻿@using Radzen
+@using Radzen.Blazor
+
+@inject DialogService dialogService
+
+<div>
+	<p>Testing</p>
+	<RadzenTextBox
+		@bind-Value="textIn"/>
+	<RadzenButton
+		Text="Submit"
+		Click="@(() => onSubmit())"/>
+</div>
+
+@code
+{
+	private string textIn = null;
+
+	private void onSubmit()
+	{
+		dialogService.Close(textIn);
+
+		return;
+	}
+}

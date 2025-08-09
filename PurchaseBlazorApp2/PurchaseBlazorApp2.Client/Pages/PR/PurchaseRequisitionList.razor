@@ -1,8 +1,12 @@
 ﻿@page "/purchaserequisitionrecords_client/list"
 @using PurchaseBlazorApp2.Components.Data
 @inject HttpClient Http
+@using Radzen
 @using Radzen.Blazor
+@using Radzen.Blazor.Rendering
+@using SharedDataType
 @inject NavigationManager NavigationManager
+@inject DialogService dialogService
 
 @rendermode InteractiveAuto
 <h3>PurchaseRequisitionList</h3>
@@ -13,7 +17,14 @@
             <RadzenDataGrid Data="@Records" TItem="PurchaseRequisitionRecord" AllowSorting="true"
             Class="shadow-sm border rounded p-3">
                 <Columns>
-                    <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Property="RequisitionNumber" Title="Requisition " />
+                    <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Property="RequisitionNumber">
+                        <HeaderTemplate>
+                            <RadzenButton @ref=buttonHeader
+                                Text="Requisition"
+                                Click="@(() => onPopupFilter())"/>
+                        </HeaderTemplate>
+                    </RadzenDataGridColumn>
+
                     <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Property="Requestor" Title="Requestor" />
                     <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Title="Status">
                         <Template Context="data">
@@ -32,13 +43,36 @@
                     </RadzenDataGridColumn>
                 </Columns>
             </RadzenDataGrid>
+
+            <table>
+                <tr>
+                    @foreach(string colFlat in contentTable.listColFlat)
+                    {
+                        <th>@colFlat</th>
+                    }
+                </tr>
+                @foreach(Dictionary<string, object> dictDbRow in contentTable.listDbRow)
+                {
+                    <tr>
+                        @foreach(string colFlat in contentTable.listColFlat)
+                        {
+                            <td>@dictDbRow[colFlat]</td>
+                        }
+                    </tr>
+                }
+            </table>
         </div>
     </div>
 </div>
+
 @code {
     private List<PurchaseRequisitionRecord> Records = new();
+    private Popup popup = new Popup();
+    private RadzenButton buttonHeader = new RadzenButton();
+    private string resultDialog = null;
 
-
+    private ParamSearch paramSearch = new ParamSearch();
+    private ContentTable contentTable = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -74,7 +108,13 @@
             Console.WriteLine($"HTTP error {response.StatusCode}: {error}");
             Records = new List<PurchaseRequisitionRecord>(); // fallback on HTTP error
         }
-       
+        
+        HttpResponseMessage resContentTable = Http.PostAsJsonAsync(NavigationManager.ToAbsoluteUri("api/table/searchFilter"), paramSearch).Result;
+
+        if (resContentTable.IsSuccessStatusCode)
+        {
+            contentTable = await resContentTable.Content.ReadFromJsonAsync<ContentTable>();
+        }
     }
 
     private void AddNewRecord()
@@ -91,12 +131,27 @@
     private void OnViewClicked(PurchaseRequisitionRecord record)
     {
         NavigationManager.NavigateTo($"/purchaserequisitionrecords_client/create/{record.RequisitionNumber}");
-      
+
     }
 
     private void OnDeleteClicked(PurchaseRequisitionRecord record)
     {
-     
+
         Console.WriteLine($"View: {record.RequisitionNumber}");
+    }
+
+    private async Task onPopupFilter()
+    {
+        resultDialog = await dialogService.OpenAsync<DialogFilter>(
+            "Filter",
+            options : new DialogOptions()
+            {
+                Width = "400px",
+                Height = "500px",
+                ShowClose = true,
+                Resizable = true
+		    });
+
+        return;
     }
 }

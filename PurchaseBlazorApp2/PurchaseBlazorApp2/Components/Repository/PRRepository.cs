@@ -19,7 +19,8 @@ namespace PurchaseBlazorApp2.Components.Repository
 
         private NpgsqlConnection GetConnection()
         {
-            return new NpgsqlConnection($"Server=einvoice.cdnonchautom.ap-southeast-1.rds.amazonaws.com;Port=5432; User Id=postgres; Password=password; Database=purchase");
+            // return new NpgsqlConnection($"Server=einvoice.cdnonchautom.ap-southeast-1.rds.amazonaws.com;Port=5432; User Id=postgres; Password=password; Database=purchase");
+            return new NpgsqlConnection($"Server=localhost;Port=5432; User Id=postgres; Password=password; Database=purchase");
         }
 
         private void InsertInfoOfBasicInfo<T>(T MainInfo, NpgsqlDataReader reader)
