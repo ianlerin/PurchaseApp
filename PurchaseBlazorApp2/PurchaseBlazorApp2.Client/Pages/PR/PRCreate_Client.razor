@@ -15,24 +15,30 @@
 
 <h1>Create</h1>
 
-<h2>PurchaseRequisitionRecord</h2>
+<h2>Purchase Requisition Record</h2>
 <hr />
 <div class="row">
-    <div class="col-md-4">
+    <div class="col-md-10">
         <EditForm Model="PurchaseRequisitionRecord" OnValidSubmit="AddPurchaseRequisitionRecord" FormName="create" Enhance>
             <DataAnnotationsValidator />
             <ValidationSummary class="text-danger" role="alert" />
-            <div class ="mb-3">
-                @if (!string.IsNullOrEmpty(PurchaseRequisitionRecord.RequisitionNumber))
-                {
-                    <label for="ID" class="form-label">ID:</label>
-                    <InputText id="ID" @bind-Value="PurchaseRequisitionRecord.RequisitionNumber" class="form-control" />
-                }
+
+            <div class ="row mb-4">
+                <div class="col-md-4">
+                    @if (!string.IsNullOrEmpty(PurchaseRequisitionRecord.RequisitionNumber))
+                    {
+                        <label for="ID" class="form-label">ID:</label>
+                        <InputText id="ID" @bind-Value="PurchaseRequisitionRecord.RequisitionNumber" class="form-control" />
+                    }
+                </div>
             </div>
-            <div class="mb-3">
-                <label for="requestdate" class="form-label">RequestDate:</label>
-                <InputDate id="requestdate" @bind-Value="PurchaseRequisitionRecord.RequestDate" class="form-control" />
-                <ValidationMessage For="() => PurchaseRequisitionRecord.RequestDate" class="text-danger" />
+
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label for="requestdate" class="form-label">Request Date:</label>
+                    <InputDate id="requestdate" @bind-Value="PurchaseRequisitionRecord.RequestDate" class="form-control" />
+                    <ValidationMessage For="() => PurchaseRequisitionRecord.RequestDate" class="text-danger" />
+                </div>            
             </div>
 
             <div class="mb-3">
@@ -40,21 +46,23 @@
                 <InputText id="purpose" @bind-Value="PurchaseRequisitionRecord.Purpose" class="form-control" />
                 <ValidationMessage For="() => PurchaseRequisitionRecord.Purpose" class="text-danger" />
             </div>
+
+            <!-- Items Section -->
             <div class="mb-3">
-                <label class="form-label">Item Requested:</label>
+                <label class="form-label me-3">Item Requested:</label>
 
                 @foreach (var item in PurchaseRequisitionRecord.ItemRequested)
                 {
                     var index = PurchaseRequisitionRecord.ItemRequested.IndexOf(item);
 
-                    <div class="mb-3 border p-3 rounded">
-                        <div class="row mb-2">
-                            <div class="col-md-4">
+                    <div class="mb-3 border p-3 rounded bg-light">
+                        <div class="row g-3 mb-2">
+                            <div class="col-md-6">
                                 <label class="form-label">Item</label>
                                 <InputText @bind-Value="item.RequestItem" class="form-control" />
                             </div>
                             <div class="col-md-2">
-                                <label class="form-label">UnitPrice</label>
+                                <label class="form-label">Unit Price</label>
                                 <InputNumber @bind-Value="item.UnitPrice" class="form-control" />
                                 <ValidationMessage For="@(() => item.UnitPrice)" class="text-danger" />
                             </div>
@@ -64,7 +72,7 @@
                                 <ValidationMessage For="@(() => item.Quantity)" class="text-danger" />
                             </div>
                             <div class="col-md-2">
-                                <label class="form-label">TotalPrice</label>
+                                <label class="form-label">Total Price</label>
                                 <InputNumber @bind-Value="item.TotalPrice" class="form-control" />
                                 <ValidationMessage For="@(() => item.TotalPrice)" class="text-danger" />
                             </div>
@@ -77,21 +85,36 @@
 
                 <button type="button" class="btn btn-primary" @onclick="AddItem">Add Item</button>
             </div>
-            <div class="mb-3">
-                <label for="department" class="form-label">Department:</label>
-                <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="PurchaseRequisitionRecord.Department" TEnum="PurchaseBlazorApp2.Components.Data.EDepartment"></PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox>
-                <ValidationMessage For="() => PurchaseRequisitionRecord.Department" class="text-danger" />
+
+            <!-- Department -->
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label for="department" class="form-label">Department:</label>
+                    <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox 
+                        @bind-Value="PurchaseRequisitionRecord.Department" 
+                        TEnum="PurchaseBlazorApp2.Components.Data.EDepartment">
+                    </PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox>
+                    <ValidationMessage For="() => PurchaseRequisitionRecord.Department" class="text-danger" />
+                </div>               
             </div>
 
-            <div class="mb-3">
-                <label for="tasktype" class="form-label">TaskType:</label>
-                <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="PurchaseRequisitionRecord.TaskType" TEnum="PurchaseBlazorApp2.Components.Data.ETask"></PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox>
-                <ValidationMessage For="() => PurchaseRequisitionRecord.TaskType" class="text-danger" />
+            <!-- Task type -->
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label for="tasktype" class="form-label">Task Type:</label>
+                    <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="PurchaseRequisitionRecord.TaskType" TEnum="PurchaseBlazorApp2.Components.Data.ETask"></PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox>
+                    <ValidationMessage For="() => PurchaseRequisitionRecord.TaskType" class="text-danger" />
+                </div>               
             </div>
-            <div class="mb-3">
-                <PurchaseBlazorApp2.Client.Components.Helper.ApprovalArea Approvals="PurchaseRequisitionRecord.Approvals" MyGlobalVar="GlobalVar" OnApprovalChanged="OnCheckboxChanged"></PurchaseBlazorApp2.Client.Components.Helper.ApprovalArea>
 
+            <!-- Approvals -->
+            <div class="mb-3">
+                <PurchaseBlazorApp2.Client.Components.Helper.ApprovalArea 
+                    Approvals="PurchaseRequisitionRecord.Approvals" 
+                    MyGlobalVar="GlobalVar" OnApprovalChanged="OnCheckboxChanged">
+                </PurchaseBlazorApp2.Client.Components.Helper.ApprovalArea>
             </div>
+          
 
             <PurchaseBlazorApp2.Client.Components.Helper.UploadImageHelper UploadedImages="PurchaseRequisitionRecord.SupportDocuments"></PurchaseBlazorApp2.Client.Components.Helper.UploadImageHelper>
             <button type="submit" class="btn btn-primary">Create</button>
@@ -100,14 +123,13 @@
 
     </div>
 </div>
+
 @if (bCanOpenPO)
 {
     <div>
         <button @onclick="OnPrintPDF">Print PDF</button>
     </div>
 }
-
-
 
 @code {
     private Guid inputFileKey = Guid.NewGuid();
