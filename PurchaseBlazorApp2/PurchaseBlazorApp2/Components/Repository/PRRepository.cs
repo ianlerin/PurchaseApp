@@ -19,7 +19,7 @@ namespace PurchaseBlazorApp2.Components.Repository
 
         private NpgsqlConnection GetConnection()
         {
-            return new NpgsqlConnection($"Server=einvoice.cdnonchautom.ap-southeast-1.rds.amazonaws.com;Port=5432; User Id=postgres; Password=password; Database=purchase");
+            return new NpgsqlConnection($"Server=localhost;Port=5432; User Id=postgres; Password=password; Database=purchase");
         }
 
         private void InsertInfoOfBasicInfo<T>(T MainInfo, NpgsqlDataReader reader)
@@ -288,11 +288,14 @@ namespace PurchaseBlazorApp2.Components.Repository
 
 
 
-        public async Task<List<ApprovalInfo>> InsertApprovalByRequisitionNumber(PurchaseRequisitionRecord Record, NpgsqlTransaction? externalTransaction = null)
+        public async Task<List<ApprovalInfo>> InsertApprovalByRequisitionNumber(
+            PurchaseRequisitionRecord Record,
+            NpgsqlTransaction? externalTransaction = null)
         {
-            var RecordsFound = Record.Approvals;
+            var Approvals = new List<ApprovalInfo>(); // Build a fresh list
             bool shouldCloseConnection = false;
             var MyConnection = GetConnection();
+
             try
             {
                 if (MyConnection.State != System.Data.ConnectionState.Open)
@@ -301,46 +304,52 @@ namespace PurchaseBlazorApp2.Components.Repository
                     shouldCloseConnection = true;
                 }
 
-                var command = new NpgsqlCommand(
-                    "SELECT username, isapproved,role FROM pr_approval_table WHERE requisitionnumber = @req",
+                using var command = new NpgsqlCommand(
+                    "SELECT username, isapproved, role FROM pr_approval_table WHERE requisitionnumber = @req",
                     MyConnection, externalTransaction);
+
                 command.Parameters.AddWithValue("@req", Record.RequisitionNumber);
 
                 using var reader = await command.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
                 {
                     string RoleString = reader["role"]?.ToString() ?? string.Empty;
+
+                    // Convert to List<EDepartment>
                     List<EDepartment> Departments = RoleString
-     .Split(',', StringSplitOptions.RemoveEmptyEntries)
-     .Select(role => Enum.Parse<EDepartment>(role))
-     .ToList();
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(role => Enum.Parse<EDepartment>(role))
+                        .ToList();
+
                     bool IsApproved = (bool)reader["isapproved"];
                     string username = reader["username"]?.ToString() ?? string.Empty;
-                    foreach(var Approval in RecordsFound)
+
+                    // Create a new ApprovalInfo object and add to the list
+                    var approvalInfo = new ApprovalInfo
                     {
-                        if (Approval.Departments.Count == Departments.Count &&
-        !Approval.Departments.Except(Departments).Any() &&
-        !Departments.Except(Approval.Departments).Any())
-                        {
-                            Approval.IsApproved = IsApproved;
-                            Approval.UserName = username;
-                        }
-                    }
-                    
+                        Departments = Departments,
+                        IsApproved = IsApproved,
+                        UserName = username
+                    };
+
+                    Approvals.Add(approvalInfo);
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"InsertApprovalByRequisitionNumber failed: {ex.Message}");
-             
             }
             finally
             {
                 if (shouldCloseConnection)
                     await MyConnection.CloseAsync();
             }
-            return RecordsFound;
+
+            // Replace Record.Approvals entirely with new data
+            Record.Approvals = Approvals;
+            return Approvals;
         }
+
 
         private async Task<bool> InsertImage(PurchaseRequisitionRecord info, NpgsqlTransaction? externalTransaction = null)
         {
@@ -571,11 +580,11 @@ namespace PurchaseBlazorApp2.Components.Repository
                                 string SID = "";
                                 if (string.IsNullOrEmpty(Info.RequisitionNumber))
                                 {
-                                    await using (var Seqcommand = new NpgsqlCommand("SELECT last_value FROM po_table_id_seq;", Connection, transaction))
+                                    await using (var Seqcommand = new NpgsqlCommand("SELECT last_value FROM prtable_id_seq;", Connection, transaction))
                                     {
                                         var result = await Seqcommand.ExecuteScalarAsync();
                                         lastSequenceValue = (long)result;
-                                        SID = $"PO_{lastSequenceValue + 1}";
+                                        SID = $"PR_{lastSequenceValue + 1}";
                                     }
 
                                     command.Parameters.Clear();

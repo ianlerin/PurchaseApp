@@ -2,6 +2,7 @@
 @using PurchaseBlazorApp2.Components.Data
 @inject HttpClient Http
 @using Radzen.Blazor
+@inject IJSRuntime JS
 @inject NavigationManager NavigationManager
 
 @rendermode InteractiveAuto
@@ -43,38 +44,56 @@
     protected override async Task OnInitializedAsync()
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        var response = await Http.PostAsJsonAsync(
-            NavigationManager.ToAbsoluteUri("api/pr/get-list-partial"), new List<PurchaseRequisitionRecord>());
 
-        if (response.IsSuccessStatusCode)
+        try
         {
-            try
-            {
-                var records = await response.Content.ReadFromJsonAsync<List<PurchaseRequisitionRecord>>();
+            var response = await Http.PostAsJsonAsync(
+                NavigationManager.ToAbsoluteUri("api/pr/get-list-partial"),
+                new List<PurchaseRequisitionRecord>());
 
-                if (records is not null)
+            if (response.IsSuccessStatusCode)
+            {
+                try
                 {
-                    Records = records;
+                    var records = await response.Content.ReadFromJsonAsync<List<PurchaseRequisitionRecord>>();
+
+                    if (records is not null)
+                    {
+                        Records = records;
+                        await JS.InvokeVoidAsync("console.log", $"✅ Loaded {records.Count} purchase requisitions");
+                    }
+                    else
+                    {
+                        await JS.InvokeVoidAsync("console.warn", "⚠️ Received null when deserializing PurchaseRequisitionRecord list.");
+                        Records = new List<PurchaseRequisitionRecord>();
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    Console.WriteLine("Warning: Received null when deserializing PurchaseRequisitionRecord list.");
-                    Records = new List<PurchaseRequisitionRecord>(); // fallback to empty list
+                    await JS.InvokeVoidAsync("console.error", $"❌ Error deserializing response: {ex.Message}");
+                    Records = new List<PurchaseRequisitionRecord>();
                 }
             }
-            catch (Exception ex)
+            else
             {
-                Console.WriteLine($"Error deserializing response: {ex.Message}");
-                Records = new List<PurchaseRequisitionRecord>(); // fallback to empty list
+                var error = await response.Content.ReadAsStringAsync();
+                await JS.InvokeVoidAsync("console.error", $"HTTP error {response.StatusCode}: {error}");
+                Records = new List<PurchaseRequisitionRecord>();
             }
         }
-        else
+        catch (HttpRequestException ex)
         {
-            var error = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"HTTP error {response.StatusCode}: {error}");
-            Records = new List<PurchaseRequisitionRecord>(); // fallback on HTTP error
+            await JS.InvokeVoidAsync("console.error", $"🌐 Network error while fetching list: {ex.Message}");
+            Records = new List<PurchaseRequisitionRecord>();
         }
-       
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("console.error", $"🔥 Unexpected error: {ex}");
+            Records = new List<PurchaseRequisitionRecord>();
+        }
+
+        stopwatch.Stop();
+        await JS.InvokeVoidAsync("console.log", $"⏱ Loaded PR list in {stopwatch.ElapsedMilliseconds} ms");
     }
 
     private void AddNewRecord()

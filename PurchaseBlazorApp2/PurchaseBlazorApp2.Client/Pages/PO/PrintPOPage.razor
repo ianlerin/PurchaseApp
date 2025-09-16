@@ -90,6 +90,8 @@
         <div class="d-flex align-items-center gap-3 mb-2">
             <PurchaseBlazorApp2.Client.Components.Helper.ApprovalArea Approvals="purchaseOrderRecord.ApprovalInfo"
             MyGlobalVar="GlobalVar"
+            bIsEditable=false
+            AllowMultipleDepartments=false
             OnApprovalChanged="OnCheckboxChanged" />
         </div>
     </div>
@@ -208,6 +210,11 @@
     private void GoToPR(MouseEventArgs args)
     {
         StateStorage.Remove("PO");
-        NavigationManager.NavigateTo($"/purchaserequisitionrecords_client/create/{purchaseOrderRecord.PR_ID}");
+        if (purchaseOrderRecord!=null)
+        {
+
+            NavigationManager.NavigateTo($"/purchaserequisitionrecords_client/create/{purchaseOrderRecord.PR_ID}");
+        }
+       
     }
 }

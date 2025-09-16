@@ -1,0 +1,38 @@
+﻿@typeparam TEnum where TEnum : Enum
+
+<div class="d-flex flex-wrap gap-3">
+    @foreach (var item in Enum.GetValues(typeof(TEnum)).Cast<TEnum>())
+    {
+        <div class="form-check">
+            <input type="checkbox"
+                   class="form-check-input"
+                   id="@($"{typeof(TEnum).Name}_{item}")"
+                   checked="@Value.Contains(item)"
+                   @onchange="e => OnCheckedChanged(item, (bool)e.Value!)" />
+            <label class="form-check-label" for="@($"{typeof(TEnum).Name}_{item}")">
+                @item
+            </label>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public List<TEnum> Value { get; set; } = new();  // The bound list
+    [Parameter] public EventCallback<List<TEnum>> ValueChanged { get; set; }
+
+    private async Task OnCheckedChanged(TEnum item, bool isChecked)
+    {
+        if (isChecked)
+        {
+            if (!Value.Contains(item))
+                Value.Add(item);
+        }
+        else
+        {
+            Value.Remove(item);
+        }
+
+        // Notify parent about change
+        await ValueChanged.InvokeAsync(Value);
+    }
+}

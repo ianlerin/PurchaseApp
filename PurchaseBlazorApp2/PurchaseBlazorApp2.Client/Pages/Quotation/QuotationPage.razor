@@ -1,0 +1,167 @@
+﻿@page "/Quotation_Client/{PrId}"
+@using PurchaseBlazorApp2.Client.Components.Helper
+@using PurchaseBlazorApp2.Components.Data;
+@using static PurchaseBlazorApp2.Client.Pages.Quotation.QuotationInfo
+@inject NavigationManager NavigationManager
+@inject HttpClient Http
+<h3>Create Quotation</h3>
+
+<p><strong>PR ID:</strong> @Quotation.pr_id</p>
+
+<!-- Image Upload Component -->
+@if (IsLoading)
+{
+    <p>Loading quotation data...</p>
+}
+else
+{
+    <!-- Image Upload Component -->
+    <UploadImageHelper UploadedImages="@Quotation.SupportDocuments"
+    SelectionType=UploadImageHelper.ESelectionType.SingleSelect
+    OnImageSelected="HandleImageSelected"
+    SelectedIndex="SelectedIndex"
+    Orientation="UploadImageHelper.EOrientation.Vertical"
+    ImageHeight="500"
+    ImageWidth="500"
+    />
+}
+<button class="btn btn-primary" @onclick="SubmitQuotation">Submit</button>
+<button class="btn btn-primary" @onclick="CreatePO">Create PO</button>
+<button class="btn btn-primary" @onclick="BacktoPR">Back</button>
+@code {
+    [Inject] IJSRuntime JS { get; set; }
+
+    [Parameter]
+    public string PrId { get; set; }
+
+    bool IsLoading = false;
+
+    private QuotationRecord Quotation = new QuotationRecord();
+
+    public int SelectedIndex = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Assign PR ID to your Quotation
+        Quotation.pr_id = PrId;
+
+        var response = await Http.PostAsJsonAsync(
+            NavigationManager.ToAbsoluteUri("api/quotation/get"),
+            new List<string> { PrId });
+
+        if (response.IsSuccessStatusCode)
+        {
+            // Optionally deserialize result if your API returns a QuotationRecord
+            var quotation = await response.Content.ReadFromJsonAsync<List<QuotationRecord>>();
+            if (quotation != null&&quotation.Count>0)
+            {
+                Quotation = quotation[0];
+                await UpdateSelectedIndexAsync();
+            }
+        }
+        else
+        {
+            var errorDetails = await response.Content.ReadAsStringAsync();
+            Console.Error.WriteLine($"Failed to load quotation: {errorDetails}");
+        }
+        await JS.InvokeVoidAsync("console.log", $"OnInitializedAsync quotation page {SelectedIndex}");
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task UpdateSelectedIndexAsync()
+    {
+        string selectedIdPreview = "null";
+
+        if (Quotation.selectedid != null)
+        {
+            string base64 = Convert.ToBase64String(Quotation.selectedid);
+            // Use min length so we don't exceed string length
+            selectedIdPreview = base64.Substring(0, Math.Min(base64.Length, 10)) + (base64.Length > 10 ? "..." : "");
+        }
+
+        await JS.InvokeVoidAsync("console.log",
+            $"[Parent] UpdateSelectedIndex called. Current Quotation.selectedid: {selectedIdPreview}");
+
+        for (int i = 0; i < Quotation.SupportDocuments.Count; i++)
+        {
+            var imageInfo = Quotation.SupportDocuments[i];
+
+            await JS.InvokeVoidAsync("console.log",
+                $"[Parent] Comparing index {i}: " +
+                $"Image data length={imageInfo.Data?.Length}, " +
+                $"SelectedBytes length={Quotation.selectedid?.Length}");
+
+            if (Quotation.selectedid != null && imageInfo.Data.SequenceEqual(Quotation.selectedid))
+            {
+                await JS.InvokeVoidAsync("console.log", $"[Parent] Match found at index {i}, setting SelectedIndex.");
+                SelectedIndex = i;
+                break;
+            }
+        }
+
+        await JS.InvokeVoidAsync("console.log", $"[Parent] UpdateSelectedIndex complete. Final SelectedIndex={SelectedIndex}");
+    }
+
+    private async void HandleImageSelected(int selected)
+    {
+        SelectedIndex = selected;
+        Quotation.selectedid = Quotation.SupportDocuments[selected].Data;
+
+    }
+    private void CreatePO()
+    {
+
+        NavigationManager.NavigateTo($"/purchaseorder_client/print/{PrId}");
+    }
+    private void BacktoPR()
+    {
+
+        NavigationManager.NavigateTo($"/purchaserequisitionrecords_client/create/{PrId}");
+
+    }
+
+    private async Task SubmitQuotation()
+    {
+        if(Quotation!=null)
+        {
+            await JS.InvokeVoidAsync("console.group", $"{Quotation.SupportDocuments.Count}, Submitting Quotation");
+        }
+        await JS.InvokeVoidAsync("console.log", "Preparing submission...");
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync(
+                NavigationManager.ToAbsoluteUri("api/quotation/submit"),
+                new List<QuotationRecord> { Quotation });
+
+            if (response.IsSuccessStatusCode)
+            {
+                await JS.InvokeVoidAsync("console.log", "✅ Submission successful!");
+                await JS.InvokeVoidAsync("alert", "Submission successful!");
+            }
+            else
+            {
+                string errorDetails = await response.Content.ReadAsStringAsync();
+                string message = $"Submission failed. Status Code: {(int)response.StatusCode} - {response.ReasonPhrase}\nDetails: {errorDetails}";
+
+                await JS.InvokeVoidAsync("console.error", message);
+                await JS.InvokeVoidAsync("alert", message);
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            await JS.InvokeVoidAsync("console.error", $"🌐 Network error while submitting quotation: {ex.Message}");
+            await JS.InvokeVoidAsync("alert", $"Network error: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("console.error", $"🔥 Unexpected error while submitting quotation: {ex}");
+            await JS.InvokeVoidAsync("alert", "Unexpected error occurred. Check console for details.");
+        }
+        finally
+        {
+            await JS.InvokeVoidAsync("console.groupEnd");
+        }
+    }
+}

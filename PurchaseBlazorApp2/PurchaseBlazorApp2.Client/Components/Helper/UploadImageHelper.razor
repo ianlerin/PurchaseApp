@@ -1,26 +1,44 @@
-﻿@page "/radzen-upload-preview"
-@using PurchaseBlazorApp2.Components.Data
-@using Radzen
+﻿@using Radzen
 @using Radzen.Blazor
+@using PurchaseBlazorApp2.Components.Data
 @using Microsoft.AspNetCore.Components.Forms
-
-<h3>Upload Images (Radzen)</h3>
+@inject IJSRuntime JS
 
 <RadzenUpload ChooseText="Upload Picture"
-Multiple="true"
-Accept="image/*"
-Change="OnUploadChange"
-Style="margin-bottom: 10px;" />
+              Multiple="true"
+              Accept="image/*"
+              Change="OnUploadChange"
+              Style="margin-bottom: 10px;" />
 
 @if (UploadedImages.Count > 0)
 {
-    <div class="d-flex flex-wrap gap-3">
+    <div class="@GetContainerClass()">
         @foreach (var image in UploadedImages)
         {
-            <div class="border p-2 position-relative" style="width: 150px;">
-                <img src="@GetImageSrc(image)" class="img-thumbnail" style="width: 100%; height: auto;" />
+            var index = UploadedImages.FindIndex(x => x.Id == image.Id);
+            var isSelected = SelectionType switch
+            {
+                ESelectionType.SingleSelect => SelectedIndex == index,
+                ESelectionType.MultiSelect => SelectedIndices.Contains(index),
+                _ => false
+            };
+
+            <div class="border p-2 position-relative"
+                 style="width:@ImageWidthPx; background-color:@(isSelected ? "#e6f2ff" : "transparent");">
+                <img src="@GetImageSrc(image)"
+                     class="img-thumbnail"
+                     style="width: 100%; height: auto; max-height:@ImageHeightPx;" />
+
+                @if (SelectionType != ESelectionType.None)
+                {
+                    <button class="btn btn-sm @(isSelected ? "btn-success" : "btn-primary") w-100 mt-1"
+                            @onclick="@(() => SelectImage(image.Id))">
+                        @(isSelected ? "Selected" : "Select")
+                    </button>
+                }
+
                 <button class="btn btn-sm btn-danger position-absolute top-0 end-0"
-                @onclick="@(() => RemoveImage(image))">
+                        @onclick="@(() => RemoveImage(image.Id))">
                     ✕
                 </button>
             </div>
@@ -33,8 +51,42 @@ else
 }
 
 @code {
-    [Parameter]
-    public List<ImageUploadInfo> UploadedImages { get; set; } = new();
+    public enum ESelectionType
+    {
+        None,
+        SingleSelect,
+        MultiSelect
+    }
+
+    public enum EOrientation
+    {
+        Horizontal,
+        Vertical
+    }
+
+    [Parameter] public EventCallback<int> OnImageSelected { get; set; }
+    [Parameter] public List<ImageUploadInfo> UploadedImages { get; set; } = new();
+    [Parameter] public ESelectionType SelectionType { get; set; } = ESelectionType.None;
+
+    [Parameter] public int? SelectedIndex { get; set; }
+    [Parameter] public EventCallback<int?> SelectedIndexChanged { get; set; }
+
+    public HashSet<int> SelectedIndices { get; set; } = new();
+
+    [Parameter] public EOrientation Orientation { get; set; } = EOrientation.Horizontal;
+
+    [Parameter] public int ImageWidth { get; set; } = 150;
+    [Parameter] public int ImageHeight { get; set; } = 150;
+
+    private string ImageWidthPx => $"{ImageWidth}px";
+    private string ImageHeightPx => $"{ImageHeight}px";
+
+    private string GetContainerClass()
+    {
+        return Orientation == EOrientation.Horizontal
+            ? "d-flex flex-wrap gap-3"
+            : "d-flex flex-column gap-3";
+    }
 
     private async Task OnUploadChange(UploadChangeEventArgs args)
     {
@@ -45,26 +97,82 @@ else
             await stream.CopyToAsync(ms);
             var buffer = ms.ToArray();
 
-            if (UploadedImages == null)
-                UploadedImages = new List<ImageUploadInfo>();
+            var newImage = new ImageUploadInfo
+                {
+                    Id = Guid.NewGuid(),
+                    Data = buffer,
+                    DataFormat = file.ContentType
+                };
 
-            ImageUploadInfo uploadInfo = new ImageUploadInfo();
-            uploadInfo.Data=buffer;
-            uploadInfo.DataFormat = file.ContentType;
-            UploadedImages.Add(uploadInfo);
+            UploadedImages.Add(newImage);
+
+            // Auto-select first uploaded image if selection mode is enabled
+            var newIndex = UploadedImages.Count - 1;
+            if (SelectionType == ESelectionType.SingleSelect && SelectedIndex == null)
+            {
+                SelectedIndex = newIndex;
+                await SelectedIndexChanged.InvokeAsync(SelectedIndex);
+            }
+            else if (SelectionType == ESelectionType.MultiSelect && SelectedIndices.Count == 0)
+            {
+                SelectedIndices.Add(newIndex);
+            }
         }
 
         StateHasChanged();
     }
 
-    private void RemoveImage(ImageUploadInfo UploadInfo)
+    private void RemoveImage(Guid id)
     {
-        UploadedImages.Remove(UploadInfo);
+        var index = UploadedImages.FindIndex(img => img.Id == id);
+        if (index == -1) return;
+
+        if (SelectionType == ESelectionType.SingleSelect)
+        {
+            if (SelectedIndex == index)
+                SelectedIndex = null;
+            else if (SelectedIndex > index)
+                SelectedIndex--;
+        }
+        else if (SelectionType == ESelectionType.MultiSelect)
+        {
+            SelectedIndices.Remove(index);
+            SelectedIndices = SelectedIndices.Select(i => i > index ? i - 1 : i).ToHashSet();
+        }
+
+        UploadedImages.RemoveAt(index);
+        SelectedIndexChanged.InvokeAsync(SelectedIndex);
     }
 
-    private string GetImageSrc(ImageUploadInfo UploadInfo)
+    private async void SelectImage(Guid id)
     {
-        var base64 = Convert.ToBase64String(UploadInfo.Data);
-        return $"data:image/{UploadInfo.DataFormat};base64,{base64}";
+        var index = UploadedImages.FindIndex(img => img.Id == id);
+        if (index == -1) return;
+
+        switch (SelectionType)
+        {
+            case ESelectionType.SingleSelect:
+                SelectedIndex = index;
+                await SelectedIndexChanged.InvokeAsync(SelectedIndex);
+                break;
+
+            case ESelectionType.MultiSelect:
+                if (SelectedIndices.Contains(index))
+                    SelectedIndices.Remove(index);
+                else
+                    SelectedIndices.Add(index);
+                break;
+        }
+
+        if (SelectionType == ESelectionType.SingleSelect && SelectedIndex.HasValue)
+            await OnImageSelected.InvokeAsync(SelectedIndex.Value);
+
+        StateHasChanged();
+    }
+
+    private string GetImageSrc(ImageUploadInfo uploadInfo)
+    {
+        var base64 = Convert.ToBase64String(uploadInfo.Data);
+        return $"data:{uploadInfo.DataFormat};base64,{base64}";
     }
 }

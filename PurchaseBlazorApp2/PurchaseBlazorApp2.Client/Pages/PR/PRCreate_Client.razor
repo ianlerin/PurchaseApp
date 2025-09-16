@@ -19,7 +19,7 @@
 <hr />
 <div class="row">
     <div class="col-md-10">
-        <EditForm Model="PurchaseRequisitionRecord" OnValidSubmit="AddPurchaseRequisitionRecord" FormName="create" Enhance>
+        <EditForm Model="PurchaseRequisitionRecord" FormName="create" Enhance>
             <DataAnnotationsValidator />
             <ValidationSummary class="text-danger" role="alert" />
 
@@ -114,10 +114,10 @@
                     MyGlobalVar="GlobalVar" OnApprovalChanged="OnCheckboxChanged">
                 </PurchaseBlazorApp2.Client.Components.Helper.ApprovalArea>
             </div>
-          
+
 
             <PurchaseBlazorApp2.Client.Components.Helper.UploadImageHelper UploadedImages="PurchaseRequisitionRecord.SupportDocuments"></PurchaseBlazorApp2.Client.Components.Helper.UploadImageHelper>
-            <button type="submit" class="btn btn-primary">Create</button>
+            <button type="submit" class="btn btn-primary" @onclick="AddPurchaseRequisitionRecord">Create</button>
         </EditForm>
 
 
@@ -127,7 +127,10 @@
 @if (bCanOpenPO)
 {
     <div>
-        <button @onclick="OnPrintPDF">Print PDF</button>
+        <button @onclick="OnPrintPDF" class="btn btn-primary">ViewPO</button>
+    </div>
+    <div>
+        <button @onclick="OnQuotation" class="btn btn-primary">Quotation</button>
     </div>
 }
 
@@ -146,6 +149,7 @@
     private async Task AddPurchaseRequisitionRecord()
     {
 
+        await JS.InvokeVoidAsync("alert", "AddPurchaseRequisitionRecord!");
         PurchaseRequisitionRecord.Requestor = GlobalVar?.UserName.Name ?? "";
         Console.WriteLine(NavigationManager.ToAbsoluteUri("api/pr/submit"));
         var response = await Http.PostAsJsonAsync(
@@ -241,4 +245,10 @@
         NavigationManager.NavigateTo($"/purchaseorder_client/print/{PurchaseRequisitionRecord.RequisitionNumber}");
       
     }
+    private void OnQuotation()
+    {
+        StateStorage.Set("PR", PurchaseRequisitionRecord);
+        NavigationManager.NavigateTo($"/Quotation_Client/{PurchaseRequisitionRecord.RequisitionNumber}");
+    }
+
 }

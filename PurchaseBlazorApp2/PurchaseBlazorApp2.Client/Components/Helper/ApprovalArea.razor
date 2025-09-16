@@ -7,55 +7,90 @@
     var approval = Approvals[i];
     bool canApprove = approval.CanApprove(MyGlobalVar.UserName.Role);
 
-    @* Console.WriteLine("Can Approve" + canApprove); *@
+    <div class="approval-item d-flex flex-column gap-2 mb-2 p-2 border rounded">
 
-    <div class="approval-item d-flex flex-wrap align-items-center gap-3 mb-2 p-2 border rounded">
-        <!-- Checkbox -->
-        <InputCheckbox Value="approval.IsApproved"
-        ValueChanged="@((bool val) => OnCheckboxChanged(val, approval))"
-        ValueExpression="@(() => approval.IsApproved)"
-        class="form-check-input"
-        disabled="@(!canApprove)" />       
-
-        <!-- Departments and details -->
-        <div class="flex-grow-1 min-width-0">
-            <div class="d-flex flex-wrap justify-content-between align-items-center">
-                <div class="me-3 text-truncate">
-                    <small class="text-muted">Departments:</small>
-                    <div class="fw-semibold text-truncate">@string.Join(", ", approval.Departments)</div>
-                </div>
-
-                <div class="d-flex align-items-center">
+        <!-- Approval checkbox -->
+        <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+                <InputCheckbox Value="approval.IsApproved"
+                ValueChanged="@((bool val) => OnCheckboxChanged(val, approval))"
+                ValueExpression="@(() => approval.IsApproved)"
+                class="form-check-input"
+                disabled="@(!canApprove)" />
+                <div>
                     <small class="text-muted me-1">Approved by:</small>
-                    <span class="badge bg-light text-dark">@(!string.IsNullOrEmpty(approval.UserName) ? approval.UserName : "-")</span>
+                    <span class="badge bg-light text-dark">
+                        @(!string.IsNullOrEmpty(approval.UserName) ? approval.UserName : "-")
+                    </span>
                 </div>
             </div>
+
+            <!-- Delete button -->
+            <button type="button" class="btn btn-sm btn-outline-danger" disabled="@(!bIsEditable)"
+            @onclick="() => DeleteApproval(approval)">
+                <i class="bi bi-trash"></i>
+            </button>
         </div>
-        
+
+        <!-- Departments section -->
+        <div>
+            <small class="text-muted">Departments:</small>
+
+            @if (AllowMultipleDepartments)
+            {
+                <!-- Multi-select version -->
+                <MultiSelectEnumDropDown TEnum="EDepartment"
+                Value="@approval.Departments"
+                ValueChanged="@((List<EDepartment> list) => OnDepartmentsChanged(approval, list))" />
+            }
+            else
+            {
+                <!-- Single select version -->
+                <InputSelect @bind-Value="approval.Departments[0]" disabled="@(!bIsEditable)">
+                    @foreach (var dept in Enum.GetValues<EDepartment>())
+                    {
+                        <option value="@dept">@dept</option>
+                    }
+                </InputSelect>
+                
+            }
+        </div>
     </div>
 }
 
+<!-- Button to add a new approval row -->
+<button class="btn btn-sm btn-outline-primary mt-2" @onclick="AddApproval" disabled="@(!bIsEditable)">
+    <i class="bi bi-plus-lg"></i> Add Approval
+</button>
+
 @code {
-    [Parameter] public List<ApprovalInfo> Approvals{ get; set; } = new List<ApprovalInfo>();
+    [Parameter] public List<ApprovalInfo> Approvals { get; set; } = new();
     [Parameter] public ClientGlobalVar MyGlobalVar { get; set; }
     [Parameter] public EventCallback<(bool NewValue, ApprovalInfo Approval)> OnApprovalChanged { get; set; }
- 
+    [Parameter] public bool bIsEditable { get; set; } = true;
+    [Parameter] public bool AllowMultipleDepartments { get; set; } = true;
+
     private async Task OnCheckboxChanged(bool newValue, ApprovalInfo approval)
     {
         approval.IsApproved = newValue;
-
-        if (newValue)
-        {
-            approval.UserName = MyGlobalVar?.UserName.Name ?? "";
-
-        }
-
-        else
-        {
-            approval.UserName = "";
-
-        }
+        approval.UserName = newValue
+            ? MyGlobalVar?.UserName.Name ?? ""
+            : "";
         await OnApprovalChanged.InvokeAsync((newValue, approval));
-        
+    }
+
+    private void OnDepartmentsChanged(ApprovalInfo approval, List<EDepartment> newList)
+    {
+        approval.Departments = newList;
+    }
+
+    private void AddApproval()
+    {
+        Approvals.Add(new ApprovalInfo());
+    }
+
+    private void DeleteApproval(ApprovalInfo approval)
+    {
+        Approvals.Remove(approval);
     }
 }

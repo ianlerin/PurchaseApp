@@ -1,5 +1,6 @@
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background-color: #f5f5f5;
 }
 
 a, .btn-link {
@@ -43,9 +44,10 @@ h1:focus {
 }
 
     .blazor-error-boundary::after {
-        content: "An error has occurred."
+        content: "An Error has occurred."
     }
 
 .darker-border-checkbox.form-check-input {
     border-color: #929292;
 }
+

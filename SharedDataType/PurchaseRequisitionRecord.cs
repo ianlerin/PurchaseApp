@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Net.NetworkInformation;
+using System.Numerics;
 
 
 namespace PurchaseBlazorApp2.Components.Data
@@ -80,10 +81,11 @@ namespace PurchaseBlazorApp2.Components.Data
     }
 
 
-    public struct ImageUploadInfo
+    public class ImageUploadInfo
     {
         public byte[] Data { get; set; }
-        public string DataFormat {  get; set; } 
+        public string DataFormat {  get; set; }
+        public Guid Id { get; set; } = Guid.NewGuid();
     }
 
     public class PurchaseOrderRecord
@@ -94,8 +96,6 @@ namespace PurchaseBlazorApp2.Components.Data
         public DateTime Date { get; set; }=DateTime.Now;
         public List<ApprovalInfo> ApprovalInfo { get; set; }= new List<ApprovalInfo> { };
         public EPRStatus PoStatus { get; set; }
-    
-
         public void OnApprovalChanged()
         {
             foreach (var item in ApprovalInfo)
@@ -129,7 +129,7 @@ namespace PurchaseBlazorApp2.Components.Data
         public List<RequestItemInfo> ItemRequested { get { return _ItemRequested; } set { _ItemRequested = value; } }
 
         public EPRStatus prstatus { get; set; }
-        public List<ImageUploadInfo> SupportDocuments { get; set; }= new List<ImageUploadInfo>(); 
+        public List<PurchaseBlazorApp2.Components.Data.ImageUploadInfo> SupportDocuments { get; set; }= new List<ImageUploadInfo>(); 
         public EDepartment Department { get; set; }
 
         private ETask _TaskType;
@@ -155,7 +155,7 @@ namespace PurchaseBlazorApp2.Components.Data
 
         public PurchaseRequisitionRecord()
         {
-            OnTaskTypeChanged();
+            //OnTaskTypeChanged();
         }
 
         private decimal CalculateTotal()
@@ -170,6 +170,7 @@ namespace PurchaseBlazorApp2.Components.Data
 
         private void OnTaskTypeChanged()
         {
+            return;
             Approvals.Clear();
 
             switch (TaskType)
