@@ -6,6 +6,7 @@
 @using PurchaseBlazorApp2.ViewModel
 @inject ClientGlobalVar GlobalVar
 @inject IJSRuntime JS
+@inject IServiceProvider ServiceProvider
 @inject NavigationManager NavigationManager
 @inject HttpClient Http
 @rendermode InteractiveAuto
@@ -38,7 +39,22 @@
 
 
 @code {
+    private async Task CheckAuthenticationServices()
+    {
+        // List of auth-related types to check
+        var authTypes = new Type[]
+        {
+            typeof(Microsoft.AspNetCore.Components.WebAssembly.Authentication.IAccessTokenProvider),
+            typeof(Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider)
+        };
 
+        foreach (var type in authTypes)
+        {
+            var service = ServiceProvider.GetService(type);
+            bool isRegistered = service != null;
+            await JS.InvokeVoidAsync("console.log", $"{type.Name}: {(isRegistered ? "registered" : "NOT registered")}");
+        }
+    }
     public UserName MyUserName { get; set; } = new UserName("","");
     private string? errorMessage;
     protected override void OnInitialized()
@@ -52,7 +68,7 @@
 
     public async Task HandleLogin()
     {
-
+        await CheckAuthenticationServices();
         var response = await Http.PostAsJsonAsync(
         NavigationManager.ToAbsoluteUri("api/login/submit"), MyUserName);
 

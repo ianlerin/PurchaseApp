@@ -50,7 +50,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                 await Connection.CloseAsync();
             }
         }
-        /*
+       
        public async Task<CredentialSubmitResponse> TryLoginAsync(UserName info)
        {
            var SubmitResponse = new CredentialSubmitResponse();
@@ -60,8 +60,8 @@ namespace PurchaseBlazorApp2.Components.Repository
                // 1. Configure Azure.Identity credential
                var credential = new InteractiveBrowserCredential(new InteractiveBrowserCredentialOptions
                {
-                   TenantId = "d7b92891-b937-4702-ad5e-03e1f752dddf",  // Tenant (Directory) ID
-                   ClientId = "d6e4c33e-072d-46cd-b8e2-4a8a256a96d9",  // Application (client) ID
+                   TenantId = "85e055dd-d7b9-4a2b-be46-f5bb151440d0",  // Tenant (Directory) ID
+                   ClientId = "ec2d75da-33ea-45d3-9e84-bd67e831a610",  // Application (client) ID
                    RedirectUri = new Uri("http://localhost"), // must match Azure AD registration
                    LoginHint = info.Name
                });
@@ -101,43 +101,43 @@ namespace PurchaseBlazorApp2.Components.Repository
 
            return SubmitResponse;
        }
+
+        /*
+      public async Task<CredentialSubmitResponse> TryLoginAsync(UserName info)
+      {
+          CredentialSubmitResponse SubmitResponse = new CredentialSubmitResponse();
+          try
+          {
+              await Connection.OpenAsync();
+
+              using var cmd = new NpgsqlCommand("SELECT username, password, role  FROM credential WHERE username = @username AND password = @password", Connection);
+              cmd.Parameters.AddWithValue("username", info.Name);
+              cmd.Parameters.AddWithValue("password", info.Password);
+
+              using var reader = await cmd.ExecuteReaderAsync();
+              while (await reader.ReadAsync())
+              {
+                  SubmitResponse.bSuccess = true;
+                  SubmitResponse.MyName.Name = reader["username"]?.ToString() ?? string.Empty;
+                  SubmitResponse.MyName.Password = reader["password"]?.ToString() ?? string.Empty;
+                  EDepartment MyRole;
+
+                  Enum.TryParse(reader["role"]?.ToString() ?? string.Empty, out MyRole);
+
+                  SubmitResponse.MyName.Role = MyRole;
+              }
+              return SubmitResponse; // true if a row exists
+          }
+          catch (Exception ex)
+          {
+             Console.WriteLine(ex.Message);
+              return SubmitResponse;
+          }
+          finally
+          {
+              await Connection.CloseAsync();
+          }
+      }
         */
-
-       public async Task<CredentialSubmitResponse> TryLoginAsync(UserName info)
-       {
-           CredentialSubmitResponse SubmitResponse = new CredentialSubmitResponse();
-           try
-           {
-               await Connection.OpenAsync();
-
-               using var cmd = new NpgsqlCommand("SELECT username, password, role  FROM credential WHERE username = @username AND password = @password", Connection);
-               cmd.Parameters.AddWithValue("username", info.Name);
-               cmd.Parameters.AddWithValue("password", info.Password);
-
-               using var reader = await cmd.ExecuteReaderAsync();
-               while (await reader.ReadAsync())
-               {
-                   SubmitResponse.bSuccess = true;
-                   SubmitResponse.MyName.Name = reader["username"]?.ToString() ?? string.Empty;
-                   SubmitResponse.MyName.Password = reader["password"]?.ToString() ?? string.Empty;
-                   EDepartment MyRole;
-
-                   Enum.TryParse(reader["role"]?.ToString() ?? string.Empty, out MyRole);
-
-                   SubmitResponse.MyName.Role = MyRole;
-               }
-               return SubmitResponse; // true if a row exists
-           }
-           catch (Exception ex)
-           {
-              Console.WriteLine(ex.Message);
-               return SubmitResponse;
-           }
-           finally
-           {
-               await Connection.CloseAsync();
-           }
-       }
-       
     }
 }
