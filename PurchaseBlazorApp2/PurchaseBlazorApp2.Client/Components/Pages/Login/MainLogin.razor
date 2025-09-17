@@ -1,170 +1,76 @@
-﻿
-@page "/login"
-@using System.ComponentModel.DataAnnotations
+﻿@page "/login"
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
 @using PurchaseBlazorApp2.Components.Global
-@using PurchaseBlazorApp2.Client.Components.Helper
-@using PurchaseBlazorApp2.ViewModel
-
-@inject AuthenticationStateProvider AuthStateProvider
-@inject ClientGlobalVar GlobalVar
 @inject IJSRuntime JS
 @inject IServiceProvider ServiceProvider
-@inject NavigationManager NavigationManager
-@inject HttpClient Http
-@rendermode InteractiveAuto
+@inject ClientGlobalVar GlobalVar
+@inject AuthenticationStateProvider AuthStateProvider
 
-
-<h3>MainLogin</h3>
-@if (bAuthRegistered)
-{
-    <RemoteAuthenticatorView Action="login"  OnLogInSucceeded="HandleLogInSucceeded" />
-   
-}
-else
-{
-    <EditForm Model="MyUserName" OnValidSubmit="HandleLogin" FormName="LoginForm">
-        <DataAnnotationsValidator />
-        <ValidationSummary />
-
-        <div class="form-group mb-3">
-            <label for="username">Username</label>
-            <InputText id="MyUserName.Name" class="form-control" @bind-Value="MyUserName.Name" />
-            <ValidationMessage For="@(() => MyUserName.Name)" />
-        </div>
-
-        <div class="form-group mb-3">
-            <label for="password">Password</label>
-            <InputText id="MyUserName.Password" type="password" class="form-control" @bind-Value="MyUserName.Password" />
-            <ValidationMessage For="@(() => MyUserName.Password)" />
-        </div>
-
-        <button type="submit" class="btn btn-primary">Login</button>
-
-        @if (!string.IsNullOrEmpty(errorMessage))
+<CascadingAuthenticationState>
+    <CascadingValue Value="this">
+        @if (authState is null)
         {
-            <div class="text-danger mt-3">@errorMessage</div>
+            <p>Loading authentication state...</p>
         }
-    </EditForm>
-
-}
-
-
-@code {
-    bool bAuthRegistered = false;
-    private async Task CheckAuthenticationServices()
-    {
-        // List of auth-related types to check
-        var authTypes = new Type[]
+        else if (!authState.User.Identity?.IsAuthenticated ?? true)
         {
-             typeof(Microsoft.AspNetCore.Components.WebAssembly.Authentication.IAccessTokenProvider)
-        };
-
-        foreach (var type in authTypes)
-        {
-            var service = ServiceProvider.GetService(type);
-            bAuthRegistered = service != null;
-
-            await JS.InvokeVoidAsync("console.log", $"{type.Name}: {(bAuthRegistered ? "registered" : "NOT registered")}");
-        }
-        StateHasChanged();
-    }
-    public UserName MyUserName { get; set; } = new UserName("","");
-    private string? errorMessage;
-    protected override void OnInitialized()
-    {
-        loginModel = new LoginModel(GlobalVar, JS);
-    }
-    private void HandleLoginSuccess()
-    {
-        InvokeAsync(StateHasChanged); 
-    }
-
-
-    private async Task HandleLogInSucceeded(RemoteAuthenticationState state)
-    {
-        try
-        {
-            // 1️⃣ Get authentication state (user identity)
-            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-            var user = authState.User;
-
-            if (user?.Identity?.IsAuthenticated == true)
-            {
-                // Optionally get access token
-                var tokenProvider = ServiceProvider.GetService<IAccessTokenProvider>();
-                if (tokenProvider != null)
-                {
-                    var tokenResult = await tokenProvider.RequestAccessToken();
-                    if (tokenResult.TryGetToken(out var accessToken))
-                    {
-                        await JS.InvokeVoidAsync("console.log", $"Access token retrieved: {accessToken.Value.Substring(0, 20)}...");
-                  
-                    }
-                }
-
-                // Build a user model from claims
-                var foundUserName = new CredentialSubmitResponse
-                    {
-                        bSuccess = true,
-                        MyName = new UserName(
-                            user.Identity?.Name ?? "",
-                            "" // no password needed, identity is from OIDC
-                        )
-                    };
-                await JS.InvokeVoidAsync("console.log", $"Username: {foundUserName.MyName.Name}");
-                string key = System.Text.Json.JsonSerializer.Serialize(foundUserName.MyName);
-                await JS.InvokeVoidAsync("setCookie", "userKey", key, 7);
-
-                GlobalVar.SetUser(foundUserName.MyName);
-
-                HandleLoginSuccess();
-            }
-            else
-            {
-                errorMessage = "Authentication succeeded but no user identity was found.";
-                StateHasChanged();
-            }
-        }
-        catch (Exception ex)
-        {
-            await JS.InvokeVoidAsync("console.error", $"Login handling failed: {ex.Message}");
-            errorMessage = "Unexpected error during login.";
-            StateHasChanged();
-        }
-    }
-
-    public async Task HandleLogin()
-    {
-        await CheckAuthenticationServices();
-        /*
-        var response = await Http.PostAsJsonAsync(
-        NavigationManager.ToAbsoluteUri("api/login/submit"), MyUserName);
-
-        if (response.IsSuccessStatusCode)
-        {
-            CredentialSubmitResponse FoundUserName = await response.Content.ReadFromJsonAsync<CredentialSubmitResponse>();
-            if (FoundUserName.bSuccess)
-            {
-                string Key = System.Text.Json.JsonSerializer.Serialize(FoundUserName.MyName);
-                if (JS is not null)
-                {
-                    await JS.InvokeVoidAsync("setCookie", "userKey", Key, 7);
-                }
-                GlobalVar.SetUser(FoundUserName.MyName);
-
-                HandleLoginSuccess();
-            }
-
+            <RemoteAuthenticatorView Action="login" OnLogInSucceeded="HandleLogInSucceeded" />
         }
         else
         {
-            Console.WriteLine("Fail!");
+            <p>You are already logged in as @authState.User.Identity?.Name</p>
         }
-        */
+    </CascadingValue>
+</CascadingAuthenticationState>
 
+@code {
+    private AuthenticationState? authState;
+
+    protected override async Task OnInitializedAsync()
+    {
+        authState = await AuthStateProvider.GetAuthenticationStateAsync();
     }
-    private LoginModel? loginModel;
-    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Only fetch auth state on the client
+            if (!OperatingSystem.IsBrowser())
+                return;
+
+            try
+            {
+                authState = await AuthStateProvider.GetAuthenticationStateAsync();
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                await JS.InvokeVoidAsync("console.error", $"Error fetching auth state: {ex.Message}");
+            }
+        }
+    }
+    private async Task HandleLogInSucceeded(RemoteAuthenticationState state)
+    {
+        authState = await AuthStateProvider.GetAuthenticationStateAsync();
+
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            // Now token provider should be available
+            var tokenProvider = ServiceProvider.GetService<IAccessTokenProvider>();
+
+            if (tokenProvider != null)
+            {
+                var tokenResult = await tokenProvider.RequestAccessToken();
+                if (tokenResult.TryGetToken(out var token))
+                {
+                    await JS.InvokeVoidAsync("console.log", $"✅ Access token acquired: {token.Value.Substring(0, 20)}...");
+                }
+            }
+
+            GlobalVar.SetUser(new UserName(authState.User.Identity.Name ?? "", ""));
+            await JS.InvokeVoidAsync("console.log", $"👤 Logged in as: {authState.User.Identity.Name}");
+            StateHasChanged();
+        }
+    }
 }

@@ -1,33 +1,31 @@
 ﻿@page "/mainlogout"
+@using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
 @using Microsoft.JSInterop
 @using PurchaseBlazorApp2.Components.Global
 @inject ClientGlobalVar GlobalVar
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
 
-
-<!-- RemoteAuthenticatorView will sign the user out of MSAL and then call OnLogOutSucceeded -->
-<RemoteAuthenticatorView Action="logout" OnLogOutSucceeded="HandleLogOutSucceeded" />
+<RemoteAuthenticatorView Action="logout"
+                         OnLogOutSucceeded="HandleLogOutSucceeded"
+                        />
 
 @code {
     private async Task HandleLogOutSucceeded(RemoteAuthenticationState state)
     {
-        await JS.InvokeVoidAsync("console.log", "Logout succeeded, clearing custom state...");
-
+        await JS.InvokeVoidAsync("console.log", "✅ Logout succeeded, clearing custom state...");
         GlobalVar.Logout();
 
-        if (JS is not null)
+        try
         {
-            try
-            {
-                await JS.InvokeVoidAsync("deleteCookie", "userKey");
-            }
-            catch
-            {
-                // Ignore errors if JS not available
-            }
+            await JS.InvokeVoidAsync("deleteCookie", "userKey");
         }
-
+        catch
+        {
+            // Ignore JS errors if running outside browser
+        }
     }
+
 }

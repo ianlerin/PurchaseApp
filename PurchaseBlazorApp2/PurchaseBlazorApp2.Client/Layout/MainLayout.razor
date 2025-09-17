@@ -1,9 +1,12 @@
-﻿@using Microsoft.AspNetCore.Components.Authorization
+﻿@page "/mainlayout"
+@using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
 @using PurchaseBlazorApp2.Client.Components.Pages.Login
 @using PurchaseBlazorApp2.Components.Global
 @inherits LayoutComponentBase
 
+
+@inject NavigationManager NavigationManager
 @inject ClientGlobalVar GlobalVar
 @inject IJSRuntime JS
 @inject AuthenticationStateProvider AuthStateProvider
@@ -36,33 +39,68 @@ else
     {
         if (!_subscribed)
         {
-            AuthStateProvider.AuthenticationStateChanged += OnAuthStateChanged;
+            // Use async lambda to avoid async void
+            AuthStateProvider.AuthenticationStateChanged += async (task) =>
+            {
+                try
+                {
+                    var state = await task;
+                    if (OperatingSystem.IsBrowser())
+                        await JS.InvokeVoidAsync("console.log", "🔄 AuthenticationStateChanged fired.");
+                    await UpdateLoginState(state);
+                }
+                catch (Exception ex)
+                {
+                    if (OperatingSystem.IsBrowser())
+                        await JS.InvokeVoidAsync("console.error", $"Error in AuthStateChanged: {ex}");
+                }
+            };
+
             _subscribed = true;
         }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        await JS.InvokeVoidAsync("console.log", "OnAfterRenderAsync");
+        if (!firstRender || !OperatingSystem.IsBrowser())
         {
-            try
+            /*
+            if(!firstRender)
             {
-                await JS.InvokeVoidAsync("console.log", "🔄 First render - fetching AuthenticationState...");
-                var state = await AuthStateProvider.GetAuthenticationStateAsync();
 
-                await JS.InvokeVoidAsync("console.log",
-                    $"🔑 AuthState: IsAuthenticated = {state.User.Identity?.IsAuthenticated}");
-
-                await UpdateLoginState(state);
-
-                _initialized = true;
-                await JS.InvokeVoidAsync("console.log", "✅ _initialized set to true, triggering StateHasChanged()");
-                StateHasChanged();
+                await JS.InvokeVoidAsync("console.log", "Not firstRender");
             }
-            catch (Exception ex)
+            if (!OperatingSystem.IsBrowser())
             {
+                await Task.Delay(1000);
+                NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+                await JS.InvokeVoidAsync("console.log", "Not browser");
+            }
+            */
+            await JS.InvokeVoidAsync("console.log", "not first render or is browser");
+            return;
+        }
+        
+
+        try
+        {
+            await JS.InvokeVoidAsync("console.log", "🔄 First render - fetching AuthenticationState...");
+            var state = await AuthStateProvider.GetAuthenticationStateAsync();
+
+            await JS.InvokeVoidAsync("console.log",
+                $"🔑 AuthState: IsAuthenticated = {state.User.Identity?.IsAuthenticated}");
+
+            await UpdateLoginState(state);
+
+            _initialized = true;
+            await JS.InvokeVoidAsync("console.log", "✅ _initialized set to true, triggering StateHasChanged()");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            if (OperatingSystem.IsBrowser())
                 await JS.InvokeVoidAsync("console.error", $"❗ Error in OnAfterRenderAsync: {ex.Message}");
-            }
         }
     }
 
@@ -76,7 +114,8 @@ else
 
             if (tokenProvider == null)
             {
-                await JS.InvokeVoidAsync("console.warn", "⚠️ IAccessTokenProvider is NULL - check AddMsalAuthentication setup.");
+                if (OperatingSystem.IsBrowser())
+                    await JS.InvokeVoidAsync("console.warn", "⚠️ IAccessTokenProvider is NULL - check AddMsalAuthentication setup.");
                 _isLoggedIn = false;
                 return;
             }
@@ -85,11 +124,13 @@ else
 
             if (tokenResult.TryGetToken(out var token))
             {
-                await JS.InvokeVoidAsync("console.log", $"🔑 Access token acquired: {token.Value.Substring(0, 20)}...");
+                if (OperatingSystem.IsBrowser())
+                    await JS.InvokeVoidAsync("console.log", $"🔑 Access token acquired: {token.Value.Substring(0, 20)}...");
             }
             else
             {
-                await JS.InvokeVoidAsync("console.warn", "⚠️ No access token available yet.");
+                if (OperatingSystem.IsBrowser())
+                    await JS.InvokeVoidAsync("console.warn", "⚠️ No access token available yet.");
                 _isLoggedIn = false;
             }
         }
@@ -97,18 +138,11 @@ else
         await InvokeAsync(StateHasChanged);
     }
 
-    private async void OnAuthStateChanged(Task<AuthenticationState> task)
-    {
-        var state = await task;
-        await JS.InvokeVoidAsync("console.log", "🔄 AuthenticationStateChanged fired.");
-        await UpdateLoginState(state);
-    }
-
     public void Dispose()
     {
-        if (_subscribed)
-        {
-            AuthStateProvider.AuthenticationStateChanged -= OnAuthStateChanged;
-        }
+        
     }
+
+    // Dummy method to allow safe unsubscribe (optional)
+    private Task OnAuthStateChangedSafe(Task<AuthenticationState> task) => Task.CompletedTask;
 }
