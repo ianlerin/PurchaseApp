@@ -1,7 +1,7 @@
 ﻿@using Microsoft.AspNetCore.Components.Authorization
 @rendermode InteractiveAuto
 
-<CascadingAuthenticationState>
+
     <Router AppAssembly="typeof(Program).Assembly" AdditionalAssemblies="new[] { typeof(Client._Imports).Assembly }">
         <Found Context="routeData">
             <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
@@ -13,4 +13,3 @@
             </LayoutView>
         </NotFound>
     </Router>
-</CascadingAuthenticationState>

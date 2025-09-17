@@ -25,6 +25,8 @@ builder.Services.AddScoped<ClientStateStorage>();
 builder.Services.AddScoped<ClientGlobalVar>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
+builder.Services.AddCascadingAuthenticationState();
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>

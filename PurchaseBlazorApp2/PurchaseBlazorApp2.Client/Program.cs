@@ -26,6 +26,8 @@ builder.Services.AddScoped(sp =>
 builder.Services.AddMsalAuthentication(options =>
 {
     builder.Configuration.Bind("AzureAd", options.ProviderOptions.Authentication);
+    options.ProviderOptions.Authentication.RedirectUri = "https://localhost:7129";
+  options.ProviderOptions.Authentication.PostLogoutRedirectUri = "https://localhost:7129";
     options.ProviderOptions.DefaultAccessTokenScopes.Add("https://graph.microsoft.com/User.Read");
     options.ProviderOptions.DefaultAccessTokenScopes.Add("https://graph.microsoft.com/Team.ReadBasic.All");
 });
@@ -50,6 +52,8 @@ builder.Services.AddScoped<TooltipService>();
 builder.Services.AddScoped<ContextMenuService>();
 builder.Services.AddScoped<ClientGlobalVar>();
 builder.Services.AddScoped<ClientStateStorage>();
+builder.Services.AddAuthorizationCore();
+builder.Services.AddCascadingAuthenticationState();
 var host = builder.Build();
 
 // Safe to use JSRuntime now

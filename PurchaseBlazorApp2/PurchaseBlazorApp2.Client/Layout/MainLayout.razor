@@ -1,76 +1,114 @@
-﻿@using PurchaseBlazorApp2.Client.Components.Pages.Login
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using PurchaseBlazorApp2.Client.Components.Pages.Login
 @using PurchaseBlazorApp2.Components.Global
-@using Radzen.Blazor
-@inject ClientGlobalVar GlobalVar
-@inject IJSRuntime JS
 @inherits LayoutComponentBase
 
+@inject ClientGlobalVar GlobalVar
+@inject IJSRuntime JS
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IServiceProvider ServiceProvider
 
-@if (!GlobalVar.IsLoggedIn)
+@if (!_initialized)
+{
+    <p>Loading authentication state...</p>
+}
+else if (!_isLoggedIn)
 {
     <MainLogin />
 }
 else
 {
     <div class="layout-container">
-        <div class="sidebar">
-            <NavMenu />
-        </div>
-
-        <main class="main-content">
-            <div class="top-row px-4">
-                <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-            </div>
-            <article class="content px-4">
-                @Body
-            </article>
+        <NavMenu />
+        <main>
+            @Body
         </main>
     </div>
 }
 
-<div id="blazor-error-ui">
-    An unhandled error has occurred.
-    <a href="" class="reload">Reload</a>
-    <a class="dismiss">🗙</a>
-</div>
-
-<RadzenComponents />
-
 @code {
-    bool _initialized{ get; set; }
+    private bool _initialized;
+    private bool _isLoggedIn;
+    private bool _subscribed;
+
     protected override void OnInitialized()
     {
-        GlobalVar.OnLoginStateChanged += HandleStateChanged; 
-     
+        if (!_subscribed)
+        {
+            AuthStateProvider.AuthenticationStateChanged += OnAuthStateChanged;
+            _subscribed = true;
+        }
     }
-
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            await JS.InvokeVoidAsync("console.log", "Loading CookieHelper manually");
-            await JS.InvokeVoidAsync("eval", "import('/js/CookieHelper.js')");
-            await JS.InvokeVoidAsync("eval", "import('/js/GeneratePDFHelper.js')");
+            try
+            {
+                await JS.InvokeVoidAsync("console.log", "🔄 First render - fetching AuthenticationState...");
+                var state = await AuthStateProvider.GetAuthenticationStateAsync();
+
+                await JS.InvokeVoidAsync("console.log",
+                    $"🔑 AuthState: IsAuthenticated = {state.User.Identity?.IsAuthenticated}");
+
+                await UpdateLoginState(state);
+
+                _initialized = true;
+                await JS.InvokeVoidAsync("console.log", "✅ _initialized set to true, triggering StateHasChanged()");
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                await JS.InvokeVoidAsync("console.error", $"❗ Error in OnAfterRenderAsync: {ex.Message}");
+            }
         }
-
-        var cookieValue = await JS.InvokeAsync<string>("getCookie", "userKey");
-
-        if (!string.IsNullOrEmpty(cookieValue))
-        {
-            var user = System.Text.Json.JsonSerializer.Deserialize<UserName>(cookieValue);
-            GlobalVar.SetUser(user);
-        }
-
     }
-    private void HandleStateChanged()
+
+    private async Task UpdateLoginState(AuthenticationState state)
     {
-        InvokeAsync(StateHasChanged);
+        _isLoggedIn = state.User.Identity?.IsAuthenticated == true;
+
+        if (_isLoggedIn)
+        {
+            var tokenProvider = ServiceProvider.GetService<IAccessTokenProvider>();
+
+            if (tokenProvider == null)
+            {
+                await JS.InvokeVoidAsync("console.warn", "⚠️ IAccessTokenProvider is NULL - check AddMsalAuthentication setup.");
+                _isLoggedIn = false;
+                return;
+            }
+
+            var tokenResult = await tokenProvider.RequestAccessToken();
+
+            if (tokenResult.TryGetToken(out var token))
+            {
+                await JS.InvokeVoidAsync("console.log", $"🔑 Access token acquired: {token.Value.Substring(0, 20)}...");
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("console.warn", "⚠️ No access token available yet.");
+                _isLoggedIn = false;
+            }
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async void OnAuthStateChanged(Task<AuthenticationState> task)
+    {
+        var state = await task;
+        await JS.InvokeVoidAsync("console.log", "🔄 AuthenticationStateChanged fired.");
+        await UpdateLoginState(state);
     }
 
     public void Dispose()
     {
-        GlobalVar.OnLoginStateChanged -= HandleStateChanged;
+        if (_subscribed)
+        {
+            AuthStateProvider.AuthenticationStateChanged -= OnAuthStateChanged;
+        }
     }
-   
 }
