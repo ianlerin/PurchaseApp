@@ -27,6 +27,7 @@ builder.Services.AddMsalAuthentication(options =>
 {
     builder.Configuration.Bind("AzureAd", options.ProviderOptions.Authentication);
     options.ProviderOptions.Authentication.RedirectUri = "https://localhost:7129/";
+    options.ProviderOptions.Authentication.PostLogoutRedirectUri = "/";
     options.ProviderOptions.DefaultAccessTokenScopes.Add("https://graph.microsoft.com/User.Read");
     options.ProviderOptions.DefaultAccessTokenScopes.Add("https://graph.microsoft.com/Team.ReadBasic.All");
 });
@@ -58,6 +59,11 @@ var host = builder.Build();
 // Safe to use JSRuntime now
 var js = host.Services.GetRequiredService<IJSRuntime>();
 _ = js.InvokeVoidAsync("console.log", "Start building");
+
+
+await js.InvokeVoidAsync("initMsal",
+    "ec2d75da-33ea-45d3-9e84-bd67e831a610",
+    "https://login.microsoftonline.com/85e055dd-d7b9-4a2b-be46-f5bb151440d0");
 
 // Run the app
 await host.RunAsync();

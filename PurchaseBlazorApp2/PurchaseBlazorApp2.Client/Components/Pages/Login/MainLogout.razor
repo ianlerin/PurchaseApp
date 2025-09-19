@@ -6,26 +6,57 @@
 @inject ClientGlobalVar GlobalVar
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
+@inject SignOutSessionStateManager SignOutManager
 @inject AuthenticationStateProvider AuthStateProvider
 
-<RemoteAuthenticatorView Action="logout"
-                         OnLogOutSucceeded="HandleLogOutSucceeded"
-                        />
+<PageTitle>Logging out...</PageTitle>
+
+<p>Logging you out, please wait...</p>
 
 @code {
-    private async Task HandleLogOutSucceeded(RemoteAuthenticationState state)
-    {
-        await JS.InvokeVoidAsync("console.log", "✅ Logout succeeded, clearing custom state...");
-        GlobalVar.Logout();
+    protected override async Task OnInitializedAsync()
+    {   
+        await JS.InvokeVoidAsync("console.log", "🔄 Starting proper logout...");
 
+        // 1. Print current authentication state BEFORE logout
+        await PrintAuthState("Before Logout");
+        
+        await JS.InvokeVoidAsync("msalLogout");
+
+    
+        // 2. Clear your own state
+        GlobalVar.Logout();
+      
         try
         {
             await JS.InvokeVoidAsync("deleteCookie", "userKey");
         }
-        catch
-        {
-            // Ignore JS errors if running outside browser
-        }
+        catch { }
+        
+        // 3. Tell Blazor auth system to sign out
+         await SignOutManager.SetSignOutState();
+
+        // 4. Print authentication state AFTER calling SignOutManager
+        await PrintAuthState("After SignOutManager");
+        
+        Navigation.NavigateTo("/", forceLoad: true);
     }
 
+    private async Task PrintAuthState(string label)
+    {
+        await JS.InvokeVoidAsync("console.log",
+                $"{label}: print auth state");
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity is not null && user.Identity.IsAuthenticated)
+        {
+            await JS.InvokeVoidAsync("console.log",
+                $"{label}: ✅ Authenticated as {user.Identity.Name} with {user.Claims.Count()} claims");
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("console.log", $"{label}: ❌ Not authenticated");
+        }
+    }
 }

@@ -15,27 +15,38 @@
         }
         else if (!authState.User.Identity?.IsAuthenticated ?? true)
         {
-            <RemoteAuthenticatorView Action="login" OnLogInSucceeded="HandleLogInSucceeded" />
+            @if (!startLogin)
+            {
+                <button class="btn btn-primary" @onclick="StartLogin">
+                    🔑 Login
+                </button>
+            }
+            else
+            {
+                <RemoteAuthenticatorView Action="login" OnLogInSucceeded="HandleLogInSucceeded" />
+            }
         }
         else
         {
-            <p>You are already logged in as @authState.User.Identity?.Name</p>
+            <p>✅ You are already logged in as @authState.User.Identity?.Name</p>
         }
     </CascadingValue>
 </CascadingAuthenticationState>
 
 @code {
     private AuthenticationState? authState;
+    private bool startLogin = false;
 
     protected override async Task OnInitializedAsync()
     {
+        startLogin = false;
         authState = await AuthStateProvider.GetAuthenticationStateAsync();
     }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            // Only fetch auth state on the client
             if (!OperatingSystem.IsBrowser())
                 return;
 
@@ -50,13 +61,19 @@
             }
         }
     }
+
+    private void StartLogin()
+    {
+        startLogin = true;
+    }
+
     private async Task HandleLogInSucceeded(RemoteAuthenticationState state)
     {
+        await JS.InvokeVoidAsync("console.log", $"HandleLogInSucceeded");
         authState = await AuthStateProvider.GetAuthenticationStateAsync();
 
         if (authState.User.Identity?.IsAuthenticated == true)
         {
-            // Now token provider should be available
             var tokenProvider = ServiceProvider.GetService<IAccessTokenProvider>();
 
             if (tokenProvider != null)
