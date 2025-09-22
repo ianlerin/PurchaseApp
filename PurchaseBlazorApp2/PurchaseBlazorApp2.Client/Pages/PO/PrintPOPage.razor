@@ -54,7 +54,12 @@
                     @foreach (var Item in PRRecord.ItemRequested)
                     {
                         <tr>
-                            <td><input class="form-control" @bind="Item.RequestItem" readonly /></td>
+                            <td>
+                                <textarea class="form-control"
+                                @bind="Item.RequestItem"
+                                @ref="requestItemRef"
+                                @oninput="ResizeTextArea" />
+                            </td>
                             <td><input type="number" class="form-control" @bind="Item.Quantity" readonly /></td>
                             <td><input type="number" class="form-control" @bind="Item.UnitPrice" readonly /></td>
                             <td>@(Item?.Quantity * Item?.UnitPrice ?? 0)</td>
@@ -66,7 +71,15 @@
 
         <div class="mb-3">
             <label>Subtotal:</label> @(Subtotal) RM <br />
-            <label>Tax (6%):</label> @(Tax) RM <br />
+            <label>
+                Tax:
+                <InputNumber @bind-Value="purchaseOrderRecord.taxrate"
+                             @bind-Value:after="OnTaxRateChanged"
+                             class="form-control d-inline-block"
+                             style="width: 80px;" />%
+
+            </label>
+            <span>@Tax RM</span><br />
             <label><b>Total:</b></label> <b>@(Total) RM</b>
         </div>
 
@@ -98,14 +111,55 @@
 }
 
 <hr />
+<button class="btn btn-primary btn-lg" @onclick="CreateandSubmit">
+    @(purchaseOrderRecord?.PO_ID is null ? "Create and Submit" : "Edit")
+</button>
+
 <button class="btn btn-primary" @onclick="ExportToPdf">Export to PDF</button>
-<button class="btn btn-primary" @onclick="CreateandSubmit">Create and Submit</button>
+
 <button class="btn btn-primary" @onclick="GoToPR">Examine PR</button>
 @code {
 
     [Parameter] public string? RequisitionNumber { get; set; }
+    private bool _resizedOnFirstRender = false;
+
+    private ElementReference requestItemRef;
+    private decimal Subtotal => PRRecord.ItemRequested.Sum(i => i.Quantity * i.UnitPrice);
+    private decimal Tax {get;set;}
+    private decimal Total { get; set; }
+
+
+
     private PurchaseOrderRecord purchaseOrderRecord { get; set; } = new PurchaseOrderRecord();
     private PurchaseRequisitionRecord PRRecord { get; set; } = new PurchaseRequisitionRecord();
+
+    // for scalable text area
+    private async Task ResizeTextArea(ChangeEventArgs e)
+    {
+        await JS.InvokeVoidAsync("autoResizeTextArea", requestItemRef);
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!string.IsNullOrEmpty(requestItemRef.Id) && !_resizedOnFirstRender)
+        {
+            _resizedOnFirstRender = true;
+            await JS.InvokeVoidAsync("autoResizeTextArea", requestItemRef);
+        }
+    }
+
+    private async void OnTaxRateChanged()
+    {
+        Tax = Subtotal * purchaseOrderRecord.taxrate/100;
+        Total = Tax + Subtotal;
+
+        // Print out all values to browser console
+        await JS.InvokeVoidAsync("console.log",
+            $"OnTaxRateChanged triggered:",
+            $"TaxRate: {purchaseOrderRecord.taxrate}",
+            $"Subtotal: {Subtotal}",
+            $"Tax: {Tax}",
+            $"Total: {Total}");
+    }
     protected override async Task OnInitializedAsync()
     {
         purchaseOrderRecord = StateStorage.Get<PurchaseOrderRecord>("PO");
@@ -138,6 +192,7 @@
         {
             purchaseOrderRecord = new PurchaseOrderRecord();
             purchaseOrderRecord.PR_ID = PRRecord.RequisitionNumber;
+            purchaseOrderRecord.Purpose = PRRecord.Purpose;
             var response = await Http.PostAsJsonAsync(
              NavigationManager.ToAbsoluteUri("api/po/get_pr"), new List<string> { PRRecord.RequisitionNumber });
             if (response.IsSuccessStatusCode)
@@ -158,11 +213,10 @@
                 }
             }
         }
+        OnTaxRateChanged();
     }
 
-    private decimal Subtotal => PRRecord.ItemRequested.Sum(i => i.Quantity * i.UnitPrice);
-    private decimal Tax => Subtotal * 0.06m;
-    private decimal Total => Subtotal + Tax;
+ 
 
     private async Task ExportToPdf()
     {

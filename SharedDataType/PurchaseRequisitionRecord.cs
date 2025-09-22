@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Net.NetworkInformation;
 using System.Numerics;
 
@@ -93,6 +94,8 @@ namespace PurchaseBlazorApp2.Components.Data
         [Key]
         public string? PO_ID { get; set; }
         public string PR_ID { get; set; }
+        public string Purpose { get; set; }
+        public decimal taxrate { get; set; } = 6;
         public DateTime Date { get; set; }=DateTime.Now;
         public List<ApprovalInfo> ApprovalInfo { get; set; }= new List<ApprovalInfo> { };
         public EPRStatus PoStatus { get; set; }
@@ -137,7 +140,7 @@ namespace PurchaseBlazorApp2.Components.Data
 
 
         private List<ApprovalInfo> _Approvals = new List<ApprovalInfo>();
-        public List<ApprovalInfo> Approvals { get { return _Approvals; } set { _Approvals = value;} } 
+        public List<ApprovalInfo> Approvals { get { return _Approvals; } set { _Approvals = value; } } 
 
 
         public void OnApprovalChanged()
@@ -155,7 +158,7 @@ namespace PurchaseBlazorApp2.Components.Data
 
         public PurchaseRequisitionRecord()
         {
-            //OnTaskTypeChanged();
+            //OnApprovalChanged();
         }
 
         private decimal CalculateTotal()
@@ -167,6 +170,21 @@ namespace PurchaseBlazorApp2.Components.Data
             }
             return Count;
         }
+
+        public HashSet<EDepartment> GetSelectedDepartments()
+        {
+            HashSet<EDepartment> ToReturn = new HashSet<EDepartment>();
+            foreach (ApprovalInfo Approval in Approvals)
+            {
+                foreach(EDepartment Department in Approval.Departments)
+                {
+                    ToReturn.Add(Department);
+                }
+            
+            }
+            return ToReturn;
+        }
+
 
         private void OnTaskTypeChanged()
         {

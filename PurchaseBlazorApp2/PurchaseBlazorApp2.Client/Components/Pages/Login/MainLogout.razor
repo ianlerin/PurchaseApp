@@ -20,10 +20,15 @@
 
         // 1. Print current authentication state BEFORE logout
         await PrintAuthState("Before Logout");
-        
-        await JS.InvokeVoidAsync("msalLogout");
 
-    
+        bool bSuccess=await JS.InvokeAsync<bool>("msalLogout");
+        
+        await JS.InvokeVoidAsync("console.log", $"{bSuccess}");
+        
+        if(!bSuccess)
+        {
+            Navigation.NavigateTo("/purchaserequisitionrecords_client/create", forceLoad: true);
+        }
         // 2. Clear your own state
         GlobalVar.Logout();
       
@@ -39,7 +44,7 @@
         // 4. Print authentication state AFTER calling SignOutManager
         await PrintAuthState("After SignOutManager");
         
-        Navigation.NavigateTo("/", forceLoad: true);
+        //Navigation.NavigateTo("/", forceLoad: true);
     }
 
     private async Task PrintAuthState(string label)

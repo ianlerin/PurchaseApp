@@ -1,6 +1,6 @@
 ﻿@using Microsoft.AspNetCore.Components.Authorization
 @rendermode InteractiveAuto
-
+@inject IJSRuntime JS
 
     <Router AppAssembly="typeof(Program).Assembly" AdditionalAssemblies="new[] { typeof(Client._Imports).Assembly }">
         <Found Context="routeData">
@@ -13,3 +13,23 @@
             </LayoutView>
         </NotFound>
     </Router>
+
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("msalHandleRedirect");
+              
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"⚠️ Error handling MSAL redirect: {ex.Message}");
+            }
+        }
+    }
+
+}

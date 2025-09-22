@@ -102,42 +102,84 @@ namespace PurchaseBlazorApp2.Components.Repository
            return SubmitResponse;
        }
 
-        /*
-      public async Task<CredentialSubmitResponse> TryLoginAsync(UserName info)
-      {
-          CredentialSubmitResponse SubmitResponse = new CredentialSubmitResponse();
-          try
-          {
-              await Connection.OpenAsync();
+        public async Task<List<string>> TryGetAllProcurementEmail(List<EDepartment> departments)
+        {
+            var emailList = new List<string>();
 
-              using var cmd = new NpgsqlCommand("SELECT username, password, role  FROM credential WHERE username = @username AND password = @password", Connection);
-              cmd.Parameters.AddWithValue("username", info.Name);
-              cmd.Parameters.AddWithValue("password", info.Password);
+            try
+            {
+                await Connection.OpenAsync();
 
-              using var reader = await cmd.ExecuteReaderAsync();
-              while (await reader.ReadAsync())
-              {
-                  SubmitResponse.bSuccess = true;
-                  SubmitResponse.MyName.Name = reader["username"]?.ToString() ?? string.Empty;
-                  SubmitResponse.MyName.Password = reader["password"]?.ToString() ?? string.Empty;
-                  EDepartment MyRole;
+                // Build parameterized IN clause
+                var parameters = new List<string>();
+                using var cmd = new NpgsqlCommand();
+                cmd.Connection = Connection;
 
-                  Enum.TryParse(reader["role"]?.ToString() ?? string.Empty, out MyRole);
+                for (int i = 0; i < departments.Count; i++)
+                {
+                    string paramName = $"role{i}";
+                    parameters.Add($"@{paramName}");
+                    cmd.Parameters.AddWithValue(paramName, departments[i].ToString());
+                }
 
-                  SubmitResponse.MyName.Role = MyRole;
-              }
-              return SubmitResponse; // true if a row exists
-          }
-          catch (Exception ex)
-          {
-             Console.WriteLine(ex.Message);
-              return SubmitResponse;
-          }
-          finally
-          {
-              await Connection.CloseAsync();
-          }
-      }
-        */
+                cmd.CommandText = $@"
+            SELECT username 
+            FROM credential
+            WHERE role IN ({string.Join(",", parameters)}) 
+            AND username IS NOT NULL 
+            AND username <> ''";
+
+                using var reader = await cmd.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    emailList.Add(reader.GetString(0)); // username = email
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error fetching procurement emails: " + ex.Message);
+            }
+            finally
+            {
+                await Connection.CloseAsync();
+            }
+
+            return emailList;
+        }
+
+
+        public async Task<EDepartment> TryGetRole(string userName)
+        {
+            try
+            {
+                await Connection.OpenAsync();
+
+                using var cmd = new NpgsqlCommand(
+                    @"SELECT role FROM credential WHERE username = @username LIMIT 1", Connection);
+
+                cmd.Parameters.AddWithValue("username", userName);
+
+                var result = await cmd.ExecuteScalarAsync();
+
+                if (result != null && Enum.TryParse<EDepartment>(result.ToString(), out var department))
+                {
+                    return department;
+                }
+
+                return EDepartment.NotSpecified;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error fetching role: " + ex.Message);
+                return EDepartment.NotSpecified;
+            }
+            finally
+            {
+                await Connection.CloseAsync();
+            }
+        }
+
+
     }
 }

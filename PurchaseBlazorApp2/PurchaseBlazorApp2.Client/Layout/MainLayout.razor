@@ -12,20 +12,24 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IServiceProvider ServiceProvider
 
-@if (!_initialized)
-{
-    <p>Loading authentication state...</p>
-}
-else if (!_isLoggedIn)
+@if (!_isLoggedIn)
 {
     <MainLogin />
 }
 else
 {
-    <div class="layout-container">
-        <NavMenu />
-        <main>
-            @Body
+     <div class="layout-container">
+        <div class="sidebar">
+            <NavMenu />
+        </div>
+
+        <main class="main-content">
+            <div class="top-row px-4">
+                <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            </div>
+            <article class="content px-4">
+                @Body
+            </article>
         </main>
     </div>
 }
@@ -62,22 +66,10 @@ else
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await JS.InvokeVoidAsync("console.log", "OnAfterRenderAsync");
+        await JS.InvokeVoidAsync("console.log", "Mainlayout OnAfterRenderAsync");
         if (!firstRender || !OperatingSystem.IsBrowser())
         {
-            /*
-            if(!firstRender)
-            {
-
-                await JS.InvokeVoidAsync("console.log", "Not firstRender");
-            }
-            if (!OperatingSystem.IsBrowser())
-            {
-                await Task.Delay(1000);
-                NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
-                await JS.InvokeVoidAsync("console.log", "Not browser");
-            }
-            */
+           
             await JS.InvokeVoidAsync("console.log", "not first render or is browser");
             return;
         }
@@ -125,7 +117,7 @@ else
             if (tokenResult.TryGetToken(out var token))
             {
                 if (OperatingSystem.IsBrowser())
-                    await JS.InvokeVoidAsync("console.log", $"🔑 Access token acquired: {token.Value.Substring(0, 20)}...");
+                    await JS.InvokeVoidAsync("console.log", $"layout Access token acquired: {token.Value.Substring(0, 20)}...");
             }
             else
             {

@@ -26,6 +26,7 @@ builder.Services.AddScoped(sp =>
 builder.Services.AddMsalAuthentication(options =>
 {
     builder.Configuration.Bind("AzureAd", options.ProviderOptions.Authentication);
+    options.ProviderOptions.DefaultAccessTokenScopes.Add("https://graph.microsoft.com/Mail.Send");
     options.ProviderOptions.Authentication.RedirectUri = "https://localhost:7129/";
     options.ProviderOptions.Authentication.PostLogoutRedirectUri = "/";
     options.ProviderOptions.DefaultAccessTokenScopes.Add("https://graph.microsoft.com/User.Read");
@@ -53,6 +54,7 @@ builder.Services.AddScoped<ContextMenuService>();
 builder.Services.AddScoped<ClientGlobalVar>();
 builder.Services.AddScoped<ClientStateStorage>();
 builder.Services.AddAuthorizationCore();
+builder.Services.AddApiAuthorization();
 builder.Services.AddCascadingAuthenticationState();
 var host = builder.Build();
 
@@ -60,11 +62,11 @@ var host = builder.Build();
 var js = host.Services.GetRequiredService<IJSRuntime>();
 _ = js.InvokeVoidAsync("console.log", "Start building");
 
-
-await js.InvokeVoidAsync("initMsal",
+await js.InvokeVoidAsync(
+    "initMsal",
     "ec2d75da-33ea-45d3-9e84-bd67e831a610",
-    "https://login.microsoftonline.com/85e055dd-d7b9-4a2b-be46-f5bb151440d0");
-
+    "https://login.microsoftonline.com/common"
+);
 // Run the app
 await host.RunAsync();
 

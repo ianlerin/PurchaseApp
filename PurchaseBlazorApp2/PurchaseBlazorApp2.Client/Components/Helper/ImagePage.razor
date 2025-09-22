@@ -1,0 +1,25 @@
+﻿@if (Visible)
+{
+    <div class="modal-backdrop" @onclick="Close">
+        <div class="modal-image-container" @onclick:stopPropagation="true">
+            <!-- Close button -->
+           
+            <img src="@ImageSrc" class="modal-image" />
+            <div class="modal-close-container">
+                <button class="modal-close-btn" @onclick="Close">Close ✕</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string? ImageSrc { get; set; }
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private async Task Close()
+    {
+        Visible = false;
+        await OnClose.InvokeAsync();
+    }
+}

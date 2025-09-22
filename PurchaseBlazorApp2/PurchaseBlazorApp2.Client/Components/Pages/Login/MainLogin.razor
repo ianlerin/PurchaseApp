@@ -1,9 +1,13 @@
 ﻿@page "/login"
+@page "/authentication/login"
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using PurchaseBlazorApp2.Components.Data
 @using PurchaseBlazorApp2.Components.Global
+@inject HttpClient Http
 @inject IJSRuntime JS
 @inject IServiceProvider ServiceProvider
+@inject NavigationManager NavigationManager
 @inject ClientGlobalVar GlobalVar
 @inject AuthenticationStateProvider AuthStateProvider
 
@@ -11,7 +15,7 @@
     <CascadingValue Value="this">
         @if (authState is null)
         {
-            <p>Loading authentication state...</p>
+            <p>⏳ Loading authentication state...</p>
         }
         else if (!authState.User.Identity?.IsAuthenticated ?? true)
         {
@@ -21,9 +25,16 @@
                     🔑 Login
                 </button>
             }
+            else if (remoteAuthServiceAvailable)
+            {
+                <!-- Only render RemoteAuthenticatorView if service is available -->
+                <RemoteAuthenticatorView Action="login" OnLogInSucceeded="HandleLogInSucceeded" />
+            }
             else
             {
-                <RemoteAuthenticatorView Action="login" OnLogInSucceeded="HandleLogInSucceeded" />
+                <p class="text-danger">
+                    ⚠️ Login service is not available. Please check your MSAL configuration.
+                </p>
             }
         }
         else
@@ -36,20 +47,31 @@
 @code {
     private AuthenticationState? authState;
     private bool startLogin = false;
+    private bool remoteAuthServiceAvailable = false;
 
     protected override async Task OnInitializedAsync()
     {
         startLogin = false;
-        authState = await AuthStateProvider.GetAuthenticationStateAsync();
+
+        // Safe check for AuthStateProvider
+        try
+        {
+            authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("console.error", $"Failed to get auth state: {ex.Message}");
+            authState = null;
+        }
+
+        // Check if RemoteAuthenticationService is registered
+        remoteAuthServiceAvailable = ServiceProvider.GetService<IRemoteAuthenticationService<RemoteAuthenticationState>>() != null;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            if (!OperatingSystem.IsBrowser())
-                return;
-
             try
             {
                 authState = await AuthStateProvider.GetAuthenticationStateAsync();
@@ -60,34 +82,100 @@
                 await JS.InvokeVoidAsync("console.error", $"Error fetching auth state: {ex.Message}");
             }
         }
+
+        // Avoid rendering loop, force reload only if not in browser or no auth state
+        if (!OperatingSystem.IsBrowser() || authState == null)
+        {
+            await Task.Delay(1000);
+            NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+        }
     }
 
-    private void StartLogin()
-    {
-        startLogin = true;
-    }
+    private void StartLogin() => startLogin = true;
 
     private async Task HandleLogInSucceeded(RemoteAuthenticationState state)
     {
-        await JS.InvokeVoidAsync("console.log", $"HandleLogInSucceeded");
-        authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        await JS.InvokeVoidAsync("console.log", "HandleLogInSucceeded triggered");
 
-        if (authState.User.Identity?.IsAuthenticated == true)
+        try
         {
-            var tokenProvider = ServiceProvider.GetService<IAccessTokenProvider>();
-
-            if (tokenProvider != null)
+            authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            if(authState==null)
             {
-                var tokenResult = await tokenProvider.RequestAccessToken();
-                if (tokenResult.TryGetToken(out var token))
-                {
-                    await JS.InvokeVoidAsync("console.log", $"✅ Access token acquired: {token.Value.Substring(0, 20)}...");
-                }
+                await JS.InvokeVoidAsync("console.log", "HandleLogInSucceeded no authstate");
+                return;
             }
+            if (authState?.User.Identity?.IsAuthenticated == true)
+            {
+                await JS.InvokeVoidAsync("console.log", "HandleLogInSucceeded has authstate");
+                var tokenProvider = ServiceProvider.GetService<IAccessTokenProvider>();
 
-            GlobalVar.SetUser(new UserName(authState.User.Identity.Name ?? "", ""));
-            await JS.InvokeVoidAsync("console.log", $"👤 Logged in as: {authState.User.Identity.Name}");
-            StateHasChanged();
+                if (tokenProvider != null)
+                {
+                    var tokenResult = await tokenProvider.RequestAccessToken();
+                    if (tokenResult.TryGetToken(out var token))
+                    {
+                        await JS.InvokeVoidAsync("console.log", $"login, ✅ Access token acquired: {token.Value[..20]}...");
+                    }
+                    else
+                    {
+                        await JS.InvokeVoidAsync("console.log", "no token");
+                    }
+                }
+                else
+                {
+                    await JS.InvokeVoidAsync("console.log", "no token provider");
+                }
+
+                var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+                var user = authState.User;
+                EDepartment MyDepartment = EDepartment.NotSpecified;
+                string email = user.FindFirst(c => c.Type == "preferred_username" || c.Type == "email")?.Value;
+                var response = await Http.PostAsJsonAsync(
+       NavigationManager.ToAbsoluteUri("api/login/getrole"), (email));
+                MyDepartment = await response.Content.ReadFromJsonAsync<EDepartment>();
+
+
+                UserName MyUser = new UserName(authState.User.Identity?.Name ?? "", "");
+                MyUser.Role = MyDepartment;
+                if (JS is not null)
+                {
+                    await JS.InvokeVoidAsync("console.log", "setCookie");
+                    string jsonUser = System.Text.Json.JsonSerializer.Serialize(MyUser);
+                    await JS.InvokeVoidAsync("setCookie", "userKey", jsonUser, 1);
+                }
+                await JS.InvokeVoidAsync("console.log", $"👤 Logged in as: {authState.User.Identity?.Name}");
+
+                // ✅ Read returnUrl from query string and navigate there
+                var uri = new Uri(NavigationManager.Uri);
+                var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+                var returnUrl = query["returnUrl"];
+
+                if (!string.IsNullOrEmpty(returnUrl))
+                {
+                    // Ensure it starts with '/' so it's a relative path
+                    if (!returnUrl.StartsWith("/"))
+                        returnUrl = "/" + returnUrl;
+
+                    NavigationManager.NavigateTo(returnUrl, forceLoad: true);
+                }
+                else
+                {
+                    // Fallback if no returnUrl provided
+                    NavigationManager.NavigateTo("/");
+                }
+
+                StateHasChanged();
+            }
+            else
+            {
+
+                await JS.InvokeVoidAsync("console.log", "HandleLogInSucceeded not authenticate");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("console.error", $"Error during HandleLogInSucceeded: {ex.Message}");
         }
     }
 }
