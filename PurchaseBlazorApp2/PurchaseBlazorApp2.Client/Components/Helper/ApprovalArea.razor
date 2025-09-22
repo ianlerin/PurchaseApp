@@ -1,67 +1,90 @@
 ﻿@using PurchaseBlazorApp2.Components.Data
 @using PurchaseBlazorApp2.Components.Global
-
+@inject IJSRuntime JS
 <label class="form-label">Approvals:</label>
-@for (int i = 0; i < Approvals.Count; i++)
+
+@if (Approvals == null || Approvals.Count == 0)
 {
-    var approval = Approvals[i];
-    bool canApprove = approval.CanApprove(MyGlobalVar.UserName.Role);
+    <p class="text-muted">No approvals available.</p>
+}
+else
+{
+    @for (int i = 0; i < Approvals.Count; i++)
+    {
+        var approval = Approvals[i];
 
-    <div class="approval-item d-flex flex-column gap-2 mb-2 p-2 border rounded">
+        // Safe check for MyGlobalVar.UserName.Role
+        bool canApprove = approval.CanApprove(MyDepartment);
+       
 
-        <!-- Approval checkbox -->
-        <div class="d-flex align-items-center justify-content-between">
-            <div class="d-flex align-items-center gap-2">
-                <InputCheckbox Value="approval.IsApproved"
-                ValueChanged="@((bool val) => OnCheckboxChanged(val, approval))"
-                ValueExpression="@(() => approval.IsApproved)"
-                class="form-check-input"
-                disabled="@(!canApprove)" />
-                <div>
-                    <small class="text-muted me-1">Approved by:</small>
-                    <span class="badge bg-light text-dark">
-                        @(!string.IsNullOrEmpty(approval.UserName) ? approval.UserName : "-")
-                    </span>
+        <div class="approval-item d-flex flex-column gap-2 mb-2 p-2 border rounded">
+
+            <!-- Approval checkbox -->
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <InputCheckbox Value="approval.IsApproved"
+                    ValueChanged="@((bool val) => OnCheckboxChanged(val, approval))"
+                    ValueExpression="@(() => approval.IsApproved)"
+                    class="form-check-input"
+                    disabled="@(!canApprove)" />
+                    <div>
+                        <small class="text-muted me-1">Approved by:</small>
+                        <span class="badge bg-light text-dark">
+                            @(!string.IsNullOrEmpty(approval.UserName) ? approval.UserName : "-")
+                        </span>
+                    </div>
                 </div>
+
+                <!-- Delete button -->
+                <button type="button"
+                class="btn btn-danger btn-lg rounded-circle d-flex align-items-center justify-content-center"
+                style="width: 60px; height: 60px;"
+                disabled="@(!bIsEditable)"
+                @onclick="() => DeleteApproval(approval)">
+                    ✖
+                </button>
             </div>
 
-            <!-- Delete button -->
-            <button type="button" class="btn btn-sm btn-outline-danger" disabled="@(!bIsEditable)"
-            @onclick="() => DeleteApproval(approval)">
-                <i class="bi bi-trash"></i>
-            </button>
-        </div>
+            <!-- Departments section -->
+            <div>
+                <small class="text-muted">Departments:</small>
 
-        <!-- Departments section -->
-        <div>
-            <small class="text-muted">Departments:</small>
-
-            @if (AllowMultipleDepartments)
-            {
-                <!-- Multi-select version -->
-                <MultiSelectEnumDropDown TEnum="EDepartment"
-                Value="@approval.Departments"
-                ValueChanged="@((List<EDepartment> list) => OnDepartmentsChanged(approval, list))" />
-            }
-            else
-            {
-                <!-- Single select version -->
-                <InputSelect @bind-Value="approval.Departments[0]" disabled="@(!bIsEditable)">
-                    @foreach (var dept in Enum.GetValues<EDepartment>())
+                @if (AllowMultipleDepartments)
+                {
+                    <!-- Multi-select version -->
+                    <MultiSelectEnumDropDown TEnum="EDepartment"
+                    Value="@approval.Departments"
+                    ValueChanged="@((List<EDepartment> list) => OnDepartmentsChanged(approval, list))" />
+                }
+                else
+                {
+                    <!-- Single select version -->
+                    @if (approval.Departments != null && approval.Departments.Count > 0)
                     {
-                        <option value="@dept">@dept</option>
+                        <InputSelect @bind-Value="approval.Departments[0]" disabled="@(!bIsEditable)">
+                            @foreach (var dept in Enum.GetValues<EDepartment>())
+                            {
+                                <option value="@dept">@dept</option>
+                            }
+                        </InputSelect>
                     }
-                </InputSelect>
-                
-            }
+                    else
+                    {
+                        <span class="text-muted">No department selected</span>
+                    }
+                }
+            </div>
         </div>
-    </div>
+    }
 }
 
 <!-- Button to add a new approval row -->
-<button class="btn btn-sm btn-outline-primary mt-2" @onclick="AddApproval" disabled="@(!bIsEditable)">
+<button class="btn btn-sm btn-outline-primary mt-2"
+@onclick="AddApproval"
+disabled="@(!bIsEditable)">
     <i class="bi bi-plus-lg"></i> Add Approval
 </button>
+
 
 @code {
     [Parameter] public List<ApprovalInfo> Approvals { get; set; } = new();
@@ -69,6 +92,37 @@
     [Parameter] public EventCallback<(bool NewValue, ApprovalInfo Approval)> OnApprovalChanged { get; set; }
     [Parameter] public bool bIsEditable { get; set; } = true;
     [Parameter] public bool AllowMultipleDepartments { get; set; } = true;
+    EDepartment MyDepartment;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        MyDepartment = await GetCurrentDepartmentRole();
+    }
+
+
+
+    private async Task<EDepartment> GetCurrentDepartmentRole()
+    {
+        EDepartment role = EDepartment.NotSpecified;
+        var json = await JS.InvokeAsync<string>("getCookie", "userKey");
+        if (!string.IsNullOrWhiteSpace(json))
+        {
+            try
+            {
+                UserName restoredUser = System.Text.Json.JsonSerializer.Deserialize<UserName>(json);
+                if (restoredUser != null)
+                {
+                    role = restoredUser.Role;
+                }
+            }
+            catch (Exception Ex)
+            {
+
+            }
+        }
+        return role;
+    }
 
     private async Task OnCheckboxChanged(bool newValue, ApprovalInfo approval)
     {
@@ -84,13 +138,15 @@
         approval.Departments = newList;
     }
 
-    private void AddApproval()
+    private async void AddApproval()
     {
         Approvals.Add(new ApprovalInfo());
+        await OnApprovalChanged.InvokeAsync((false, null));
     }
 
-    private void DeleteApproval(ApprovalInfo approval)
+    private async  void DeleteApproval(ApprovalInfo approval)
     {
         Approvals.Remove(approval);
+        await OnApprovalChanged.InvokeAsync((false, null));
     }
 }

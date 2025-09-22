@@ -6,7 +6,7 @@
 
 <RadzenUpload ChooseText="Upload Picture"
               Multiple="true"
-              Accept="image/*"
+              Accept="image/*,application/pdf"
               Change="OnUploadChange"
               Style="margin-bottom: 10px;" />
 
@@ -25,9 +25,28 @@
 
             <div class="border p-2 position-relative"
                  style="width:@ImageWidthPx; background-color:@(isSelected ? "#e6f2ff" : "transparent");">
-                <img src="@GetImageSrc(image)"
-                     class="img-thumbnail"
-                     style="width: 100%; height: auto; max-height:@ImageHeightPx;" />
+
+                @if (image.DataFormat.StartsWith("image/"))
+                {
+                    <!-- Show as Image -->
+                    <img src="@GetImageSrc(image)"
+                         class="img-thumbnail"
+                         style="width: 100%; height: auto; max-height:@ImageHeightPx; cursor:pointer;"
+                         @onclick="@(() => ShowZoom(image))" />
+                }
+                else if (image.DataFormat == "application/pdf")
+                {
+                    <!-- Show as PDF Preview -->
+                    <iframe src="@GetImageSrc(image)"
+                            style="width: 100%; height:@ImageHeightPx; border:none; cursor:pointer;"
+                            title="PDF Preview"
+                            @onclick="@(() => OpenPdf(image))">
+                    </iframe>
+                }
+                else
+                {
+                    <p class="text-muted text-center">Unsupported file type</p>
+                }
 
                 @if (SelectionType != ESelectionType.None)
                 {
@@ -49,6 +68,9 @@ else
 {
     <p>No images uploaded yet.</p>
 }
+
+
+<ImagePage ImageSrc="@ZoomedImageSrc" Visible="@IsZoomVisible" OnClose="@HideZoom" />
 
 @code {
     public enum ESelectionType
@@ -77,6 +99,9 @@ else
 
     [Parameter] public int ImageWidth { get; set; } = 150;
     [Parameter] public int ImageHeight { get; set; } = 150;
+
+    private string? ZoomedImageSrc;
+    private bool IsZoomVisible;
 
     private string ImageWidthPx => $"{ImageWidth}px";
     private string ImageHeightPx => $"{ImageHeight}px";
@@ -144,6 +169,18 @@ else
         SelectedIndexChanged.InvokeAsync(SelectedIndex);
     }
 
+    private void ShowZoom(ImageUploadInfo image)
+    {
+        ZoomedImageSrc = GetImageSrc(image);
+        IsZoomVisible = true;
+    }
+
+    private void HideZoom()
+    {
+        ZoomedImageSrc = null;
+        IsZoomVisible = false;
+    }
+
     private async void SelectImage(Guid id)
     {
         var index = UploadedImages.FindIndex(img => img.Id == id);
@@ -174,5 +211,11 @@ else
     {
         var base64 = Convert.ToBase64String(uploadInfo.Data);
         return $"data:{uploadInfo.DataFormat};base64,{base64}";
+    }
+
+    private async void OpenPdf(ImageUploadInfo image)
+    {
+        var src = GetImageSrc(image);
+        await JS.InvokeVoidAsync("open", src, "_blank"); // Opens PDF in new tab
     }
 }

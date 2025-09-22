@@ -1,5 +1,10 @@
 ﻿using Npgsql;
 using PurchaseBlazorApp2.Components.Data;
+using PurchaseBlazorApp2.Components.Global;
+using ServiceStack;
+using System.Data;
+
+
 
 namespace PurchaseBlazorApp2.Components.Repository
 {
@@ -124,6 +129,8 @@ namespace PurchaseBlazorApp2.Components.Repository
             }
             return ToReturn;
         }
+
+
 
         private void InsertInfoOfBasicInfo<T>(T MainInfo, NpgsqlDataReader reader)
         {

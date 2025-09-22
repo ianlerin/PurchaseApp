@@ -1,0 +1,96 @@
+﻿@page "/main"
+@page "/"
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using PurchaseBlazorApp2.Components.Global
+@inject IAccessTokenProvider TokenProvider
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ClientGlobalVar GlobalVar
+@inject IJSRuntime JS
+<AuthorizeView>
+    <Authorized>
+        @if (isLoading)
+        {
+            <p>Loading user data...</p>
+        }
+        else
+        {
+            <div class="p-4 border rounded">
+                <p><b>Email:</b> @email</p>
+                <p><b>Name:</b> @name</p>
+                <p><b>Role:</b> @role</p>
+            </div>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <p>You are not logged in.</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private bool isLoading = true;
+    private bool hasLoaded = false;
+
+    private string? email;
+    private string? name;
+    private string? role;
+    private string? team;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || hasLoaded) return; // Run only once
+        hasLoaded = true;
+
+        isLoading = true;
+
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            if (user.Identity?.IsAuthenticated ?? false)
+            {
+                email = user.FindFirst(c => c.Type == "preferred_username" || c.Type == "email")?.Value;
+                name = user.FindFirst(c => c.Type == "name")?.Value;
+                //role = string.Join(", ", user.FindAll("roles").Select(c => c.Value));
+                var json = await JS.InvokeAsync<string>("getCookie", "userKey");
+                if (!string.IsNullOrWhiteSpace(json))
+                {
+                    try
+                    {
+                        UserName restoredUser = System.Text.Json.JsonSerializer.Deserialize<UserName>(json);
+                        if(restoredUser!=null)
+                        {
+                            role = restoredUser.Role.ToString();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"❌ Failed to deserialize cookie: {ex.Message}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("⚠️ No userKey cookie found.");
+                }
+
+
+                if (OperatingSystem.IsBrowser())
+                {
+                    var tokenResult = await TokenProvider.RequestAccessToken();
+                    if (tokenResult.TryGetToken(out var token))
+                    {
+                        var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+                        var jwt = handler.ReadJwtToken(token.Value);
+                        team ??= jwt.Claims.FirstOrDefault(c => c.Type == "team")?.Value;
+                    }
+                }
+            }
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+}

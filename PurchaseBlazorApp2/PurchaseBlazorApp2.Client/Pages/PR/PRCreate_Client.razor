@@ -1,14 +1,18 @@
 ﻿@page "/purchaserequisitionrecords_client/create"
+
 @page "/purchaserequisitionrecords_client/create/{RequisitionNumber}"
-@page "/"
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
 @using PurchaseBlazorApp2.Components.Data
 @using PurchaseBlazorApp2.Components.Global
 @using Radzen
 @using Radzen.Blazor
 @inject ClientGlobalVar GlobalVar
+@inject AuthenticationStateProvider AuthStateProvider
 @inject HttpClient Http
 @inject ClientStateStorage StateStorage
 @inject NavigationManager NavigationManager
+@inject IAccessTokenProvider TokenProvider
 @rendermode InteractiveAuto
 
 <PageTitle>Create</PageTitle>
@@ -28,7 +32,8 @@
                     @if (!string.IsNullOrEmpty(PurchaseRequisitionRecord.RequisitionNumber))
                     {
                         <label for="ID" class="form-label">ID:</label>
-                        <InputText id="ID" @bind-Value="PurchaseRequisitionRecord.RequisitionNumber" class="form-control" />
+                        <InputText id="ID" @bind-Value="PurchaseRequisitionRecord.RequisitionNumber"
+                        class="form-control" readonly />
                     }
                 </div>
             </div>
@@ -59,7 +64,10 @@
                         <div class="row g-3 mb-2">
                             <div class="col-md-6">
                                 <label class="form-label">Item</label>
-                                <InputText @bind-Value="item.RequestItem" class="form-control" />
+                                <textarea class="form-control"
+                                @bind="item.RequestItem"
+                                @ref="requestItemRef"
+                                @oninput="ResizeTextArea"></textarea>
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Unit Price</label>
@@ -91,8 +99,8 @@
                 <div class="col-md-4">
                     <label for="department" class="form-label">Department:</label>
                     <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox 
-                        @bind-Value="PurchaseRequisitionRecord.Department" 
-                        TEnum="PurchaseBlazorApp2.Components.Data.EDepartment">
+                    @bind-Value="PurchaseRequisitionRecord.Department" 
+                    TEnum="PurchaseBlazorApp2.Components.Data.EDepartment">
                     </PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox>
                     <ValidationMessage For="() => PurchaseRequisitionRecord.Department" class="text-danger" />
                 </div>               
@@ -110,29 +118,51 @@
             <!-- Approvals -->
             <div class="mb-3">
                 <PurchaseBlazorApp2.Client.Components.Helper.ApprovalArea 
-                    Approvals="PurchaseRequisitionRecord.Approvals" 
-                    MyGlobalVar="GlobalVar" OnApprovalChanged="OnCheckboxChanged">
+                Approvals="PurchaseRequisitionRecord.Approvals"
+                bIsEditable="bIsProcurementManager"
+                MyGlobalVar="GlobalVar" OnApprovalChanged="OnCheckboxChanged">
+
                 </PurchaseBlazorApp2.Client.Components.Helper.ApprovalArea>
             </div>
 
 
             <PurchaseBlazorApp2.Client.Components.Helper.UploadImageHelper UploadedImages="PurchaseRequisitionRecord.SupportDocuments"></PurchaseBlazorApp2.Client.Components.Helper.UploadImageHelper>
-            <button type="submit" class="btn btn-primary" @onclick="AddPurchaseRequisitionRecord">Create</button>
+            <div class="d-flex flex-wrap gap-3 align-items-center my-3">
+                <button type="submit" class="btn btn-primary btn-lg" @onclick="AddPurchaseRequisitionRecord">
+                    @(IsSubmitted() ? "Edit" : "Create")
+                </button>
+
+                @if (IsSubmitted())
+                {
+                    <button type="submit" class="btn btn-success btn-lg" @onclick="SendEmail">
+                        Send Email
+                    </button>
+                    <span class="status-message fs-5">@EmailSendStatus</span>
+                    <button @onclick="OnQuotation" class="btn btn-secondary btn-lg">
+                        Quotation
+                    </button>
+                }
+
+                @if (bCanOpenPO)
+                {
+                    @if (bIsProcurementManager)
+                    {
+                        <button @onclick="OnPrintPDF" class="btn btn-primary btn-lg">
+                            View PO
+                        </button>
+                    }
+
+                }
+
+               
+            </div>
+
         </EditForm>
 
 
     </div>
 </div>
 
-@if (bCanOpenPO)
-{
-    <div>
-        <button @onclick="OnPrintPDF" class="btn btn-primary">ViewPO</button>
-    </div>
-    <div>
-        <button @onclick="OnQuotation" class="btn btn-primary">Quotation</button>
-    </div>
-}
 
 @code {
     private Guid inputFileKey = Guid.NewGuid();
@@ -144,14 +174,210 @@
 
     private bool bCanOpenPO;
 
+    private string EmailSendStatus;
 
+    private bool bIsProcurementManager;
+
+    private bool _resizedOnFirstRender = false;
+
+    private ElementReference requestItemRef;
+
+    // for scalable text area
+    private async Task ResizeTextArea(ChangeEventArgs e)
+    {
+        await JS.InvokeVoidAsync("autoResizeTextArea", requestItemRef);
+    }
+
+    private async Task SendEmail()
+    {
+        // Request token with Mail.Send scope
+        var tokenResult = await TokenProvider.RequestAccessToken(
+            new AccessTokenRequestOptions
+                {
+                    Scopes = new[] { "Mail.Send" }
+                });
+
+        if (!tokenResult.TryGetToken(out var token))
+        {
+            Console.WriteLine("❌ Failed to acquire token");
+            return;
+        }
+
+        // Attach token to HttpClient
+        Http.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token.Value);
+
+        // Encode return URL
+        var encodedReturnUrl = Uri.EscapeDataString(
+            $"purchaserequisitionrecords_client/create/{PurchaseRequisitionRecord.RequisitionNumber}");
+
+        // Build full requisition URL
+        var requisitionUrl = $"{NavigationManager.BaseUri}authentication/login?returnUrl={encodedReturnUrl}";
+
+
+
+        var MainEmailList = await GetAllNeededForMainEmails();
+        var CCList = await GetAllNeededForCCEmails();
+
+        // if main exist, send to main cc other
+        // if main no exist, send to cc instead
+        var toRecipients = MainEmailList?.Any() == true ? MainEmailList : CCList;
+        var ccRecipients = MainEmailList?.Any() == true ? CCList : Array.Empty<object>();
+
+        var emailPayload = new
+        {
+            message = new
+            {
+                subject = $"Approval Needed: Purchase Requisition #{PurchaseRequisitionRecord.RequisitionNumber}",
+                body = new
+                {
+                    contentType = "HTML",
+                    content = $@"
+            <html>
+                <body style='font-family:Segoe UI, Arial, sans-serif; color:#333; font-size:14px;'>
+                    <p>Hello,</p>
+                    <p>A new purchase requisition (<strong>{PurchaseRequisitionRecord.RequisitionNumber}</strong>) requires your review and approval.</p>
+                    <p style='margin:20px 0;'>
+                        <a href='{requisitionUrl}'
+                           style='background-color:#007bff; color:#ffffff; padding:10px 20px;
+                                  text-decoration:none; border-radius:5px; display:inline-block;'>
+                            Approve Requisition
+                        </a>
+                    </p>
+                    <p>If the button above doesn't work, you can copy and paste this link into your browser:</p>
+                    <p><a href='{requisitionUrl}'>{requisitionUrl}</a></p>
+                    <p>Thank you,<br/>Procurement Team</p>
+                </body>
+            </html>"
+                },
+                toRecipients = toRecipients,
+                ccRecipients = ccRecipients
+            },
+            saveToSentItems = "true"
+        };
+
+        // Make the HTTP call directly from client
+        var response = await Http.PostAsJsonAsync("https://graph.microsoft.com/v1.0/me/sendMail", emailPayload);
+
+        if (response.IsSuccessStatusCode)
+        {
+            EmailSendStatus = "Email sent success";
+            Console.WriteLine("✅ Email sent successfully!");
+        }
+        else
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"❌ Failed to send email: {response.StatusCode} - {error}");
+        }
+    }
+
+
+    private async Task<object[]> GetAllNeededForMainEmails()
+    {
+        var MainEmailList = await GetAllNeededForApprovalEmails();
+        var Recipients = MainEmailList?
+           .Select(email => new
+           {
+               emailAddress = new { address = email }
+           })
+           .ToArray();
+        return Recipients;
+    }
+
+
+    private async Task<object[]> GetAllNeededForCCEmails()
+    {
+        var FindEmailResponse = await Http.PostAsJsonAsync(
+        NavigationManager.ToAbsoluteUri("api/login/getrolemail"),
+          new List<EDepartment> { EDepartment.ProcurementManager });
+
+        List<string> emailList = new List<string>();
+
+        if (FindEmailResponse.IsSuccessStatusCode)
+        {
+            emailList = await FindEmailResponse.Content.ReadFromJsonAsync<List<string>>();
+
+
+        }
+        var ccRecipients = emailList?
+           .Select(email => new
+           {
+               emailAddress = new { address = email }
+           })
+           .ToArray();
+        return ccRecipients;
+    }
+
+
+    private async Task<List<string>> GetAllNeededForApprovalEmails()
+    {
+        List<string> Email = new List<string>();
+        if (PurchaseRequisitionRecord==null)
+        {
+            return Email;
+        }
+        HashSet<EDepartment> Departments=PurchaseRequisitionRecord.GetSelectedDepartments();
+        var FindEmailResponse = await Http.PostAsJsonAsync(
+    NavigationManager.ToAbsoluteUri("api/login/getrolemail"),
+      Departments.ToList());
+        List<string> emailList = new List<string>();
+
+        if (FindEmailResponse.IsSuccessStatusCode)
+        {
+            emailList = await FindEmailResponse.Content.ReadFromJsonAsync<List<string>>();
+
+
+        }
+        return emailList;
+    }
+
+    private async Task<EDepartment> GetCurrentDepartmentRole()
+    {
+        EDepartment role = EDepartment.NotSpecified;
+        var json = await JS.InvokeAsync<string>("getCookie", "userKey");
+        if (!string.IsNullOrWhiteSpace(json))
+        {
+            try
+            {
+                UserName restoredUser = System.Text.Json.JsonSerializer.Deserialize<UserName>(json);
+                if (restoredUser != null)
+                {
+                    role = restoredUser.Role;
+                }
+            }
+            catch(Exception Ex)
+            {
+
+            }
+        }
+        return role;
+    }
 
     private async Task AddPurchaseRequisitionRecord()
     {
-
+        PurchaseRequisitionRecord.OnApprovalChanged();
         await JS.InvokeVoidAsync("alert", "AddPurchaseRequisitionRecord!");
-        PurchaseRequisitionRecord.Requestor = GlobalVar?.UserName.Name ?? "";
-        Console.WriteLine(NavigationManager.ToAbsoluteUri("api/pr/submit"));
+        if (PurchaseRequisitionRecord==null)
+        {
+
+            await JS.InvokeVoidAsync("alert", "null PurchaseRequisitionRecord!");
+        }
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated ?? false)
+        {
+            string name = user.FindFirst(c => c.Type == "name")?.Value;
+
+            PurchaseRequisitionRecord.Requestor = name;
+        }
+
+        foreach(var Approval in PurchaseRequisitionRecord.Approvals)
+        {
+            await JS.InvokeVoidAsync("console.log", Approval.IsApproved);
+        }
+
+
         var response = await Http.PostAsJsonAsync(
             NavigationManager.ToAbsoluteUri("api/pr/submit"),
             new List<PurchaseRequisitionRecord> { PurchaseRequisitionRecord });
@@ -168,11 +394,32 @@
             await JS.InvokeVoidAsync("alert", message);
         }
 
+        StateHasChanged();
     }
 
+    private bool IsSubmitted()
+    {
+        if (!string.IsNullOrEmpty(RequisitionNumber))
+        {
+            return true;
+        }
+        return false;
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!string.IsNullOrEmpty(requestItemRef.Id) && !_resizedOnFirstRender)
+        {
+            _resizedOnFirstRender=true;
+            await JS.InvokeVoidAsync("autoResizeTextArea", requestItemRef);
+        }
+    }
     protected override async Task OnInitializedAsync()
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+     
+        EDepartment MyDepartment = await GetCurrentDepartmentRole();
+        bIsProcurementManager = (MyDepartment == EDepartment.ProcurementManager);
+
 
         if (!string.IsNullOrEmpty(RequisitionNumber))
         {
@@ -199,14 +446,21 @@
                     catch (Exception ex)
                     {
                         Console.WriteLine($"Error deserializing response: {ex.Message}");
-                      
+
                     }
                 }
             }
         }
+        // if new create
+        else
+        {
+            PurchaseRequisitionRecord.Department = MyDepartment;
+        }
+        bCanOpenPO = (PurchaseRequisitionRecord.prstatus == EPRStatus.Close);
         stopwatch.Stop();
         Console.WriteLine($"OnInitializedAsync took {stopwatch.ElapsedMilliseconds} ms");
-        bCanOpenPO = (PurchaseRequisitionRecord.prstatus == EPRStatus.Close);
+       
+       
     }
 
     private Task OnInputChange(ChangeEventArgs args, ApprovalInfo approval)

@@ -30,7 +30,20 @@ namespace PurchaseBlazorApp2.Controller
             return Ok(bSuccess);
         }
 
+        [HttpPost("getrole")]
+        public async Task<ActionResult<EDepartment>> GetRole([FromBody] string  username)
+        {
+            EDepartment Department = await CredentialRepository.TryGetRole(username);
+            return Ok(Department);
+        }
 
+
+        [HttpPost("getrolemail")]
+        public async Task<ActionResult<List<string>>> TryGetAllProcurementEmail([FromBody] List<EDepartment> Departments)
+        {
+            List<string> Emails = await CredentialRepository.TryGetAllProcurementEmail(Departments);
+            return Ok(Emails);
+        }
 
     }
 }

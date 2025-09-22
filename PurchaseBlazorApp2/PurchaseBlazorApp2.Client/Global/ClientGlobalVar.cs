@@ -1,4 +1,5 @@
-﻿using PurchaseBlazorApp2.Components.Data;
+﻿using Azure.Core;
+using PurchaseBlazorApp2.Components.Data;
 using System.Collections.Generic;
 using System.Text.Json;
 
@@ -31,6 +32,11 @@ namespace PurchaseBlazorApp2.Components.Global
         public event Action? OnLoginStateChanged;
         public UserName UserName { get; set; }
         public bool IsLoggedIn { get; set; } = false;
+        public Microsoft.AspNetCore.Components.WebAssembly.Authentication.AccessToken AccessToken { get; set; }
+        public void SetToken(Microsoft.AspNetCore.Components.WebAssembly.Authentication.AccessToken _Token)
+        {
+            AccessToken = _Token;
+        }
         public void SetUser(UserName ToSet)
         {
             if (UserName == null|| ToSet.Name!= UserName.Name)
