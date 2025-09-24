@@ -31,13 +31,29 @@ namespace PurchaseBlazorApp2.Components.Data
 
     public enum EPRStatus
     {
-        Open,
-        Close
+        PendingRequest,
+        ApprovedRequests,
+        PendingDelivery,
+        ItemsReceived
+    }
+
+    public enum EApprovalStatus
+    {
+       PreApproval,
+       PendingApproval,
+       Approved,
+       Rejected
+    }
+
+    public enum ESingleApprovalStatus
+    {
+        PendingAction,
+        Rejected,
+        Approved
     }
 
 
-
-        public class POSubmitResponse
+    public class POSubmitResponse
     {
         public bool bSuccess { get; set; }
         public List<string> IDs { get; set; } = new List<string>();
@@ -47,8 +63,9 @@ namespace PurchaseBlazorApp2.Components.Data
     {
         public List<EDepartment> Departments { get; set; } = new List<EDepartment>();
         public string UserName { get; set; } = "";
-        private bool _IsApproved;
-        public bool IsApproved { get { return _IsApproved; } set { _IsApproved = value;
+        private ESingleApprovalStatus _ApproveStatus;
+        public ESingleApprovalStatus ApproveStatus { get { return _ApproveStatus; } set {
+                _ApproveStatus = value;
             } }
         public bool CanApprove(EDepartment UserDepartment)
         {
@@ -94,28 +111,53 @@ namespace PurchaseBlazorApp2.Components.Data
         [Key]
         public string? PO_ID { get; set; }
         public string PR_ID { get; set; }
-        public string Purpose { get; set; }
-        public decimal taxrate { get; set; } = 6;
-        public DateTime Date { get; set; }=DateTime.Now;
-        public List<ApprovalInfo> ApprovalInfo { get; set; }= new List<ApprovalInfo> { };
-        public EPRStatus PoStatus { get; set; }
-        public void OnApprovalChanged()
+        public string CreatedBy { get; set; }
+
+        //company info
+        public string mycompanyname { get; set; }
+        public string myaddress { get; set; }
+        public string myemail { get; set; }
+        public string tel { get; set; }
+
+
+
+        // supplier related info
+
+        public string? suppliercompanyname { get; set; }
+        public string? suppliercontactperson { get; set; }
+        public string? suppliercontact { get; set; }
+        public string? supplieremail { get; set; }
+
+        //ship to detail
+        public string? shiptocompanyname { get; set; }
+        public string? warehouseaddress { get; set; }
+        public string? receivingperson { get; set; }
+        public string? shippingcontact { get; set; }
+        public DateTime orderdate { get; set; } = DateTime.Now;
+
+        //additional info
+        public string? remark { get; set; }
+
+        public decimal SubTotal { get; set; }
+        public decimal Tax { get; set; }
+
+        public decimal GetTotal()
         {
-            foreach (var item in ApprovalInfo)
-            {
-                if (!item.IsApproved)
-                {
-                    PoStatus = EPRStatus.Open;
-                    return;
-                }
-            }
-            PoStatus = EPRStatus.Close;
+            return SubTotal + SubTotal * Tax;
         }
+
+        //delivery info
+
+        public DateTime DeliveryDate { get; set; } = DateTime.Now;
+        public string? DeliveryMethod { get; set; }
+        public string? PaymentMethod { get; set; }
+
         public PurchaseOrderRecord()
         {
-            ApprovalInfo POApprovalInfo = new ApprovalInfo();
-            POApprovalInfo.Departments.Add(EDepartment.ProcurementManager);
-            ApprovalInfo.Add(POApprovalInfo);
+          mycompanyname = "LCDA MSB PINEAPPLE SDN BHD 202201032786 (1478483-W)";
+          myaddress = "166, Kampung Kovil, Lot 931 Mk17, 14000 Bukit Mertajam, Penang, Malaysia";
+          myemail = "lcdamsbpineapple@gmail.com, nitsei1@hotmail.com";
+          tel = "604-5308419/ 5370081";
         }
     }
 
@@ -127,33 +169,84 @@ namespace PurchaseBlazorApp2.Components.Data
         public string Requestor { get; set; }
 
         public string Purpose { get; set; }
+        public string? po_id { get; set; } = "";
+
+        private bool _burgent = false;
+        public bool burgent { get { return _burgent; } set { _burgent = value; } }
+        public EDepartment Department { get; set; }
 
         private List<RequestItemInfo> _ItemRequested = new List<RequestItemInfo>();
         public List<RequestItemInfo> ItemRequested { get { return _ItemRequested; } set { _ItemRequested = value; } }
 
         public EPRStatus prstatus { get; set; }
+        public EApprovalStatus approvalstatus { get; set; }
         public List<PurchaseBlazorApp2.Components.Data.ImageUploadInfo> SupportDocuments { get; set; }= new List<ImageUploadInfo>(); 
-        public EDepartment Department { get; set; }
-
+    
         private ETask _TaskType;
         public ETask TaskType { get { return _TaskType; } set { _TaskType = value; OnTaskTypeChanged(); } }
 
 
+
         private List<ApprovalInfo> _Approvals = new List<ApprovalInfo>();
-        public List<ApprovalInfo> Approvals { get { return _Approvals; } set { _Approvals = value; } } 
+        public List<ApprovalInfo> Approvals { get { return _Approvals; } set { _Approvals = value; } }
 
 
         public void OnApprovalChanged()
         {
-            foreach(var item in _Approvals)
+            if (_Approvals == null || _Approvals.Count == 0)
             {
-                if(!item.IsApproved)
+                approvalstatus = EApprovalStatus.PreApproval;
+                return;
+            }
+
+            // At least one approval exists → default to PendingApproval
+            approvalstatus = EApprovalStatus.PendingApproval;
+
+            bool allApproved = true;
+
+            foreach (var item in _Approvals)
+            {
+                if (item.ApproveStatus == ESingleApprovalStatus.Rejected)
                 {
-                    prstatus = EPRStatus.Open;
-                    return;
+                    approvalstatus = EApprovalStatus.Rejected;
+                    return; // rejected overrides everything
+                }
+
+                if (item.ApproveStatus != ESingleApprovalStatus.Approved)
+                {
+                    allApproved = false; // found something not approved yet
                 }
             }
-            prstatus = EPRStatus.Close;
+
+            if (allApproved)
+            {
+                approvalstatus = EApprovalStatus.Approved;
+            }
+        }
+
+        public void OnUpdatePRStatus()
+        {
+            prstatus = EPRStatus.ApprovedRequests;
+            if (Approvals.Count > 0)
+            {
+                foreach (var item in _Approvals)
+                {
+                    if (item.ApproveStatus != ESingleApprovalStatus.Approved)
+                    {
+                        prstatus = EPRStatus.PendingRequest;
+                        return;
+                    }
+                }
+                if (!string.IsNullOrEmpty(po_id))
+                {
+                    prstatus = EPRStatus.PendingDelivery;
+                }
+            }
+            else
+            {
+                prstatus = EPRStatus.PendingRequest;
+            }
+
         }
 
         public PurchaseRequisitionRecord()
@@ -161,7 +254,7 @@ namespace PurchaseBlazorApp2.Components.Data
             //OnApprovalChanged();
         }
 
-        private decimal CalculateTotal()
+        public decimal CalculateTotal()
         {
             decimal Count = 0;
             foreach (RequestItemInfo Info in ItemRequested)

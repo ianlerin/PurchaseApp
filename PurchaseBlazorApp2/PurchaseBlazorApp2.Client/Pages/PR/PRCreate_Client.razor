@@ -27,7 +27,7 @@
             <DataAnnotationsValidator />
             <ValidationSummary class="text-danger" role="alert" />
 
-            <div class ="row mb-4">
+            <div class="row mb-4">
                 <div class="col-md-4">
                     @if (!string.IsNullOrEmpty(PurchaseRequisitionRecord.RequisitionNumber))
                     {
@@ -41,14 +41,20 @@
             <div class="row mb-3">
                 <div class="col-md-4">
                     <label for="requestdate" class="form-label">Request Date:</label>
-                    <InputDate id="requestdate" @bind-Value="PurchaseRequisitionRecord.RequestDate" class="form-control" />
+                    <InputDate id="requestdate"
+                    @bind-Value="PurchaseRequisitionRecord.RequestDate"
+                    class="form-control"
+                    disabled="@(!bNewRequisition)" />
                     <ValidationMessage For="() => PurchaseRequisitionRecord.RequestDate" class="text-danger" />
-                </div>            
+                </div>
             </div>
 
             <div class="mb-3">
                 <label for="purpose" class="form-label">Purpose:</label>
-                <InputText id="purpose" @bind-Value="PurchaseRequisitionRecord.Purpose" class="form-control" />
+                <InputText id="purpose"
+                @bind-Value="PurchaseRequisitionRecord.Purpose"
+                class="form-control"
+                disabled="@(!bNewRequisition)" />
                 <ValidationMessage For="() => PurchaseRequisitionRecord.Purpose" class="text-danger" />
             </div>
 
@@ -67,77 +73,107 @@
                                 <textarea class="form-control"
                                 @bind="item.RequestItem"
                                 @ref="requestItemRef"
-                                @oninput="ResizeTextArea"></textarea>
+                                @oninput="ResizeTextArea"
+                                disabled="@(!bNewRequisition)"></textarea>
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Unit Price</label>
-                                <InputNumber @bind-Value="item.UnitPrice" class="form-control" />
+                                <InputNumber @bind-Value="item.UnitPrice"
+                                class="form-control"
+                                disabled="@(!bNewRequisition)" />
                                 <ValidationMessage For="@(() => item.UnitPrice)" class="text-danger" />
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Quantity</label>
-                                <InputNumber @bind-Value="item.Quantity" class="form-control" />
+                                <InputNumber @bind-Value="item.Quantity"
+                                class="form-control"
+                                disabled="@(!bNewRequisition)" />
                                 <ValidationMessage For="@(() => item.Quantity)" class="text-danger" />
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Total Price</label>
-                                <InputNumber @bind-Value="item.TotalPrice" class="form-control" />
+                                <InputNumber @bind-Value="item.TotalPrice"
+                                class="form-control"
+                                disabled="@(!bNewRequisition)" />
                                 <ValidationMessage For="@(() => item.TotalPrice)" class="text-danger" />
                             </div>
                             <div class="col-md-2 d-flex align-items-end">
-                                <button type="button" class="btn btn-danger w-100" @onclick="() => RemoveItem(index)">Remove</button>
+                                <button type="button" class="btn btn-danger w-100"
+                                @onclick="() => RemoveItem(index)"
+                                disabled="@(!bNewRequisition)">
+                                    Remove
+                                </button>
                             </div>
                         </div>
                     </div>
                 }
 
-                <button type="button" class="btn btn-primary" @onclick="AddItem">Add Item</button>
+                <button type="button"
+                class="btn btn-primary"
+                @onclick="AddItem"
+                disabled="@(!bNewRequisition)">
+                    Add Item
+                </button>
             </div>
 
             <!-- Department -->
             <div class="row mb-3">
                 <div class="col-md-4">
                     <label for="department" class="form-label">Department:</label>
-                    <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox 
-                    @bind-Value="PurchaseRequisitionRecord.Department" 
-                    TEnum="PurchaseBlazorApp2.Components.Data.EDepartment">
+                    <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="PurchaseRequisitionRecord.Department"
+                    TEnum="PurchaseBlazorApp2.Components.Data.EDepartment"
+                    Disabled="@(!bNewRequisition)">
                     </PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox>
                     <ValidationMessage For="() => PurchaseRequisitionRecord.Department" class="text-danger" />
-                </div>               
+                </div>
+            </div>
+
+            <div class="mb-3 form-check">
+                <InputCheckbox id="burgent"
+                @bind-Value="PurchaseRequisitionRecord.burgent"
+                class="form-check-input"
+                disabled="@(!bNewRequisition)" />
+                <label for="burgent" class="form-check-label">Urgent</label>
             </div>
 
             <!-- Task type -->
             <div class="row mb-3">
                 <div class="col-md-4">
                     <label for="tasktype" class="form-label">Task Type:</label>
-                    <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="PurchaseRequisitionRecord.TaskType" TEnum="PurchaseBlazorApp2.Components.Data.ETask"></PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox>
+                    <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="PurchaseRequisitionRecord.TaskType"
+                    TEnum="PurchaseBlazorApp2.Components.Data.ETask"
+                    Disabled="@(!bNewRequisition)">
+                    </PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox>
                     <ValidationMessage For="() => PurchaseRequisitionRecord.TaskType" class="text-danger" />
-                </div>               
+                </div>
             </div>
+            @if (bIsProcurementManager)
+            {
+                <!-- Approvals -->
+                <div class="mb-3">
+                    <PurchaseBlazorApp2.Client.Components.Helper.ApprovalArea Approvals="PurchaseRequisitionRecord.Approvals"
+                    bIsEditable="bIsProcurementManager"
+                    MyGlobalVar="GlobalVar" OnApprovalChanged="OnCheckboxChanged">
+                    </PurchaseBlazorApp2.Client.Components.Helper.ApprovalArea>
+                </div>
 
-            <!-- Approvals -->
-            <div class="mb-3">
-                <PurchaseBlazorApp2.Client.Components.Helper.ApprovalArea 
-                Approvals="PurchaseRequisitionRecord.Approvals"
-                bIsEditable="bIsProcurementManager"
-                MyGlobalVar="GlobalVar" OnApprovalChanged="OnCheckboxChanged">
-
-                </PurchaseBlazorApp2.Client.Components.Helper.ApprovalArea>
-            </div>
+            }
 
 
-            <PurchaseBlazorApp2.Client.Components.Helper.UploadImageHelper UploadedImages="PurchaseRequisitionRecord.SupportDocuments"></PurchaseBlazorApp2.Client.Components.Helper.UploadImageHelper>
+            <PurchaseBlazorApp2.Client.Components.Helper.UploadImageHelper bNewRequisition=bNewRequisition UploadedImages="PurchaseRequisitionRecord.SupportDocuments"></PurchaseBlazorApp2.Client.Components.Helper.UploadImageHelper>
             <div class="d-flex flex-wrap gap-3 align-items-center my-3">
-                <button type="submit" class="btn btn-primary btn-lg" @onclick="AddPurchaseRequisitionRecord">
-                    @(IsSubmitted() ? "Edit" : "Create")
-                </button>
+
+                @if (bIsProcurementManager || bNewRequisition)
+                {
+                    <button type="submit" class="btn btn-primary btn-lg" @onclick="AddPurchaseRequisitionRecord">
+                        @(IsSubmitted() ? "Edit" : "Create")
+                    </button>
+                }
+
 
                 @if (IsSubmitted())
                 {
-                    <button type="submit" class="btn btn-success btn-lg" @onclick="SendEmail">
-                        Send Email
-                    </button>
-                    <span class="status-message fs-5">@EmailSendStatus</span>
+
                     <button @onclick="OnQuotation" class="btn btn-secondary btn-lg">
                         Quotation
                     </button>
@@ -154,7 +190,17 @@
 
                 }
 
-               
+                @if (bIsDepartmentMatchApproval)
+                {
+                    <button @onclick="OnApprove" class="btn btn-primary btn-lg">
+                        Approve
+                    </button>
+                    <button @onclick="OnReject" class="btn btn-primary btn-lg">
+                        Reject
+                    </button>
+                }
+
+
             </div>
 
         </EditForm>
@@ -171,12 +217,14 @@
     [SupplyParameterFromForm]
     private PurchaseRequisitionRecord PurchaseRequisitionRecord { get; set; } = new();
     [Inject] IJSRuntime JS { get; set; }
-
+    private bool bNewRequisition = false;
     private bool bCanOpenPO;
 
     private string EmailSendStatus;
 
     private bool bIsProcurementManager;
+
+    private bool bIsDepartmentMatchApproval;
 
     private bool _resizedOnFirstRender = false;
 
@@ -356,6 +404,9 @@
     private async Task AddPurchaseRequisitionRecord()
     {
         PurchaseRequisitionRecord.OnApprovalChanged();
+
+        PurchaseRequisitionRecord.OnUpdatePRStatus();
+
         await JS.InvokeVoidAsync("alert", "AddPurchaseRequisitionRecord!");
         if (PurchaseRequisitionRecord==null)
         {
@@ -371,12 +422,6 @@
 
             PurchaseRequisitionRecord.Requestor = name;
         }
-
-        foreach(var Approval in PurchaseRequisitionRecord.Approvals)
-        {
-            await JS.InvokeVoidAsync("console.log", Approval.IsApproved);
-        }
-
 
         var response = await Http.PostAsJsonAsync(
             NavigationManager.ToAbsoluteUri("api/pr/submit"),
@@ -416,13 +461,13 @@
     protected override async Task OnInitializedAsync()
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-     
+
         EDepartment MyDepartment = await GetCurrentDepartmentRole();
         bIsProcurementManager = (MyDepartment == EDepartment.ProcurementManager);
 
-
         if (!string.IsNullOrEmpty(RequisitionNumber))
         {
+            bNewRequisition = false;
             var FoundPRRecord = StateStorage.Get<PurchaseRequisitionRecord>("PR");
             if (FoundPRRecord!=null&&FoundPRRecord.RequisitionNumber == RequisitionNumber)
             {
@@ -450,17 +495,59 @@
                     }
                 }
             }
+            if(PurchaseRequisitionRecord!=null)
+            {
+                foreach (var approval in PurchaseRequisitionRecord.Approvals)
+                {
+                    if(approval.Departments.Contains(MyDepartment))
+                    {
+                        bIsDepartmentMatchApproval = true;
+                    }
+                }
+            }
+
         }
         // if new create
         else
         {
+            bNewRequisition = true;
             PurchaseRequisitionRecord.Department = MyDepartment;
         }
-        bCanOpenPO = (PurchaseRequisitionRecord.prstatus == EPRStatus.Close);
+        bCanOpenPO = (PurchaseRequisitionRecord.prstatus == EPRStatus.ApprovedRequests);
         stopwatch.Stop();
         Console.WriteLine($"OnInitializedAsync took {stopwatch.ElapsedMilliseconds} ms");
-       
-       
+
+
+    }
+
+    private async void OnApprove()
+    {
+        EDepartment MyDepartment = await GetCurrentDepartmentRole();
+        foreach (var approval in PurchaseRequisitionRecord.Approvals)
+        {
+            if (approval.Departments.Contains(MyDepartment))
+            {
+                approval.ApproveStatus = ESingleApprovalStatus.Approved;
+            }
+        }
+        PurchaseRequisitionRecord.OnUpdatePRStatus();
+        PurchaseRequisitionRecord.OnApprovalChanged();
+        await AddPurchaseRequisitionRecord();
+    }
+
+    private async void OnReject()
+    {
+        EDepartment MyDepartment = await GetCurrentDepartmentRole();
+        foreach (var approval in PurchaseRequisitionRecord.Approvals)
+        {
+            if (approval.Departments.Contains(MyDepartment))
+            {
+                approval.ApproveStatus = ESingleApprovalStatus.Rejected;
+            }
+        }
+        PurchaseRequisitionRecord.OnUpdatePRStatus();
+        PurchaseRequisitionRecord.OnApprovalChanged();
+        await AddPurchaseRequisitionRecord();
     }
 
     private Task OnInputChange(ChangeEventArgs args, ApprovalInfo approval)

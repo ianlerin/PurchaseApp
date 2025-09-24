@@ -22,11 +22,6 @@ else
             <!-- Approval checkbox -->
             <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center gap-2">
-                    <InputCheckbox Value="approval.IsApproved"
-                    ValueChanged="@((bool val) => OnCheckboxChanged(val, approval))"
-                    ValueExpression="@(() => approval.IsApproved)"
-                    class="form-check-input"
-                    disabled="@(!canApprove)" />
                     <div>
                         <small class="text-muted me-1">Approved by:</small>
                         <span class="badge bg-light text-dark">
@@ -123,16 +118,6 @@ disabled="@(!bIsEditable)">
         }
         return role;
     }
-
-    private async Task OnCheckboxChanged(bool newValue, ApprovalInfo approval)
-    {
-        approval.IsApproved = newValue;
-        approval.UserName = newValue
-            ? MyGlobalVar?.UserName.Name ?? ""
-            : "";
-        await OnApprovalChanged.InvokeAsync((newValue, approval));
-    }
-
     private void OnDepartmentsChanged(ApprovalInfo approval, List<EDepartment> newList)
     {
         approval.Departments = newList;

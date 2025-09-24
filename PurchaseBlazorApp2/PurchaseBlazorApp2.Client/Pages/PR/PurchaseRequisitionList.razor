@@ -6,29 +6,55 @@
 @inject NavigationManager NavigationManager
 
 @rendermode InteractiveAuto
-<h3>PurchaseRequisitionList</h3>
+<h3>Purchase Requisition List</h3>
 
 <div class="container mt-4 mb-4">
     <div class="row">
         <div class="col-md-12">
             <RadzenDataGrid Data="@Records" TItem="PurchaseRequisitionRecord" AllowSorting="true"
-            Class="shadow-sm border rounded p-3">
+                            Class="shadow-sm border rounded p-3">
                 <Columns>
-                    <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Property="RequisitionNumber" Title="Requisition " />
-                    <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Property="Requestor" Title="Requestor" />
-                    <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Title="Status">
+                    <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Property="RequisitionNumber" Title="Requisition No." />
+
+                    <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Property="RequestDate" Title="Request Date">
+                        <Template Context="data">
+                            @data.RequestDate.ToString("dd/MM/yyyy")
+                        </Template>
+                    </RadzenDataGridColumn>
+
+                    <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Title="PR Status">
                         <Template Context="data">
                             @data.prstatus.ToString()
                         </Template>
                     </RadzenDataGridColumn>
 
-                    <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Property="Purpose" Title="Purpose" />
+                    <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Title="Approval Status">
+                        <Template Context="data">
+                            @data.approvalstatus.ToString()
+                        </Template>
+                    </RadzenDataGridColumn>
+
+                    <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Title="Requested Item">
+                        <Template Context="data">
+                            @(
+                                data.ItemRequested != null && data.ItemRequested.Count > 0
+                                ? data.ItemRequested[0].RequestItem
+                                : "-"
+                                )
+                        </Template>
+                    </RadzenDataGridColumn>
+
+
+                    <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Title="Urgent">
+                        <Template Context="data">
+                            @(data.burgent ? "Yes" : "No")
+                        </Template>
+                    </RadzenDataGridColumn>
+
                     <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Title="Actions">
                         <Template Context="record">
                             <RadzenButton Text="View" Icon="visibility"
-                            Click="@(() => OnViewClicked(record))" />
-                            <RadzenButton Text="Delete" Icon="delete"
-                            Click="@(() => OnDeleteClicked(record))" />
+                                          Click="@(() => OnViewClicked(record))" />
                         </Template>
                     </RadzenDataGridColumn>
                 </Columns>
@@ -36,10 +62,9 @@
         </div>
     </div>
 </div>
+
 @code {
     private List<PurchaseRequisitionRecord> Records = new();
-
-
 
     protected override async Task OnInitializedAsync()
     {
@@ -96,26 +121,8 @@
         await JS.InvokeVoidAsync("console.log", $"⏱ Loaded PR list in {stopwatch.ElapsedMilliseconds} ms");
     }
 
-    private void AddNewRecord()
-    {
-        Console.WriteLine($"AddNewRecord");
-        //Records.Add(new PurchaseRequisitionRecord());
-    }
-
-    private void RemoveRecord(PurchaseRequisitionRecord record)
-    {
-        Records.Remove(record);
-    }
-
     private void OnViewClicked(PurchaseRequisitionRecord record)
     {
         NavigationManager.NavigateTo($"/purchaserequisitionrecords_client/create/{record.RequisitionNumber}");
-      
-    }
-
-    private void OnDeleteClicked(PurchaseRequisitionRecord record)
-    {
-     
-        Console.WriteLine($"View: {record.RequisitionNumber}");
     }
 }

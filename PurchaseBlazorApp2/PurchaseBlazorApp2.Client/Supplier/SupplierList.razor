@@ -1,0 +1,54 @@
+﻿@page "/supplier/list"
+@using PurchaseBlazorApp2.Components.Data
+@using Radzen.Blazor
+@using SharedDataType
+@inject NavigationManager NavigationManager
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+@rendermode InteractiveAuto
+<h3>Supplier List</h3>
+
+<div class="container mt-4 mb-4">
+    <div class="row">
+        <div class="col-md-12">
+            <RadzenDataGrid Data="@Suppliers" TItem="SupplierRecord" AllowSorting="true"
+                            Class="shadow-sm border rounded p-3">
+                <Columns>
+                    <RadzenDataGridColumn TItem="SupplierRecord" Property="SID" Title="Supplier ID" />
+                    <RadzenDataGridColumn TItem="SupplierRecord" Property="companyname" Title="Company Name" />
+
+                    <RadzenDataGridColumn TItem="SupplierRecord" Title="Actions">
+                        <Template Context="record">
+                            <RadzenButton Text="View" Icon="visibility"
+                                          Click="@(() => OnViewClicked(record))" />
+                            
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<SupplierRecord> Suppliers = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Suppliers = await Http.GetFromJsonAsync<List<SupplierRecord>>("api/supplier/getall") ?? new();
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"❌ Failed to load suppliers: {ex.Message}");
+        }
+    }
+
+    private void OnViewClicked(SupplierRecord record)
+    {
+        NavigationManager.NavigateTo($"/supplier-record/{record.SID}");
+    }
+
+}

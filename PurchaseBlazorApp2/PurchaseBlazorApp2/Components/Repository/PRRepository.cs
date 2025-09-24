@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.Graph.Models;
 using Npgsql;
 using Npgsql.Internal;
 using PurchaseBlazorApp2.Components.Data;
@@ -51,6 +52,12 @@ namespace PurchaseBlazorApp2.Components.Repository
                             Enum.TryParse(reader[property.Name].ToString(), out EPRStatus Type);
                             property.SetValue(MainInfo, Type);
                         }
+
+                        else if (obj is EApprovalStatus)
+                        {
+                            Enum.TryParse(reader[property.Name].ToString(), out EApprovalStatus Type);
+                            property.SetValue(MainInfo, Type);
+                        }
                         else if (obj is DateTime)
                         {
                             DateTime.TryParse(reader[property.Name].ToString(), out DateTime Date);
@@ -86,15 +93,15 @@ namespace PurchaseBlazorApp2.Components.Repository
 
         public async Task<List<PurchaseRequisitionRecord>> GetRecordsForListAsync(List<string> requisitionNumbers = null)
         {
-            List<PurchaseRequisitionRecord> ToReturn = new List<PurchaseRequisitionRecord>();
+            var ToReturn = new List<PurchaseRequisitionRecord>();
+
             try
             {
                 await Connection.OpenAsync();
 
-                string query = "SELECT requisitionnumber,requestor,prstatus,purpose FROM prtable";
+                string query = "SELECT requisitionnumber, requestdate, prstatus, approvalstatus, burgent FROM prtable";
 
-                var command = new NpgsqlCommand();
-                command.Connection = Connection;
+                var command = new NpgsqlCommand { Connection = Connection };
 
                 if (requisitionNumbers != null && requisitionNumbers.Count > 0)
                 {
@@ -116,30 +123,42 @@ namespace PurchaseBlazorApp2.Components.Repository
                 {
                     while (await reader.ReadAsync())
                     {
-                        PurchaseRequisitionRecord MainInfo = new PurchaseRequisitionRecord();
+                        var MainInfo = new PurchaseRequisitionRecord();
+
                         MainInfo.RequisitionNumber = reader["requisitionnumber"]?.ToString() ?? string.Empty;
-                        MainInfo.Requestor = reader["requestor"]?.ToString() ?? string.Empty;
-                        EPRStatus PRStatus;
-                        Enum.TryParse(reader["prstatus"]?.ToString() ?? string.Empty, out PRStatus);
-                        MainInfo.prstatus = PRStatus;
-                        MainInfo.Purpose = reader["purpose"]?.ToString() ?? string.Empty;
+
+                        // requestdate
+                        if (reader["requestdate"] != DBNull.Value)
+                            MainInfo.RequestDate = (DateTime)reader["requestdate"];
+
+                        // prstatus enum
+                        if (Enum.TryParse(reader["prstatus"]?.ToString() ?? string.Empty, out EPRStatus prStatus))
+                            MainInfo.prstatus = prStatus;
+
+                        // approvalstatus enum
+                        if (Enum.TryParse(reader["approvalstatus"]?.ToString() ?? string.Empty, out EApprovalStatus approvalStatus))
+                            MainInfo.approvalstatus = approvalStatus;
+
+                        // burgent bool
+                        MainInfo.burgent = reader["burgent"] != DBNull.Value && (bool)reader["burgent"];
+                        MainInfo.ItemRequested= await GetRequestedItemByRequisitionNumber(MainInfo.RequisitionNumber);
                         ToReturn.Add(MainInfo);
                     }
                 }
-
+          
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"GetRecordsAsync Exception: {ex.Message}");
+                Console.WriteLine($"GetRecordsForListAsync Exception: {ex.Message}");
                 return ToReturn;
             }
             finally
             {
                 await Connection.CloseAsync();
             }
+
             return ToReturn;
         }
-
 
         public async Task<List<PurchaseRequisitionRecord>> GetRecordsAsync(List<string> requisitionNumbers = null)
         {
@@ -248,7 +267,7 @@ namespace PurchaseBlazorApp2.Components.Repository
             }
         }
 
-        private async Task<List<RequestItemInfo>> GetRequestedItemByRequisitionNumber(string requisitionNumber, NpgsqlTransaction? externalTransaction = null)
+        public async Task<List<RequestItemInfo>> GetRequestedItemByRequisitionNumber(string requisitionNumber, NpgsqlTransaction? externalTransaction = null)
         {
             var Items = new List<RequestItemInfo>();
             var MyConnection = GetConnection();
@@ -305,7 +324,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                 }
 
                 using var command = new NpgsqlCommand(
-                    "SELECT username, isapproved, role FROM pr_approval_table WHERE requisitionnumber = @req",
+                    "SELECT username, approvestatus, role FROM pr_approval_table WHERE requisitionnumber = @req",
                     MyConnection, externalTransaction);
 
                 command.Parameters.AddWithValue("@req", Record.RequisitionNumber);
@@ -319,16 +338,17 @@ namespace PurchaseBlazorApp2.Components.Repository
                     List<EDepartment> Departments = RoleString
                         .Split(',', StringSplitOptions.RemoveEmptyEntries)
                         .Select(role => Enum.Parse<EDepartment>(role))
-                        .ToList();
+                    .ToList();
 
-                    bool IsApproved = (bool)reader["isapproved"];
+
+                   ESingleApprovalStatus status = Enum.Parse<ESingleApprovalStatus>(reader["approvestatus"].ToString());
                     string username = reader["username"]?.ToString() ?? string.Empty;
 
                     // Create a new ApprovalInfo object and add to the list
                     var approvalInfo = new ApprovalInfo
                     {
                         Departments = Departments,
-                        IsApproved = IsApproved,
+                        ApproveStatus = status,
                         UserName = username
                     };
 
@@ -520,11 +540,11 @@ namespace PurchaseBlazorApp2.Components.Repository
                 {
                     string result = string.Join(",", single.Departments);
                     var insertCmd = new NpgsqlCommand(
-                        "INSERT INTO pr_approval_table (requisitionnumber, username, isapproved,role) VALUES (@req, @username, @isapproved,@role)",
+                        "INSERT INTO pr_approval_table (requisitionnumber, username, approvestatus,role) VALUES (@req, @username, @approvestatus,@role)",
                         Connection, transaction);
                     insertCmd.Parameters.AddWithValue("@req", info.RequisitionNumber);
                     insertCmd.Parameters.AddWithValue("@username", single.UserName);
-                    insertCmd.Parameters.AddWithValue("@isapproved", single.IsApproved);
+                    insertCmd.Parameters.AddWithValue("@approvestatus", single.ApproveStatus.ToString());
                     string Joined=string.Join(',', single.Departments);
                     insertCmd.Parameters.AddWithValue("@role", Joined);
                     await insertCmd.ExecuteNonQueryAsync();
@@ -618,7 +638,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                                         DateTime.TryParse(obj.ToString(), out DateTime date);
                                         command.Parameters.AddWithValue("@" + propName, date);
                                     }
-                                    else if (obj is EDepartment|| obj is ETask||obj is EPRStatus)
+                                    else if (obj is EDepartment|| obj is ETask||obj is EPRStatus||obj is EApprovalStatus)
                                     {
                                         command.Parameters.AddWithValue("@" + propName, obj.ToString());
                                     }

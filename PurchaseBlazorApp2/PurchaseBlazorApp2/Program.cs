@@ -3,6 +3,9 @@ using PurchaseBlazorApp2.Components;
 using PurchaseBlazorApp2.Components.Global;
 using PurchaseBlazorApp2.Components.Helper;
 using Radzen;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,6 +42,9 @@ builder.Services.AddCors(options =>
 
 
 var app = builder.Build();
+
+QuestPDF.Settings.License = LicenseType.Community;
+
 app.MapControllers();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
