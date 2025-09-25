@@ -152,7 +152,7 @@
                 <!-- Approvals -->
                 <div class="mb-3">
                     <PurchaseBlazorApp2.Client.Components.Helper.ApprovalArea Approvals="PurchaseRequisitionRecord.Approvals"
-                    bIsEditable="bIsProcurementManager"
+                    bIsEditable="bIsProcurementManager&&bCanEditApproval"
                     MyGlobalVar="GlobalVar" OnApprovalChanged="OnCheckboxChanged">
                     </PurchaseBlazorApp2.Client.Components.Helper.ApprovalArea>
                 </div>
@@ -202,7 +202,7 @@
 
 
             </div>
-
+            <textarea readonly>@EmailSendStatus</textarea>
         </EditForm>
 
 
@@ -222,6 +222,8 @@
 
     private string EmailSendStatus;
 
+
+    private bool bCanEditApproval;
     private bool bIsProcurementManager;
 
     private bool bIsDepartmentMatchApproval;
@@ -236,8 +238,29 @@
         await JS.InvokeVoidAsync("autoResizeTextArea", requestItemRef);
     }
 
-    private async Task SendEmail()
+    private async Task SendEmail(List<string> MainEmailList, List<string> CCList)
     {
+        // Convert lists to comma-separated strings
+        string mainEmails = string.Join(", ", MainEmailList);
+        string ccEmails = string.Join(", ", CCList);
+
+        // Print to browser console
+        await JS.InvokeVoidAsync("console.log", $"Main Emails: {mainEmails}");
+        await JS.InvokeVoidAsync("console.log", $"CC Emails: {ccEmails}");
+
+        object[] MainEmailObj = MainEmailList?
+      .Where(email => !string.IsNullOrWhiteSpace(email))
+      .Select(email => new
+      {
+          emailAddress = new { address = email }
+      }).ToArray();
+
+        object[] CCObj = CCList?
+            .Where(email => !string.IsNullOrWhiteSpace(email))
+            .Select(email => new
+            {
+                emailAddress = new { address = email }
+            }).ToArray();
         // Request token with Mail.Send scope
         var tokenResult = await TokenProvider.RequestAccessToken(
             new AccessTokenRequestOptions
@@ -262,15 +285,8 @@
         // Build full requisition URL
         var requisitionUrl = $"{NavigationManager.BaseUri}authentication/login?returnUrl={encodedReturnUrl}";
 
-
-
-        var MainEmailList = await GetAllNeededForMainEmails();
-        var CCList = await GetAllNeededForCCEmails();
-
         // if main exist, send to main cc other
         // if main no exist, send to cc instead
-        var toRecipients = MainEmailList?.Any() == true ? MainEmailList : CCList;
-        var ccRecipients = MainEmailList?.Any() == true ? CCList : Array.Empty<object>();
 
         var emailPayload = new
         {
@@ -298,8 +314,8 @@
                 </body>
             </html>"
                 },
-                toRecipients = toRecipients,
-                ccRecipients = ccRecipients
+                toRecipients = MainEmailObj,
+                ccRecipients = CCObj
             },
             saveToSentItems = "true"
         };
@@ -309,7 +325,10 @@
 
         if (response.IsSuccessStatusCode)
         {
-            EmailSendStatus = "Email sent success";
+            var toList = string.Join(", ", MainEmailList.Where(e => !string.IsNullOrWhiteSpace(e)));
+            var ccList = string.Join(", ", CCList.Where(e => !string.IsNullOrWhiteSpace(e)));
+
+            EmailSendStatus = $"✅ Email sent successfully!\nTo: {toList}\nCc: {ccList}";
             Console.WriteLine("✅ Email sent successfully!");
         }
         else
@@ -333,7 +352,7 @@
     }
 
 
-    private async Task<object[]> GetAllNeededForCCEmails()
+    private async Task<List<string>> GetProcurementEmail()
     {
         var FindEmailResponse = await Http.PostAsJsonAsync(
         NavigationManager.ToAbsoluteUri("api/login/getrolemail"),
@@ -347,13 +366,39 @@
 
 
         }
-        var ccRecipients = emailList?
-           .Select(email => new
-           {
-               emailAddress = new { address = email }
-           })
-           .ToArray();
-        return ccRecipients;
+
+        return emailList;
+    }
+
+    private async Task OnSendEmailToRelevantParty()
+    {
+        List<string> CCEmail = new List<string>();
+        List<string> MainEmail = new List<string>();
+        switch (PurchaseRequisitionRecord.approvalstatus)
+        {
+            case(EApprovalStatus.PreApproval):
+
+                MainEmail = await GetProcurementEmail();
+                CCEmail.Add(await GetCurrentEmail());
+                break;
+            case (EApprovalStatus.PendingApproval):
+
+                MainEmail = await GetAllNeededForApprovalEmails();
+                CCEmail = await GetProcurementEmail();
+                break;
+            case (EApprovalStatus.Approved):
+
+                MainEmail = await GetProcurementEmail();
+                CCEmail.Add(await GetCurrentEmail());
+                break;
+            case (EApprovalStatus.Rejected):
+
+                MainEmail = await GetProcurementEmail();
+                CCEmail.Add(await GetCurrentEmail());
+                break;
+
+        }
+        await SendEmail(MainEmail, CCEmail);
     }
 
 
@@ -378,6 +423,53 @@
         }
         return emailList;
     }
+
+    private async Task<UserName?> GetCurrentUser()
+    {
+        UserName restoredUser = new UserName();
+        var json = await JS.InvokeAsync<string>("getCookie", "userKey");
+        if (!string.IsNullOrWhiteSpace(json))
+        {
+            try
+            {
+                restoredUser = System.Text.Json.JsonSerializer.Deserialize<UserName>(json);
+
+            }
+            catch (Exception Ex)
+            {
+
+            }
+        }
+        return restoredUser;
+    }
+
+
+
+    private async Task<string?> GetCurrentEmail()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated ?? false)
+        {
+            // Try to get the email claim
+            var emailClaim = user.FindFirst(c => c.Type == System.Security.Claims.ClaimTypes.Email);
+            if (emailClaim != null)
+            {
+                return emailClaim.Value;
+            }
+
+            // Alternatively, sometimes the claim type could be "email"
+            emailClaim = user.FindFirst(c => c.Type == "email");
+            if (emailClaim != null)
+            {
+                return emailClaim.Value;
+            }
+        }
+
+        return null;
+    }
+
 
     private async Task<EDepartment> GetCurrentDepartmentRole()
     {
@@ -438,7 +530,7 @@
 
             await JS.InvokeVoidAsync("alert", message);
         }
-
+        await OnSendEmailToRelevantParty();
         StateHasChanged();
     }
 
@@ -517,7 +609,25 @@
         stopwatch.Stop();
         Console.WriteLine($"OnInitializedAsync took {stopwatch.ElapsedMilliseconds} ms");
 
+        UpdatebCanEditApproval();
+    }
 
+    private void UpdatebCanEditApproval()
+    {
+        if(PurchaseRequisitionRecord==null)
+        {
+            bCanEditApproval = false;
+            return;
+        }
+        foreach(var Approval in PurchaseRequisitionRecord.Approvals)
+        {
+            if(Approval.ApproveStatus!=ESingleApprovalStatus.PendingAction)
+            {
+                bCanEditApproval = false;
+                return;
+            }
+        }
+        bCanEditApproval = true;
     }
 
     private async void OnApprove()
@@ -528,6 +638,9 @@
             if (approval.Departments.Contains(MyDepartment))
             {
                 approval.ApproveStatus = ESingleApprovalStatus.Approved;
+                UserName MyUser = await GetCurrentUser();
+                await JS.InvokeVoidAsync("console.log", $"OnApprove: {MyUser.Name}");
+                approval.UserName = MyUser.Name;
             }
         }
         PurchaseRequisitionRecord.OnUpdatePRStatus();
@@ -543,6 +656,9 @@
             if (approval.Departments.Contains(MyDepartment))
             {
                 approval.ApproveStatus = ESingleApprovalStatus.Rejected;
+                UserName MyUser = await GetCurrentUser();
+                await JS.InvokeVoidAsync("console.log", $"OnApprove: {MyUser.Name}");
+                approval.UserName = MyUser.Name;
             }
         }
         PurchaseRequisitionRecord.OnUpdatePRStatus();
