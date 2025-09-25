@@ -51,3 +51,8 @@ h1:focus {
     border-color: #929292;
 }
 
+.login-logo {
+    display: block;
+    margin: 0 auto 20px auto; /* center and add spacing */
+    max-width: 200px;
+}
