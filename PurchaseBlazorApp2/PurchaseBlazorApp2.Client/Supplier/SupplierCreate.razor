@@ -1,0 +1,128 @@
+﻿@page "/supplier-record"
+@page "/supplier-record/{sid}"
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Components.Forms
+@using SharedDataType
+
+<h3>Supplier Record</h3>
+
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<EditForm Model="Record" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary class="text-danger" />
+
+    <div class="mb-3">
+        <label for="sid" class="form-label">Supplier ID</label>
+        <InputText id="sid" class="form-control" @bind-Value="Record.SID" />
+        <ValidationMessage For="@(() => Record.SID)" class="text-danger" />
+    </div>
+
+    <div class="mb-3">
+        <label for="company" class="form-label">Company Name</label>
+        <InputText id="company" class="form-control" @bind-Value="Record.companyname" />
+        <ValidationMessage For="@(() => Record.companyname)" class="text-danger" />
+    </div>
+
+    <div class="mb-3">
+        <label for="contactperson" class="form-label">Contact Person</label>
+        <InputText id="contactperson" class="form-control" @bind-Value="Record.contactperson" />
+    </div>
+
+    <div class="mb-3">
+        <label for="contact" class="form-label">Contact</label>
+        <InputText id="contact" class="form-control" @bind-Value="Record.contact" />
+    </div>
+
+    <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        <InputText id="email" class="form-control" @bind-Value="Record.email" type="email" />
+        <ValidationMessage For="@(() => Record.email)" class="text-danger" />
+    </div>
+
+    <h5>Ship To Details</h5>
+    <div class="mb-3">
+        <label for="shipcompany" class="form-label">Ship To Company</label>
+        <InputText id="shipcompany" class="form-control" @bind-Value="Record.shiptocompanyname" />
+    </div>
+
+    <div class="mb-3">
+        <label for="address" class="form-label">Warehouse Address</label>
+        <InputText id="address" class="form-control" @bind-Value="Record.warehouseaddress" />
+    </div>
+
+    <div class="mb-3">
+        <label for="receivingperson" class="form-label">Receiving Person</label>
+        <InputText id="receivingperson" class="form-control" @bind-Value="Record.receivingperson" />
+    </div>
+
+    <div class="mb-3">
+        <label for="shippingcontact" class="form-label">Shipping Contact</label>
+        <InputText id="shippingcontact" class="form-control" @bind-Value="Record.shippingcontact" />
+    </div>
+
+    <button type="submit" class="btn btn-primary me-2">Save</button>
+    <button type="button" class="btn btn-secondary" @onclick="ResetForm">Reset</button>
+</EditForm>
+
+@code {
+    [Parameter] public string? sid { get; set; }
+
+    private SupplierRecord Record = new();
+    private SupplierRecord? SavedRecord;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(sid))
+        {
+            try
+            {
+                Record = await Http.GetFromJsonAsync<SupplierRecord>($"api/supplier/get/{sid}")
+                         ?? new SupplierRecord();
+            }
+            catch (Exception ex)
+            {
+                await JS.InvokeVoidAsync("alert", $"⚠️ Failed to load supplier {sid}: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        var payload = new List<SupplierRecord> { Record };
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/supplier/submit", payload);
+
+            if (response.IsSuccessStatusCode)
+            {
+                bool success = await response.Content.ReadFromJsonAsync<bool>();
+                if (success)
+                {
+                    SavedRecord = Record;
+                    await JS.InvokeVoidAsync("alert", "✅ Supplier saved successfully!");
+                }
+                else
+                {
+                    await JS.InvokeVoidAsync("alert", "⚠️ Supplier save failed!");
+                }
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("alert", $"❌ API call failed: {response.StatusCode}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"🔥 Unexpected error: {ex.Message}");
+        }
+    }
+
+    private void ResetForm()
+    {
+        Record = new SupplierRecord();
+        SavedRecord = null;
+    }
+}

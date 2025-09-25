@@ -15,11 +15,17 @@
     <PackageReference Include="Microsoft.Authentication.WebAssembly.Msal" Version="8.0.15" />
     <PackageReference Include="Microsoft.Graph" Version="5.92.0" />
     <PackageReference Include="Microsoft.Identity.Client.Extensions.Msal" Version="4.77.0" />
+    <PackageReference Include="QuestPDF" Version="2025.7.1" />
     <PackageReference Include="Radzen.Blazor" Version="7.1.5" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\SharedDataType\SharedDataType.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="NewFolder1\" />
+    <Folder Include="NewFolder\" />
   </ItemGroup>
 
 </Project>

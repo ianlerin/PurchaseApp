@@ -7,6 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="PineappleLogo.jpeg" />
+    <None Remove="Resource\PineappleLogo.jpeg" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\SharedDataType\SharedDataType.csproj" />
     <ProjectReference Include="..\PurchaseBlazorApp2.Client\PurchaseBlazorApp2.Client.csproj" />
     <PackageReference Include="Azure.Identity" Version="1.16.0" />
@@ -17,6 +22,7 @@
     <PackageReference Include="Microsoft.Identity.Client" Version="4.77.0" />
     <PackageReference Include="Microsoft.Identity.Client.Extensions.Msal" Version="4.77.0" />
     <PackageReference Include="Npgsql" Version="9.0.3" />
+    <PackageReference Include="QuestPDF" Version="2025.7.1" />
     <PackageReference Include="Radzen.Blazor" Version="7.1.5" />
     <PackageReference Include="ServiceStack.Common" Version="8.8.0" />
   </ItemGroup>
@@ -29,7 +35,18 @@
   <ItemGroup>
     <Folder Include="Components\Data\" />
     <Folder Include="Components\Pages\Login\" />
+    <Folder Include="NewFolder1\" />
     <Folder Include="NewFolder\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ApplicationDefinition Include="PineappleLogo.jpeg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Resource\PineappleLogo.jpeg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

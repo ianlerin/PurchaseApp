@@ -1,4 +1,4 @@
-﻿@page "/purchaseorder_client/print/{RequisitionNumber}"
+﻿<!--
 @inject IJSRuntime JS
 @inject ClientStateStorage StateStorage
 @inject ClientGlobalVar GlobalVar
@@ -6,6 +6,7 @@
 @inject NavigationManager NavigationManager
 @using PurchaseBlazorApp2.Components.Data
 @using PurchaseBlazorApp2.Components.Global
+
 
 @if (PRRecord is not null)
 {
@@ -224,7 +225,6 @@
     }
     private Task OnCheckboxChanged((bool NewValue, ApprovalInfo Approval) args)
     {
-        purchaseOrderRecord.OnApprovalChanged();
         return Task.CompletedTask;
     }
     public class RequisitionItem
@@ -272,3 +272,4 @@
        
     }
 }
+-->
