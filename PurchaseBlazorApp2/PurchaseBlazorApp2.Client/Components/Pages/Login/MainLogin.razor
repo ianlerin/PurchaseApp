@@ -19,6 +19,10 @@
         }
         else if (!authState.User.Identity?.IsAuthenticated ?? true)
         {
+             <div class="text-center my-3">
+                <img src="/images/Logo.jpeg" alt="App Logo" class="login-logo" />
+            </div>
+
             @if (!startLogin)
             {
                 <button class="btn btn-primary" @onclick="StartLogin">
