@@ -1,6 +1,9 @@
 ﻿@typeparam TEnum where TEnum : Enum
 
-<select @onchange="OnChanged" class="form-select" value="@Value.ToString()">
+<select @onchange="OnChanged"
+        class="form-select"
+        value="@Value.ToString()"
+        disabled="@Disabled">
     @foreach (var item in Enum.GetValues(typeof(TEnum)).Cast<TEnum>())
     {
         <option value="@item">@item</option>
@@ -13,6 +16,9 @@
 
     [Parameter]
     public EventCallback<TEnum> ValueChanged { get; set; }
+
+    [Parameter]
+    public bool Disabled { get; set; }  
 
     private async Task OnChanged(ChangeEventArgs e)
     {

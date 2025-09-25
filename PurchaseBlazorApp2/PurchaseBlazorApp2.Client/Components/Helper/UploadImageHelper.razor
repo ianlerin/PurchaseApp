@@ -4,12 +4,15 @@
 @using Microsoft.AspNetCore.Components.Forms
 @inject IJSRuntime JS
 
-<RadzenUpload ChooseText="Upload Picture"
-              Multiple="true"
-              Accept="image/*,application/pdf"
-              Change="OnUploadChange"
-              Style="margin-bottom: 10px;" />
-
+@if (bNewRequisition)
+{
+    <!-- Editable Upload -->
+    <RadzenUpload ChooseText="Upload Picture"
+    Multiple="true"
+    Accept="image/*,application/pdf"
+    Change="OnUploadChange"
+    Style="margin-bottom: 10px;" />
+}
 @if (UploadedImages.Count > 0)
 {
     <div class="@GetContainerClass()">
@@ -24,23 +27,23 @@
             };
 
             <div class="border p-2 position-relative"
-                 style="width:@ImageWidthPx; background-color:@(isSelected ? "#e6f2ff" : "transparent");">
+            style="width:@ImageWidthPx; background-color:@(isSelected ? "#e6f2ff" : "transparent");">
 
                 @if (image.DataFormat.StartsWith("image/"))
                 {
                     <!-- Show as Image -->
                     <img src="@GetImageSrc(image)"
-                         class="img-thumbnail"
-                         style="width: 100%; height: auto; max-height:@ImageHeightPx; cursor:pointer;"
-                         @onclick="@(() => ShowZoom(image))" />
+                    class="img-thumbnail"
+                    style="width: 100%; height: auto; max-height:@ImageHeightPx; cursor:pointer;"
+                    @onclick="@(() => ShowZoom(image))" />
                 }
                 else if (image.DataFormat == "application/pdf")
                 {
                     <!-- Show as PDF Preview -->
                     <iframe src="@GetImageSrc(image)"
-                            style="width: 100%; height:@ImageHeightPx; border:none; cursor:pointer;"
-                            title="PDF Preview"
-                            @onclick="@(() => OpenPdf(image))">
+                    style="width: 100%; height:@ImageHeightPx; border:none; cursor:pointer;"
+                    title="PDF Preview"
+                    @onclick="@(() => OpenPdf(image))">
                     </iframe>
                 }
                 else
@@ -51,15 +54,19 @@
                 @if (SelectionType != ESelectionType.None)
                 {
                     <button class="btn btn-sm @(isSelected ? "btn-success" : "btn-primary") w-100 mt-1"
-                            @onclick="@(() => SelectImage(image.Id))">
+                    @onclick="@(() => SelectImage(image.Id))">
                         @(isSelected ? "Selected" : "Select")
                     </button>
                 }
 
-                <button class="btn btn-sm btn-danger position-absolute top-0 end-0"
-                        @onclick="@(() => RemoveImage(image.Id))">
-                    ✕
-                </button>
+                @if (bNewRequisition)
+                {
+                    <button class="btn btn-sm btn-danger position-absolute top-0 end-0"
+                            @onclick="@(() => RemoveImage(image.Id))">
+                        ✕
+                    </button>
+                }
+
             </div>
         }
     </div>
@@ -96,7 +103,7 @@ else
     public HashSet<int> SelectedIndices { get; set; } = new();
 
     [Parameter] public EOrientation Orientation { get; set; } = EOrientation.Horizontal;
-
+    [Parameter] public bool bNewRequisition { get; set; } = false;
     [Parameter] public int ImageWidth { get; set; } = 150;
     [Parameter] public int ImageHeight { get; set; } = 150;
 

@@ -1,0 +1,343 @@
+﻿@page "/purchaseorder"
+@page "/purchaseorder_client/print/{RequisitionNumber}"
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Components.Forms
+@using PurchaseBlazorApp2.Components.Data
+@using QuestPDF.Fluent;
+@using QuestPDF.Helpers
+@using QuestPDF.Infrastructure;
+@using PurchaseBlazorApp2.Components.Global
+@using SharedDataType
+
+<h3>Create Purchase Order</h3>
+
+@inject NavigationManager NavigationManager
+@inject ClientStateStorage StateStorage
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<EditForm Model="Record" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary class="text-danger" />
+
+    <h5>Purchase Order Info</h5>
+    <div class="mb-3">
+        <label for="poid" class="form-label">PO ID</label>
+        <InputText id="poid" class="form-control" @bind-Value="Record.PO_ID" readonly/>
+    </div>
+
+    <div class="mb-3">
+        <label for="prid" class="form-label">PR ID</label>
+        <InputText id="prid" class="form-control" @bind-Value="Record.PR_ID" />
+    </div>
+
+    <div class="mb-3">
+        <label for="createdby" class="form-label">Created By</label>
+        <InputText id="createdby" class="form-control" @bind-Value="Record.CreatedBy" />
+    </div>
+
+    <h5>Company Info</h5>
+
+    <div class="mb-3">
+        <label for="companyname" class="form-label">Company Name</label>
+        <InputText id="companyname" class="form-control" @bind-Value="Record.mycompanyname" />
+    </div>
+
+    <div class="mb-3">
+        <label for="address" class="form-label">Address</label>
+        <InputText id="address" class="form-control" @bind-Value="Record.myaddress" />
+    </div>
+
+    <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        <InputText id="email"  class="form-control" @bind-Value="Record.myemail" />
+    </div>
+
+    <div class="mb-3">
+        <label for="tel" class="form-label">Telephone</label>
+        <InputText id="tel" class="form-control" @bind-Value="Record.tel" />
+    </div>
+
+
+    <h5>Supplier Lookup</h5>
+    <div class="input-group mb-3">
+        <InputText @bind-Value="SearchSID" class="form-control" placeholder="Enter Supplier SID" />
+        <button type="button" class="btn btn-outline-primary" @onclick="SearchSupplier">Find Supplier</button>
+    </div>
+
+   
+    <h5>Supplier Info</h5>
+    <div class="mb-3">
+        <label for="suppliercompany" class="form-label">Company</label>
+        <InputText id="suppliercompany" class="form-control" @bind-Value="Record.suppliercompanyname" />
+    </div>
+    <div class="mb-3">
+        <label for="supplierperson" class="form-label">Contact Person</label>
+        <InputText id="supplierperson" class="form-control" @bind-Value="Record.suppliercontactperson" />
+    </div>
+    <div class="mb-3">
+        <label for="suppliercontact" class="form-label">Contact</label>
+        <InputText id="suppliercontact" class="form-control" @bind-Value="Record.suppliercontact" />
+    </div>
+    <div class="mb-3">
+        <label for="supplieremail" class="form-label">Email</label>
+        <InputText id="supplieremail" type="email" class="form-control" @bind-Value="Record.supplieremail" />
+    </div>
+
+    <h5>Ship To</h5>
+    <div class="mb-3">
+        <label for="shipcompany" class="form-label">Ship To Company</label>
+        <InputText id="shipcompany" class="form-control" @bind-Value="Record.shiptocompanyname" />
+    </div>
+    <div class="mb-3">
+        <label for="warehouseaddress" class="form-label">Warehouse Address</label>
+        <InputText id="warehouseaddress" class="form-control" @bind-Value="Record.warehouseaddress" />
+    </div>
+    <div class="mb-3">
+        <label for="receivingperson" class="form-label">Receiving Person</label>
+        <InputText id="receivingperson" class="form-control" @bind-Value="Record.receivingperson" />
+    </div>
+    <div class="mb-3">
+        <label for="shippingcontact" class="form-label">Shipping Contact</label>
+        <InputText id="shippingcontact" class="form-control" @bind-Value="Record.shippingcontact" />
+    </div>
+
+
+    <h5>Additional Info</h5>
+    <label for="remark" class="form-label">Remark</label>
+    <InputText id="remark" class="form-control" @bind-Value="Record.remark" />
+
+    <h5>Financial</h5>
+    <div class="mb-3">
+        <label for="subtotal" class="form-label">SubTotal</label>
+        <InputNumber id="subtotal" class="form-control" @bind-Value="Record.SubTotal" readonly/>
+    </div>
+    <div class="mb-3">
+        <label for="tax" class="form-label">Tax (%)</label>
+        <InputNumber id="tax" class="form-control" @bind-Value="Record.Tax" />
+    </div>
+    <div class="mb-3">
+        <label>Total</label>
+        <span class="ms-2 fw-bold">@Record.GetTotal()</span>
+    </div>
+
+    <h5>Delivery</h5>
+    <div class="mb-3">
+        <label for="deliverydate" class="form-label">Delivery Date</label>
+        <InputDate id="deliverydate" class="form-control" @bind-Value="Record.DeliveryDate" />
+    </div>
+    <div class="mb-3">
+        <label for="deliverymethod" class="form-label">Delivery Method</label>
+        <InputText id="deliverymethod" class="form-control" @bind-Value="Record.DeliveryMethod" />
+    </div>
+    <div class="mb-3">
+        <label for="paymentmethod" class="form-label">Payment Method</label>
+        <InputText id="paymentmethod" class="form-control" @bind-Value="Record.PaymentMethod" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save</button>
+    <button type="button" class="btn btn-secondary ms-2" @onclick="ResetForm">Reset</button>
+    <button type="button" @onclick="DownloadPdf">Download PDF</button>
+</EditForm>
+
+
+
+@code {
+
+
+    public static class PdfGenerator
+    {
+        public static byte[] GeneratePdf(string text)
+        {
+            var doc = Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+                    page.Margin(20);
+                    page.Header().Text("My PDF").FontSize(20);
+                    page.Content().Text(text);
+                    page.Footer().AlignCenter().Text("Generated with QuestPDF");
+                });
+            });
+
+            return doc.GeneratePdf();
+        }
+    }
+
+
+    private PurchaseOrderRecord Record = new();
+    private PurchaseRequisitionRecord PRRecord { get; set; } = new PurchaseRequisitionRecord();
+
+    private string SearchSID { get; set; } = string.Empty;
+    [Parameter] public string? RequisitionNumber { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        Record = StateStorage.Get<PurchaseOrderRecord>("PO");
+        PRRecord = StateStorage.Get<PurchaseRequisitionRecord>("PR");
+
+
+
+        if (Record != null)
+        {
+            var response = await Http.PostAsJsonAsync(
+               NavigationManager.ToAbsoluteUri("api/pr/get-detail"), new List<string> { RequisitionNumber });
+            if (response.IsSuccessStatusCode)
+            {
+                try
+                {
+                    var Lists = await response.Content.ReadFromJsonAsync<List<PurchaseRequisitionRecord>>();
+                    if (Lists.Count > 0)
+                    {
+                        PRRecord = Lists[0];
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error deserializing response: {ex.Message}");
+
+                }
+            }
+        }
+
+        if (Record == null && PRRecord != null)
+        {
+            Record = new PurchaseOrderRecord();
+            Record.PR_ID = PRRecord.RequisitionNumber;
+            var response = await Http.PostAsJsonAsync(
+             NavigationManager.ToAbsoluteUri("api/po/get_pr"), new List<string> { PRRecord.RequisitionNumber });
+            if (response.IsSuccessStatusCode)
+            {
+                try
+                {
+                    var Lists = await response.Content.ReadFromJsonAsync<List<PurchaseOrderRecord>>();
+                    if (Lists.Count > 0)
+                    {
+                        Record = Lists[0];
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error deserializing response: {ex.Message}");
+
+                }
+            }
+        }
+
+        if (PRRecord != null)
+        {
+
+            decimal subtotal = PRRecord.CalculateTotal();
+            Record.SubTotal = subtotal;
+
+            EDepartment role = EDepartment.NotSpecified;
+            var json = await JS.InvokeAsync<string>("getCookie", "userKey");
+            if (!string.IsNullOrWhiteSpace(json))
+            {
+                try
+                {
+                    UserName restoredUser = System.Text.Json.JsonSerializer.Deserialize<UserName>(json);
+                    if (restoredUser != null)
+                    {
+                        Record.CreatedBy = restoredUser.Name;
+                    }
+                }
+                catch(Exception ex)
+                {
+
+                }
+            }
+
+        }
+    }
+
+
+    private async Task SearchSupplier()
+    {
+        if (string.IsNullOrWhiteSpace(SearchSID))
+        {
+            await JS.InvokeVoidAsync("alert", "⚠️ Please enter a Supplier SID.");
+            return;
+        }
+
+        try
+        {
+            var supplier = await Http.GetFromJsonAsync<SupplierRecord>($"api/supplier/get/{SearchSID}");
+            if (supplier != null)
+            {
+                // Map SupplierRecord into PurchaseOrderRecord supplier fields
+                Record.suppliercompanyname = supplier.companyname;
+                Record.suppliercontactperson = supplier.contactperson;
+                Record.suppliercontact = supplier.contact;
+                Record.supplieremail = supplier.email;
+                Record.shiptocompanyname = supplier.shiptocompanyname;
+                Record.warehouseaddress = supplier.warehouseaddress;
+                Record.receivingperson = supplier.receivingperson;
+                Record.shippingcontact = supplier.shippingcontact;
+                StateHasChanged();
+                await JS.InvokeVoidAsync("alert", $"✅ Supplier '{supplier.companyname}' loaded successfully!");
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("alert", "❌ No supplier found with that SID.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"🔥 Error retrieving supplier: {ex.Message}");
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            var payload = new List<PurchaseOrderRecord> { Record };
+            var response = await Http.PostAsJsonAsync("api/po/submit", payload);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<POSubmitResponse>();
+
+                if (result != null && result.bSuccess)
+                {
+                    // Update PO ID with first returned ID (or handle multiple IDs if needed)
+                    if (result.IDs.Count > 0)
+                    {
+                        Record.PO_ID = result.IDs[0];
+                    }
+
+                    await JS.InvokeVoidAsync("alert", $"✅ Purchase Order saved successfully! ID: {Record.PO_ID}");
+                }
+                else
+                {
+                    await JS.InvokeVoidAsync("alert", "⚠️ Failed to save Purchase Order.");
+                }
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("alert", $"❌ API call failed: {response.StatusCode}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"🔥 Unexpected error: {ex.Message}");
+        }
+        StateHasChanged();
+    }
+
+    private void ResetForm()
+    {
+        Record = new PurchaseOrderRecord();
+       
+    }
+    private async Task DownloadPdf()
+    {
+        var pdfBytes = await Http.GetByteArrayAsync($"api/pdf/purchase/{Record.PO_ID}");
+        var base64 = Convert.ToBase64String(pdfBytes);
+        await JS.InvokeVoidAsync("downloadFileFromBase64", $"PurchaseOrder-{Record.PO_ID}.pdf", base64);
+    }
+    
+}

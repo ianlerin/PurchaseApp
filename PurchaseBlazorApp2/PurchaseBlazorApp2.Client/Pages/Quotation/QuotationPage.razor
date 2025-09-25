@@ -23,15 +23,22 @@ else
     Orientation="UploadImageHelper.EOrientation.Vertical"
     ImageHeight="500"
     ImageWidth="500"
-    />
+    bNewRequisition=bnewrequisition />
 }
-<button class="btn btn-primary" @onclick="SubmitQuotation">Submit</button>
+@if (bnewrequisition)
+{
+    <button class="btn btn-primary" @onclick="SubmitQuotation">Submit</button>
+}
 <button class="btn btn-primary" @onclick="BacktoPR">Back</button>
 @code {
     [Inject] IJSRuntime JS { get; set; }
 
     [Parameter]
     public string PrId { get; set; }
+
+    [Parameter]
+    public bool bnewrequisition { get; set; }
+
 
     bool IsLoading = false;
 

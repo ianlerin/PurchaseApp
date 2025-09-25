@@ -15,34 +15,36 @@ else
 
         // Safe check for MyGlobalVar.UserName.Role
         bool canApprove = approval.CanApprove(MyDepartment);
-       
+
 
         <div class="approval-item d-flex flex-column gap-2 mb-2 p-2 border rounded">
 
             <!-- Approval checkbox -->
             <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center gap-2">
-                    <InputCheckbox Value="approval.IsApproved"
-                    ValueChanged="@((bool val) => OnCheckboxChanged(val, approval))"
-                    ValueExpression="@(() => approval.IsApproved)"
-                    class="form-check-input"
-                    disabled="@(!canApprove)" />
                     <div>
-                        <small class="text-muted me-1">Approved by:</small>
+                        <small class="text-muted me-1">
+                            @(approval.ApproveStatus == ESingleApprovalStatus.Rejected
+                                        ? "Rejected by:"
+                                        : "Approved by:")
+                        </small>
                         <span class="badge bg-light text-dark">
                             @(!string.IsNullOrEmpty(approval.UserName) ? approval.UserName : "-")
                         </span>
                     </div>
                 </div>
-
                 <!-- Delete button -->
-                <button type="button"
-                class="btn btn-danger btn-lg rounded-circle d-flex align-items-center justify-content-center"
-                style="width: 60px; height: 60px;"
-                disabled="@(!bIsEditable)"
-                @onclick="() => DeleteApproval(approval)">
-                    ✖
-                </button>
+                @if (approval.ApproveStatus == ESingleApprovalStatus.PendingAction)
+                {
+                    <button type="button"
+                    class="btn btn-danger btn-lg rounded-circle d-flex align-items-center justify-content-center"
+                    style="width: 60px; height: 60px;"
+                    disabled="@(!bIsEditable)"
+                    @onclick="() => DeleteApproval(approval)">
+                        ✖
+                    </button>
+                }
+
             </div>
 
             <!-- Departments section -->
@@ -54,7 +56,7 @@ else
                     <!-- Multi-select version -->
                     <MultiSelectEnumDropDown TEnum="EDepartment"
                     Value="@approval.Departments"
-                    ValueChanged="@((List<EDepartment> list) => OnDepartmentsChanged(approval, list))" />
+                    ValueChanged="@((List<EDepartment> list) => OnDepartmentsChanged(approval, list))"  Disabled=@(approval.ApproveStatus != ESingleApprovalStatus.PendingAction)/>
                 }
                 else
                 {
@@ -98,6 +100,7 @@ disabled="@(!bIsEditable)">
     protected override async Task OnInitializedAsync()
     {
         MyDepartment = await GetCurrentDepartmentRole();
+
     }
 
 
@@ -123,16 +126,6 @@ disabled="@(!bIsEditable)">
         }
         return role;
     }
-
-    private async Task OnCheckboxChanged(bool newValue, ApprovalInfo approval)
-    {
-        approval.IsApproved = newValue;
-        approval.UserName = newValue
-            ? MyGlobalVar?.UserName.Name ?? ""
-            : "";
-        await OnApprovalChanged.InvokeAsync((newValue, approval));
-    }
-
     private void OnDepartmentsChanged(ApprovalInfo approval, List<EDepartment> newList)
     {
         approval.Departments = newList;

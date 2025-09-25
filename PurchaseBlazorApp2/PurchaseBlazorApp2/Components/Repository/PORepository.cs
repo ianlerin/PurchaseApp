@@ -56,8 +56,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                     {
                         PurchaseOrderRecord MainInfo = new PurchaseOrderRecord();
                         InsertInfoOfBasicInfo(MainInfo, reader);
-                        MainInfo.ApprovalInfo[0].UserName = reader["approvedby"]?.ToString() ?? string.Empty;
-                        MainInfo.ApprovalInfo[0].IsApproved = (bool)reader["isapproved"];
+                      
                         ToReturn.Add(MainInfo);
                     }
                 }
@@ -111,8 +110,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                     {
                         PurchaseOrderRecord MainInfo = new PurchaseOrderRecord();
                         InsertInfoOfBasicInfo(MainInfo, reader);
-                        MainInfo.ApprovalInfo[0].UserName = reader["approvedby"]?.ToString() ?? string.Empty;
-                        MainInfo.ApprovalInfo[0].IsApproved = (bool)reader["isapproved"];
+                        
                         ToReturn.Add(MainInfo);
                     }
                 }
@@ -256,28 +254,20 @@ namespace PurchaseBlazorApp2.Components.Repository
                                         DateTime.TryParse(obj.ToString(), out DateTime date);
                                         command.Parameters.AddWithValue("@" + propName, date);
                                     }
-                                    else if (obj is EDepartment || obj is ETask || obj is EPRStatus)
+
+                                    if (obj is decimal)
                                     {
-                                        command.Parameters.AddWithValue("@" + propName, obj.ToString());
+                                        decimal.TryParse(obj.ToString(), out decimal date);
+                                        command.Parameters.AddWithValue("@" + propName, date);
                                     }
-                                    
+
 
                                     else
                                     {
                                         command.Parameters.AddWithValue("@" + propName, obj ?? DBNull.Value);
                                     }
                                 }
-                                if(Info.ApprovalInfo.Count>0)
-                                {
-                                    sqlCommand += "approvedby,isapproved,";
-                                    sqlValues += "@approvedby,@isapproved,";
-                                    sqlUpdate += "approvedby = EXCLUDED.approvedby,";
-                                    sqlUpdate += "isapproved = EXCLUDED.isapproved,";
-                                    command.Parameters.AddWithValue("@approvedby", Info.ApprovalInfo[0].UserName);
-                                    command.Parameters.AddWithValue("@isapproved", Info.ApprovalInfo[0].IsApproved);
-
-                                }
-
+                
 
                                 sqlCommand += "PO_ID)";
                                 sqlValues += "@PO_ID)";

@@ -17,11 +17,7 @@
                 <Columns>
                     <RadzenDataGridColumn TItem="PurchaseOrderRecord" Property="PO_ID" Title="Requisition " />
                     <RadzenDataGridColumn TItem="PurchaseOrderRecord" Property="PR_ID" Title="PR" />
-                    <RadzenDataGridColumn TItem="PurchaseOrderRecord" Title="Status">
-                        <Template Context="data">
-                            @data.PoStatus.ToString()
-                        </Template>
-                    </RadzenDataGridColumn>
+                   
 
                     <RadzenDataGridColumn TItem="PurchaseOrderRecord" Property="Purpose" Title="Purpose" />
                     <RadzenDataGridColumn TItem="PurchaseOrderRecord" Title="Actions">
