@@ -70,11 +70,13 @@
                         <div class="row g-3 mb-2">
                             <div class="col-md-6">
                                 <label class="form-label">Item</label>
-                                <ResizableTextArea @bind-Value="item.RequestItem"
-                                                   CssClass="form-control"
-                                                   Rows="1"
-                                                   Placeholder="Enter item..."
-                                                   disabled="@(!bNewRequisition)" />
+                                <ResizableInputTextArea @bind-Value="item.RequestItem"
+                                                        CssClass="form-control"
+                                                        Rows="1"
+                                                        Placeholder="Enter item descriptions here..."
+                                                        disabled="@(!bNewRequisition)" />
+
+                                <ValidationMessage For="@(() => item.RequestItem)" class="text-danger" />
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Unit Price</label>
