@@ -71,11 +71,13 @@
                         <div class="row g-3 mb-2">
                             <div class="col-md-6">
                                 <label class="form-label">Item</label>
-                                <textarea class="form-control"
-                                @bind="item.RequestItem"
-                                @ref="requestItemRef"
-                                @oninput="ResizeTextArea"
-                                disabled="@(!bNewRequisition)"></textarea>
+                                <ResizableInputTextArea @bind-Value="item.RequestItem"
+                                                        CssClass="form-control"
+                                                        Rows="1"
+                                                        Placeholder="Enter item descriptions here..."
+                                                        disabled="@(!bNewRequisition)" />
+
+                                <ValidationMessage For="@(() => item.RequestItem)" class="text-danger" />
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Unit Price</label>
@@ -243,15 +245,24 @@
 
     private bool bIsDepartmentMatchApproval;
 
-    private bool _resizedOnFirstRender = false;
+    //private bool _resizedOnFirstRender = false;
 
-    private ElementReference requestItemRef;
+    // private ElementReference requestItemRef;
 
-    // for scalable text area
-    private async Task ResizeTextArea(ChangeEventArgs e)
-    {
-        await JS.InvokeVoidAsync("autoResizeTextArea", requestItemRef);
-    }
+    // // for scalable text area
+    // private async Task ResizeTextArea(ChangeEventArgs e)
+    // {
+    //     await JS.InvokeVoidAsync("autoResizeTextArea", requestItemRef);
+    // }
+
+    // protected override async Task OnAfterRenderAsync(bool firstRender)
+    // {
+    //     if (!string.IsNullOrEmpty(requestItemRef.Id) && !_resizedOnFirstRender)
+    //     {
+    //         _resizedOnFirstRender=true;
+    //         await JS.InvokeVoidAsync("autoResizeTextArea", requestItemRef);
+    //     }
+    // }
 
     private async Task SendEmail(List<string> mainEmailList, List<string> ccList)
     {
@@ -262,8 +273,6 @@
         // Print to browser console for debug
         await JS.InvokeVoidAsync("console.log", $"Main Emails: {mainEmails}");
         await JS.InvokeVoidAsync("console.log", $"CC Emails: {ccEmails}");
-
-        // Build the requisition URL
         var encodedReturnUrl = Uri.EscapeDataString(
             $"purchaserequisitionrecords_client/create/{PurchaseRequisitionRecord.RequisitionNumber}");
 
@@ -546,14 +555,8 @@
         }
         return false;
     }
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!string.IsNullOrEmpty(requestItemRef.Id) && !_resizedOnFirstRender)
-        {
-            _resizedOnFirstRender=true;
-            await JS.InvokeVoidAsync("autoResizeTextArea", requestItemRef);
-        }
-    }
+
+    
     protected override async Task OnInitializedAsync()
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();

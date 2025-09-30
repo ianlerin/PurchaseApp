@@ -1,0 +1,72 @@
+﻿@using Microsoft.JSInterop
+@inherits InputBase<string>
+
+<textarea @ref="_textareaRef"
+          class="@CssClass @CssValidationClass"
+          rows="@Rows"
+          placeholder="@Placeholder"
+          value="@CurrentValueAsString"
+          @oninput="OnInput"
+          @attributes="AdditionalAttributes"></textarea>
+
+@code {
+    private ElementReference _textareaRef;
+
+    [Parameter] public string CssClass { get; set; } = "form-control";
+    [Parameter] public int Rows { get; set; } = 1;
+    [Parameter] public string Placeholder { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    
+    [Inject] private IJSRuntime JS { get; set; }
+
+    // Add validation CSS class to indicate invalid input (Bootstrap 'is-invalid' etc.)
+    private string CssValidationClass =>
+       (EditContext != null && FieldIdentifier.FieldName != null && EditContext.GetValidationMessages(FieldIdentifier).Any())
+       ? "is-invalid"
+       : string.Empty;
+
+    // Compute attributes and only add disabled when true
+    private IReadOnlyDictionary<string, object> ComputedAdditionalAttributes
+    {
+        get
+        {
+            // AdditionalAttributes is inherited from InputBase and is IReadOnlyDictionary<string, object>
+            var source = AdditionalAttributes; 
+            var dict = (source != null) ? new Dictionary<string, object>(source) : new Dictionary<string, object>();
+            if (Disabled)
+                dict["disabled"] = "disabled";
+            else
+                dict.Remove("disabled");
+            return dict;
+        }
+    }
+
+    // InputBase requires parsing
+    protected override bool TryParseValueFromString(string value, out string result, out string validationErrorMessage)
+    {
+        result = value;
+        validationErrorMessage = null;
+        return true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await ResizeAsync();
+        }
+    }
+
+    // call whenever user types in the textarea
+    private async Task OnInput(ChangeEventArgs e)
+    {
+        CurrentValueAsString = e?.Value?.ToString() ?? string.Empty;
+        await ResizeAsync();
+    }
+
+    // public method parent can call via @ref
+    public async Task ResizeAsync()
+    {
+        await JS.InvokeVoidAsync("autoResizeTextArea", _textareaRef);
+    }
+}
