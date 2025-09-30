@@ -99,7 +99,7 @@ namespace PurchaseBlazorApp2.Components.Repository
             {
                 await Connection.OpenAsync();
 
-                string query = "SELECT requisitionnumber, requestdate, prstatus, approvalstatus, burgent FROM prtable";
+                string query = "SELECT requisitionnumber, requestdate, prstatus, approvalstatus, burgent,deliverydate FROM prtable";
 
                 var command = new NpgsqlCommand { Connection = Connection };
 
@@ -130,6 +130,9 @@ namespace PurchaseBlazorApp2.Components.Repository
                         // requestdate
                         if (reader["requestdate"] != DBNull.Value)
                             MainInfo.RequestDate = (DateTime)reader["requestdate"];
+
+                        if (reader["deliverydate"] != DBNull.Value)
+                            MainInfo.DeliveryDate = (DateTime)reader["deliverydate"];
 
                         // prstatus enum
                         if (Enum.TryParse(reader["prstatus"]?.ToString() ?? string.Empty, out EPRStatus prStatus))
@@ -436,6 +439,36 @@ namespace PurchaseBlazorApp2.Components.Repository
             }
         }
 
+        public async Task<bool> UpdateDeliveryDateAsync(string requisitionNumber, DateTime deliveryDate)
+        {
+            try
+            {
+                await Connection.OpenAsync();
+
+                string query = @"
+            UPDATE prtable
+            SET deliverydate = @deliveryDate
+            WHERE requisitionnumber = @reqNo;";
+
+                using (var command = new NpgsqlCommand(query, Connection))
+                {
+                    command.Parameters.AddWithValue("@deliveryDate", deliveryDate);
+                    command.Parameters.AddWithValue("@reqNo", requisitionNumber);
+
+                    int rowsAffected = await command.ExecuteNonQueryAsync();
+                    return rowsAffected > 0; // true if updated
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"UpdateDeliveryDateAsync Exception: {ex.Message}");
+                return false;
+            }
+            finally
+            {
+                await Connection.CloseAsync();
+            }
+        }
 
         private async Task<bool> InsertPRItems(PurchaseRequisitionRecord info, NpgsqlTransaction? externalTransaction = null)
         {
@@ -576,17 +609,102 @@ namespace PurchaseBlazorApp2.Components.Repository
             }
         }
 
-
-        public async Task<bool> SubmitAsync(IEnumerable<PurchaseRequisitionRecord> InfoList)
+        public async Task<List<string>> GetPendingRemindersAsync(int daysAgo)
         {
-            bool bSuccess = false;
+            var results = new List<string>();
+
+            try
+            {
+                await Connection.OpenAsync();
+
+                string query = @"
+            SELECT requisitionnumber
+            FROM prtable
+            WHERE prstatus = 'ApprovedRequests'
+              AND updatedate < NOW() - @days * INTERVAL '1 day'
+              AND bsentreminder = FALSE;";
+
+                using (var command = new NpgsqlCommand(query, Connection))
+                {
+                    command.Parameters.AddWithValue("days", daysAgo);
+
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            results.Add(reader.GetString(0));
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"GetPendingRemindersAsync Exception: {ex.Message}");
+            }
+            finally
+            {
+                await Connection.CloseAsync();
+            }
+
+            return results;
+        }
+
+
+        public async Task<int> MarkRemindersAsSentAsync(List<string> requisitionNumbers)
+        {
+            if (requisitionNumbers == null || requisitionNumbers.Count == 0)
+                return 0;
+
+            int rowsAffected = 0;
+
+            try
+            {
+                await Connection.OpenAsync();
+
+                // Build parameterized IN clause
+                var paramNames = new List<string>();
+                var command = new NpgsqlCommand();
+                command.Connection = Connection;
+
+                for (int i = 0; i < requisitionNumbers.Count; i++)
+                {
+                    string paramName = $"@id{i}";
+                    paramNames.Add(paramName);
+                    command.Parameters.AddWithValue(paramName, requisitionNumbers[i]);
+                }
+
+                string inClause = string.Join(", ", paramNames);
+
+                string query = $@"
+            UPDATE prtable
+            SET bsentreminder = TRUE
+            WHERE requisitionnumber IN ({inClause});";
+
+                command.CommandText = query;
+
+                rowsAffected = await command.ExecuteNonQueryAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"MarkRemindersAsSentAsync Exception: {ex.Message}");
+            }
+            finally
+            {
+                await Connection.CloseAsync();
+            }
+
+            return rowsAffected;
+        }
+
+        public async Task<List<string>> SubmitAsync(IEnumerable<PurchaseRequisitionRecord> InfoList)
+        {
+            var submittedIds = new List<string>();
+
             try
             {
                 await Connection.OpenAsync();
                 await using (var transaction = await Connection.BeginTransactionAsync())
                 {
-                    long lastSequenceValue = 0;
-
                     await using (var command = new NpgsqlCommand())
                     {
                         command.Connection = Connection;
@@ -597,16 +715,17 @@ namespace PurchaseBlazorApp2.Components.Repository
                             while (infoEnumerator.MoveNext())
                             {
                                 var Info = infoEnumerator.Current;
-                                string SID = "";
+                                string SID;
+
+                                // Generate new RequisitionNumber if missing
                                 if (string.IsNullOrEmpty(Info.RequisitionNumber))
                                 {
                                     await using (var Seqcommand = new NpgsqlCommand("SELECT last_value FROM prtable_id_seq;", Connection, transaction))
                                     {
                                         var result = await Seqcommand.ExecuteScalarAsync();
-                                        lastSequenceValue = (long)result;
+                                        long lastSequenceValue = (long)result;
                                         SID = $"PR_{lastSequenceValue + 1}";
                                     }
-
                                     command.Parameters.Clear();
                                 }
                                 else
@@ -614,7 +733,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                                     SID = Info.RequisitionNumber;
                                 }
 
-
+                                // Build INSERT ... ON CONFLICT SQL
                                 string sqlCommand = "INSERT INTO prtable (";
                                 string sqlValues = "VALUES (";
                                 string sqlUpdate = "ON CONFLICT (requisitionnumber) DO UPDATE SET ";
@@ -623,8 +742,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                                 foreach (var prop in props)
                                 {
                                     string propName = prop.Name;
-
-                                    if (propName == "RequisitionNumber" || propName == "SupportDocuments"|| propName == "Approvals"|| propName == "ItemRequested")
+                                    if (propName == "RequisitionNumber" || propName == "SupportDocuments" || propName == "Approvals" || propName == "ItemRequested")
                                         continue;
 
                                     sqlCommand += propName + ",";
@@ -638,11 +756,10 @@ namespace PurchaseBlazorApp2.Components.Repository
                                         DateTime.TryParse(obj.ToString(), out DateTime date);
                                         command.Parameters.AddWithValue("@" + propName, date);
                                     }
-                                    else if (obj is EDepartment|| obj is ETask||obj is EPRStatus||obj is EApprovalStatus)
+                                    else if (obj is EDepartment || obj is ETask || obj is EPRStatus || obj is EApprovalStatus)
                                     {
                                         command.Parameters.AddWithValue("@" + propName, obj.ToString());
                                     }
-                                   
                                     else
                                     {
                                         command.Parameters.AddWithValue("@" + propName, obj ?? DBNull.Value);
@@ -657,26 +774,28 @@ namespace PurchaseBlazorApp2.Components.Repository
                                 command.CommandText = sqlCommand + " " + sqlValues + " " + sqlUpdate;
 
                                 int rowsAffected = await command.ExecuteNonQueryAsync();
-                                if (rowsAffected > 0)
-                                {
-                                    bSuccess = true;
-                                }
                                 Info.RequisitionNumber = SID;
-                                bSuccess = await InsertImage(Info,transaction);
+
+                                // Insert related data
+                                bool bSuccess = await InsertImage(Info, transaction);
                                 if (bSuccess)
                                 {
-                                    bSuccess=await InsertApproval(Info,transaction);
-                                    bSuccess=await InsertPRItems(Info,transaction);
+                                    bSuccess = await InsertApproval(Info, transaction);
+                                    bSuccess = await InsertPRItems(Info, transaction);
                                 }
 
+                                if (!bSuccess)
+                                {
+                                    await transaction.RollbackAsync();
+                                    return new List<string>(); // empty if failed
+                                }
+
+                                submittedIds.Add(SID);
                             }
                         }
                     }
 
-                    if (bSuccess)
-                        await transaction.CommitAsync();
-                    else
-                        await transaction.RollbackAsync();
+                    await transaction.CommitAsync();
                 }
 
                 await Connection.CloseAsync();
@@ -684,10 +803,10 @@ namespace PurchaseBlazorApp2.Components.Repository
             catch (Exception ex)
             {
                 Console.WriteLine($"SubmitAsync Exception: {ex.Message}");
-                return false;
+                return new List<string>();
             }
 
-            return bSuccess;
+            return submittedIds;
         }
 
     }

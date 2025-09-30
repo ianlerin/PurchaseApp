@@ -6,6 +6,7 @@
 @using PurchaseBlazorApp2.Components.Global
 @inject HttpClient Http
 @inject IJSRuntime JS
+@inject ClientGlobalVar GlobalVar
 @inject IServiceProvider ServiceProvider
 @inject NavigationManager NavigationManager
 @inject ClientGlobalVar GlobalVar
@@ -164,7 +165,10 @@
                     // Fallback if no returnUrl provided
                     NavigationManager.NavigateTo("/");
                 }
-
+                if (GlobalVar != null)
+                {
+                    GlobalVar.StartTokenRefreshLoop(tokenProvider);
+                }
                 StateHasChanged();
             }
             else

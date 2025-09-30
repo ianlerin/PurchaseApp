@@ -7,6 +7,7 @@
 @using PurchaseBlazorApp2.Components.Global
 @using Radzen
 @using Radzen.Blazor
+@using static PurchaseBlazorApp2.Client.Pages.Quotation.QuotationInfo
 @inject ClientGlobalVar GlobalVar
 @inject AuthenticationStateProvider AuthStateProvider
 @inject HttpClient Http
@@ -165,20 +166,34 @@
             <PurchaseBlazorApp2.Client.Components.Helper.UploadImageHelper bNewRequisition=bNewRequisition UploadedImages="PurchaseRequisitionRecord.SupportDocuments"></PurchaseBlazorApp2.Client.Components.Helper.UploadImageHelper>
             <div class="d-flex flex-wrap gap-3 align-items-center my-3">
 
-                @if (bIsProcurementManager || bNewRequisition)
+                @if (bNewRequisition)
                 {
                     <button type="submit" class="btn btn-primary btn-lg" @onclick="AddPurchaseRequisitionRecord">
-                        @(IsSubmitted() ? "Edit" : "Create")
+                        Create
+                    </button>
+                    <button @onclick="OnQuotation" type="button" class="btn btn-secondary btn-lg">
+                        Quotation
+                    </button>
+                }
+                @if (bIsProcurementManager && bCanEditApproval && IsSubmitted())
+                {
+                    <button type="submit" class="btn btn-primary btn-lg" @onclick="AddPurchaseRequisitionRecord">
+                        Edit
+                    </button>
+                    <button @onclick="OnQuotation" type="button" class="btn btn-secondary btn-lg">
+                        Quotation
                     </button>
                 }
 
-
-                @if (IsSubmitted())
+                @if (bIsProcurementManager || bNewRequisition)
                 {
 
-                    <button @onclick="OnQuotation" class="btn btn-secondary btn-lg">
-                        Quotation
-                    </button>
+                    @if(!IsSubmitted())
+                    {
+                        <button type="button" class="btn btn-primary btn-lg" @onclick="SaveAsDraft">Save Draft</button>
+                        <button type="button" class="btn btn-primary btn-lg" @onclick="LoadDraft">Load Draft</button>
+                    }
+
                 }
 
                 @if (bCanOpenPO)
@@ -249,66 +264,27 @@
     //     }
     // }
 
-    private async Task SendEmail(List<string> MainEmailList, List<string> CCList)
+    private async Task SendEmail(List<string> mainEmailList, List<string> ccList)
     {
-        // Convert lists to comma-separated strings
-        string mainEmails = string.Join(", ", MainEmailList);
-        string ccEmails = string.Join(", ", CCList);
+        // Convert lists to comma-separated strings for debugging
+        string mainEmails = string.Join(", ", mainEmailList);
+        string ccEmails = string.Join(", ", ccList);
 
-        // Print to browser console
+        // Print to browser console for debug
         await JS.InvokeVoidAsync("console.log", $"Main Emails: {mainEmails}");
         await JS.InvokeVoidAsync("console.log", $"CC Emails: {ccEmails}");
-
-        object[] MainEmailObj = MainEmailList?
-          .Where(email => !string.IsNullOrWhiteSpace(email))
-          .Select(email => new
-          {
-              emailAddress = new { address = email }
-          }).ToArray();
-
-            object[] CCObj = CCList?
-                .Where(email => !string.IsNullOrWhiteSpace(email))
-                .Select(email => new
-                {
-                    emailAddress = new { address = email }
-                }).ToArray();
-
-        // Request token with Mail.Send scope
-        var tokenResult = await TokenProvider.RequestAccessToken(
-            new AccessTokenRequestOptions
-                {
-                    Scopes = new[] { "Mail.Send" }
-                });
-
-        if (!tokenResult.TryGetToken(out var token))
-        {
-            Console.WriteLine("❌ Failed to acquire token");
-            return;
-        }
-
-        // Attach token to HttpClient
-        Http.DefaultRequestHeaders.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token.Value);
-
-        // Encode return URL
         var encodedReturnUrl = Uri.EscapeDataString(
             $"purchaserequisitionrecords_client/create/{PurchaseRequisitionRecord.RequisitionNumber}");
 
-        // Build full requisition URL
         var requisitionUrl = $"{NavigationManager.BaseUri}authentication/login?returnUrl={encodedReturnUrl}";
 
-        // if main exist, send to main cc other
-        // if main no exist, send to cc instead
-
-        var emailPayload = new
-        {
-            message = new
+        // Create request object for controller
+        var emailRequest = new EmailRequest
             {
-                subject = $"Approval Needed: Purchase Requisition #{PurchaseRequisitionRecord.RequisitionNumber}",
-                body = new
-                {
-                    contentType = "HTML",
-                    content = $@"
+                To = mainEmailList,
+                Cc = ccList,
+                Subject = $"Approval Needed: Purchase Requisition #{PurchaseRequisitionRecord.RequisitionNumber}",
+                Body = $@"
             <html>
                 <body style='font-family:Segoe UI, Arial, sans-serif; color:#333; font-size:14px;'>
                     <p>Hello,</p>
@@ -324,29 +300,33 @@
                     <p><a href='{requisitionUrl}'>{requisitionUrl}</a></p>
                     <p>Thank you,<br/>Procurement Team</p>
                 </body>
-            </html>"
-                },
-                toRecipients = MainEmailObj,
-                ccRecipients = CCObj
-            },
-            saveToSentItems = "true"
-        };
+            </html>",
+                IsHtml = true
+            };
 
-        // Make the HTTP call directly from client
-        var response = await Http.PostAsJsonAsync("https://graph.microsoft.com/v1.0/me/sendMail", emailPayload);
-
-        if (response.IsSuccessStatusCode)
+        try
         {
-            var toList = string.Join(", ", MainEmailList.Where(e => !string.IsNullOrWhiteSpace(e)));
-            var ccList = string.Join(", ", CCList.Where(e => !string.IsNullOrWhiteSpace(e)));
+            var response = await Http.PostAsJsonAsync("api/email/send", emailRequest);
 
-            EmailSendStatus = $"✅ Email sent successfully!\nTo: {toList}\nCc: {ccList}";
-            Console.WriteLine("✅ Email sent successfully!");
+            if (response.IsSuccessStatusCode)
+            {
+                var toList = string.Join(", ", mainEmailList.Where(e => !string.IsNullOrWhiteSpace(e)));
+                var ccListStr = string.Join(", ", ccList.Where(e => !string.IsNullOrWhiteSpace(e)));
+
+                EmailSendStatus = $"✅ Email sent successfully!\nTo: {toList}\nCc: {ccListStr}";
+                Console.WriteLine("✅ Email sent successfully!");
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"❌ Failed to send email: {response.StatusCode} - {error}");
+                EmailSendStatus = $"❌ Failed to send email: {response.StatusCode}";
+            }
         }
-        else
+        catch (Exception ex)
         {
-            var error = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"❌ Failed to send email: {response.StatusCode} - {error}");
+            Console.WriteLine($"❌ Exception sending email: {ex.Message}");
+            EmailSendStatus = $"❌ Exception: {ex.Message}";
         }
     }
 
@@ -386,12 +366,17 @@
     {
         List<string> CCEmail = new List<string>();
         List<string> MainEmail = new List<string>();
+        string currentEmail;
         switch (PurchaseRequisitionRecord.approvalstatus)
         {
             case(EApprovalStatus.PreApproval):
 
                 MainEmail = await GetProcurementEmail();
-                CCEmail.Add(await GetCurrentEmail());
+                currentEmail = await GetCurrentEmail();
+                if (!string.IsNullOrWhiteSpace(currentEmail))
+                {
+                    CCEmail.Add(currentEmail);
+                }
                 break;
             case (EApprovalStatus.PendingApproval):
 
@@ -401,12 +386,20 @@
             case (EApprovalStatus.Approved):
 
                 MainEmail = await GetProcurementEmail();
-                CCEmail.Add(await GetCurrentEmail());
+                currentEmail = await GetCurrentEmail();
+                if (!string.IsNullOrWhiteSpace(currentEmail))
+                {
+                    CCEmail.Add(currentEmail);
+                }
                 break;
             case (EApprovalStatus.Rejected):
 
                 MainEmail = await GetProcurementEmail();
-                CCEmail.Add(await GetCurrentEmail());
+                currentEmail = await GetCurrentEmail();
+                if (!string.IsNullOrWhiteSpace(currentEmail))
+                {
+                    CCEmail.Add(currentEmail);
+                }
                 break;
 
         }
@@ -526,14 +519,19 @@
 
             PurchaseRequisitionRecord.Requestor = name;
         }
-
+        PurchaseRequisitionRecord.UpdateDate = DateTime.Now;
         var response = await Http.PostAsJsonAsync(
             NavigationManager.ToAbsoluteUri("api/pr/submit"),
             new List<PurchaseRequisitionRecord> { PurchaseRequisitionRecord });
 
         if (response.IsSuccessStatusCode)
         {
-            await JS.InvokeVoidAsync("alert", "Submission successful!");
+            var PR_Ids = await response.Content.ReadFromJsonAsync<List<string>>();
+            if(PR_Ids.Count>0)
+            {
+                PurchaseRequisitionRecord.RequisitionNumber=PR_Ids[0];
+            }
+
         }
         else
         {
@@ -543,6 +541,9 @@
             await JS.InvokeVoidAsync("alert", message);
         }
         await OnSendEmailToRelevantParty();
+        await SubmitQuotation();
+        StateStorage.Remove("PR");
+
         StateHasChanged();
     }
 
@@ -608,6 +609,13 @@
         // if new create
         else
         {
+            PurchaseRequisitionRecord FindRecord;
+            bool bFound=StateStorage.TryGet<PurchaseRequisitionRecord>("PR", out FindRecord);
+            if(bFound)
+            {
+                PurchaseRequisitionRecord = FindRecord;
+
+            }
             bNewRequisition = true;
             PurchaseRequisitionRecord.Department = MyDepartment;
         }
@@ -617,6 +625,62 @@
 
         UpdatebCanEditApproval();
     }
+
+
+    private async Task SubmitQuotation()
+    {
+        QuotationRecord Quotation;
+
+        StateStorage.TryGet<QuotationRecord>("Quotation", out Quotation);
+        if (Quotation != null)
+        {
+            await JS.InvokeVoidAsync("console.group", $"{Quotation.SupportDocuments.Count}, Submitting Quotation");
+            Quotation.pr_id = PurchaseRequisitionRecord.RequisitionNumber;
+        }
+        else
+        {
+            return;
+        }
+
+
+        await JS.InvokeVoidAsync("console.log", "Preparing submission...");
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync(
+                NavigationManager.ToAbsoluteUri("api/quotation/submit"),
+                new List<QuotationRecord> { Quotation });
+
+            if (response.IsSuccessStatusCode)
+            {
+                await JS.InvokeVoidAsync("console.log", "✅ Submission successful!");
+                await JS.InvokeVoidAsync("alert", "Submission successful!");
+            }
+            else
+            {
+                string errorDetails = await response.Content.ReadAsStringAsync();
+                string message = $"Submission failed. Status Code: {(int)response.StatusCode} - {response.ReasonPhrase}\nDetails: {errorDetails}";
+
+                await JS.InvokeVoidAsync("console.error", message);
+                await JS.InvokeVoidAsync("alert", message);
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            await JS.InvokeVoidAsync("console.error", $"🌐 Network error while submitting quotation: {ex.Message}");
+            await JS.InvokeVoidAsync("alert", $"Network error: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("console.error", $"🔥 Unexpected error while submitting quotation: {ex}");
+            await JS.InvokeVoidAsync("alert", "Unexpected error occurred. Check console for details.");
+        }
+        finally
+        {
+            await JS.InvokeVoidAsync("console.groupEnd");
+        }
+    }
+
 
     private void UpdatebCanEditApproval()
     {
@@ -704,14 +768,43 @@
     }
     private void OnPrintPDF()
     {
-        StateStorage.Set("PR", PurchaseRequisitionRecord);
+        if (!IsSubmitted())
+        {
+            StateStorage.Set("PR", PurchaseRequisitionRecord);
+        }
         NavigationManager.NavigateTo($"/purchaseorder_client/print/{PurchaseRequisitionRecord.RequisitionNumber}");
-      
+
     }
     private void OnQuotation()
     {
-        StateStorage.Set("PR", PurchaseRequisitionRecord);
-        NavigationManager.NavigateTo($"/Quotation_Client/{PurchaseRequisitionRecord.RequisitionNumber}");
+        if(!IsSubmitted())
+        {
+            StateStorage.Set("PR", PurchaseRequisitionRecord);
+        }
+       
+        if (string.IsNullOrEmpty(PurchaseRequisitionRecord.RequisitionNumber))
+        {
+            NavigationManager.NavigateTo($"/Quotation_Client");
+        }
+        else
+        {
+            NavigationManager.NavigateTo($"/Quotation_Client/{PurchaseRequisitionRecord.RequisitionNumber}");
+        }
+        //
     }
 
+    private void SaveAsDraft()
+    {
+        StateStorage.Set("PR_Draft", PurchaseRequisitionRecord);
+
+    }
+
+    private void LoadDraft()
+    {
+        bool bTrue=StateStorage.TryGet<PurchaseRequisitionRecord>("PR_Draft", out PurchaseRequisitionRecord Found);
+        if(bTrue)
+        {
+            PurchaseRequisitionRecord = Found;
+        }
+    }
 }

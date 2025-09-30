@@ -34,7 +34,8 @@ namespace PurchaseBlazorApp2.Components.Data
         PendingRequest,
         ApprovedRequests,
         PendingDelivery,
-        ItemsReceived
+        ItemsReceived,
+        Close
     }
 
     public enum EApprovalStatus
@@ -52,6 +53,19 @@ namespace PurchaseBlazorApp2.Components.Data
         Approved
     }
 
+    public class EmailRequest
+    {
+        public List<string> To { get; set; } = new();
+        public List<string>? Cc { get; set; }
+        public string Subject { get; set; } = string.Empty;
+        public string Body { get; set; } = string.Empty;
+        public bool IsHtml { get; set; } = false;
+    }
+    public class DeliveryDateUpdateRequest
+    {
+        public string PR_ID { get; set; }
+        public DateTime DeliveryDate { get; set; }
+    }
 
     public class POSubmitResponse
     {
@@ -166,9 +180,13 @@ namespace PurchaseBlazorApp2.Components.Data
         [Key]
         public string? RequisitionNumber { get; set; } 
         public DateTime RequestDate { get; set; } = DateTime.Now;
+        public DateTime DeliveryDate { get; set; } = DateTime.MinValue;
+        public DateTime UpdateDate { get; set; } = DateTime.MinValue;
         public string Requestor { get; set; }
 
         public string Purpose { get; set; }
+
+        public bool bSentReminder { get; set; }
         public string? po_id { get; set; } = "";
 
         private bool _burgent = false;
