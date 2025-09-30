@@ -21,6 +21,60 @@ namespace PurchaseBlazorApp2.Components.Repository
             return new NpgsqlConnection($"Server=localhost;Port=5432; User Id=postgres; Password=password; Database=purchase");
         }
 
+        public async Task<List<DateTime>> GetDeliveryDatesAsync(List<string> requisitionNumbers)
+        {
+            var results = new List<DateTime>();
+
+            if (requisitionNumbers == null || requisitionNumbers.Count == 0)
+                return results;
+
+            try
+            {
+                await Connection.OpenAsync();
+
+                string query = @"
+            SELECT pr_id, deliverydate
+            FROM potable
+            WHERE pr_id = ANY(@ids);";
+
+                var tempResults = new Dictionary<string, DateTime>();
+
+                using (var command = new NpgsqlCommand(query, Connection))
+                {
+                    command.Parameters.AddWithValue("ids", requisitionNumbers);
+
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            string prId = reader.GetString(0);
+                            DateTime deliveryDate = reader.GetDateTime(1);
+                            tempResults[prId] = deliveryDate;
+                        }
+                    }
+                }
+
+                // Always return in same order as requisitionNumbers
+                foreach (var prId in requisitionNumbers)
+                {
+                    if (tempResults.TryGetValue(prId, out var date))
+                        results.Add(date);
+                    else
+                        results.Add(DateTime.MinValue); // placeholder for missing -> UI can show empty
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"GetDeliveryDatesAsync Exception: {ex.Message}");
+            }
+            finally
+            {
+                await Connection.CloseAsync();
+            }
+
+            return results;
+        }
+
         public async Task<List<PurchaseOrderRecord>> GetRecordsAsyncWithPR(List<string> requisitionNumbers = null)
         {
             List<PurchaseOrderRecord> ToReturn = new List<PurchaseOrderRecord>();

@@ -22,6 +22,14 @@
                         </Template>
                     </RadzenDataGridColumn>
 
+                    <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Property="DeliveryDate" Title="DeliveryDate">
+                        <Template Context="data">
+                            @(data.DeliveryDate == DateTime.MinValue
+                                ? string.Empty
+                                : data.DeliveryDate.ToString("dd/MM/yyyy"))
+                        </Template>
+                    </RadzenDataGridColumn>
+
                     <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Title="PR Status">
                         <Template Context="data">
                             @data.prstatus.ToString()

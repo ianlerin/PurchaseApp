@@ -1,8 +1,11 @@
 ﻿@page "/Quotation_Client/{PrId}"
+@page "/Quotation_Client"
 @using PurchaseBlazorApp2.Client.Components.Helper
 @using PurchaseBlazorApp2.Components.Data;
+@using PurchaseBlazorApp2.Components.Global
 @using static PurchaseBlazorApp2.Client.Pages.Quotation.QuotationInfo
 @inject NavigationManager NavigationManager
+@inject ClientStateStorage StateStorage
 @inject HttpClient Http
 <h3>Create Quotation</h3>
 
@@ -16,26 +19,23 @@
 else
 {
     <!-- Image Upload Component -->
-    <UploadImageHelper UploadedImages="@Quotation.SupportDocuments"
+    <UploadImageHelper @key="bnewrequisition"
+    UploadedImages="@Quotation.SupportDocuments"
     SelectionType=UploadImageHelper.ESelectionType.SingleSelect
     OnImageSelected="HandleImageSelected"
     SelectedIndex="SelectedIndex"
     Orientation="UploadImageHelper.EOrientation.Vertical"
     ImageHeight="500"
     ImageWidth="500"
-    bNewRequisition=bnewrequisition />
+    bNewRequisition="bnewrequisition" />
 }
-@if (bnewrequisition)
-{
-    <button class="btn btn-primary" @onclick="SubmitQuotation">Submit</button>
-}
+
 <button class="btn btn-primary" @onclick="BacktoPR">Back</button>
 @code {
     [Inject] IJSRuntime JS { get; set; }
 
     [Parameter]
     public string PrId { get; set; }
-
     [Parameter]
     public bool bnewrequisition { get; set; }
 
@@ -48,6 +48,29 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        await JS.InvokeVoidAsync("console.log", $"Quotation OnInitializedAsync");
+        if (!string.IsNullOrEmpty(PrId))
+        {
+            await JS.InvokeVoidAsync("console.log", $"Quotation OnInitializedAsync,  pr id exist");
+            await SetupExistingRecord();
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("console.log", $"Quotation OnInitializedAsync,  no pr id");
+            bnewrequisition = true;
+            await LoadQuotation();
+            IsLoading = false;
+        }
+        //StateHasChanged();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+
+    }
+
+    private async Task SetupExistingRecord()
+    {
         // Assign PR ID to your Quotation
         Quotation.pr_id = PrId;
 
@@ -59,7 +82,7 @@ else
         {
             // Optionally deserialize result if your API returns a QuotationRecord
             var quotation = await response.Content.ReadFromJsonAsync<List<QuotationRecord>>();
-            if (quotation != null&&quotation.Count>0)
+            if (quotation != null && quotation.Count > 0)
             {
                 Quotation = quotation[0];
                 await UpdateSelectedIndexAsync();
@@ -72,7 +95,7 @@ else
         }
         await JS.InvokeVoidAsync("console.log", $"OnInitializedAsync quotation page {SelectedIndex}");
         IsLoading = false;
-        StateHasChanged();
+
     }
 
     private async Task UpdateSelectedIndexAsync()
@@ -122,9 +145,28 @@ else
     }
     private void BacktoPR()
     {
-
+        SaveQuotation();
         NavigationManager.NavigateTo($"/purchaserequisitionrecords_client/create/{PrId}");
 
+    }
+
+    private async void  SaveQuotation()
+    {
+        StateStorage.Set("Quotation", Quotation);
+    }
+    private async Task LoadQuotation()
+    {
+        QuotationRecord FoundQuotation;
+        if(StateStorage!=null)
+        {
+            StateStorage.TryGet<QuotationRecord>("Quotation", out FoundQuotation);
+            if(FoundQuotation!=null)
+            {
+                Quotation = FoundQuotation;
+            }
+           
+        }
+        await UpdateSelectedIndexAsync();
     }
 
     private async Task SubmitQuotation()

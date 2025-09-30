@@ -18,9 +18,9 @@ namespace PurchaseBlazorApp2.Controller
         }
 
         [HttpPost("submit")]
-        public async Task<ActionResult<bool>> SubmitPRs([FromBody] IEnumerable<PurchaseRequisitionRecord> infoList)
+        public async Task<ActionResult<List<string>>> SubmitPRs([FromBody] IEnumerable<PurchaseRequisitionRecord> infoList)
         {
-           bool Result= await  PRRepository.SubmitAsync(infoList);
+            List<string> Result = await PRRepository.SubmitAsync(infoList);
            return Ok(Result);
         }
 
@@ -30,6 +30,14 @@ namespace PurchaseBlazorApp2.Controller
             var result = await PRRepository.InsertApprovalByRequisitionNumber(record);
             return Ok(result);
         }
+
+        [HttpPost("edit-deliverydate")]
+        public async Task<ActionResult<bool>> InsertDeliveryDate([FromBody] DeliveryDateUpdateRequest Request)
+        {
+            var result = await PRRepository.UpdateDeliveryDateAsync(Request.PR_ID, Request.DeliveryDate);
+            return Ok(result);
+        }
+
         [HttpPost("get-list-partial")]
         public async Task<ActionResult<List<PurchaseRequisitionRecord>>> GetRecordsForListAsync([FromBody] List<string> requisitionNumbers)
         {

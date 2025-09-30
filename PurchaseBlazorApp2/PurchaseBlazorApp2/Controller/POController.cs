@@ -37,5 +37,11 @@ namespace PurchaseBlazorApp2.Controller
             return Ok(allRecords);
 
         }
+        [HttpGet("get_deliverydate")]
+        public async Task<ActionResult<List<DateTime>>> GetDeliveryDate([FromQuery] List<string> requisitionNumbers)
+        {
+            List<DateTime> allRecords = await PORepository.GetDeliveryDatesAsync(requisitionNumbers);
+            return Ok(allRecords);
+        }
     }
 }

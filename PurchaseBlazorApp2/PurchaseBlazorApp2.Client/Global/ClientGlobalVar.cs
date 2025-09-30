@@ -1,4 +1,6 @@
 ﻿using Azure.Core;
+using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
+using Microsoft.Extensions.DependencyInjection;
 using PurchaseBlazorApp2.Components.Data;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -52,8 +54,35 @@ namespace PurchaseBlazorApp2.Components.Global
         {
             UserName = new UserName();
             IsLoggedIn = false;
-           
-            OnLoginStateChanged?.Invoke();
+            StopTokenRefreshLoop();
+             OnLoginStateChanged?.Invoke();
+        }
+
+
+        private Timer? _refreshTimer;
+
+        public async Task StartTokenRefreshLoop(IAccessTokenProvider tokenProvider)
+        {
+            _refreshTimer = new Timer(async _ =>
+            {
+                var result = await tokenProvider.RequestAccessToken();
+
+                if (result.TryGetToken(out var token))
+                {
+                    var expiresIn = token.Expires - DateTimeOffset.Now;
+                    Console.WriteLine($"Token refreshed, expires in {expiresIn.TotalMinutes} min");
+                }
+                else
+                {
+                    Console.WriteLine("Failed to refresh token, user may need to login again.");
+                }
+
+            }, null, TimeSpan.Zero, TimeSpan.FromMinutes(1)); // check every 5 minutes
+        }
+        private void StopTokenRefreshLoop()
+        {
+            _refreshTimer?.Dispose();
+            _refreshTimer = null;
         }
     }
 
