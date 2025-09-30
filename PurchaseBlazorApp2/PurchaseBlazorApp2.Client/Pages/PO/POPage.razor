@@ -308,7 +308,13 @@
                     {
                         Record.PO_ID = result.IDs[0];
                     }
-
+                    //update delivery date too
+                    var DeliveryDatePayload = new DeliveryDateUpdateRequest
+                        {
+                            PR_ID = Record.PR_ID,
+                            DeliveryDate = Record.DeliveryDate
+                        };
+                    await Http.PostAsJsonAsync("api/pr/edit-deliverydate", DeliveryDatePayload);
                     await JS.InvokeVoidAsync("alert", $"✅ Purchase Order saved successfully! ID: {Record.PO_ID}");
                 }
                 else

@@ -6,6 +6,9 @@ using Radzen;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using Azure.Identity;
+using Microsoft.Graph;
+using PurchaseBlazorApp2.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,7 +43,20 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddSingleton(provider =>
+{
+    var tenantId = builder.Configuration["AzureAd:TenantId"];
+    var clientId = builder.Configuration["AzureAd:ClientId"];
+    var clientSecret = builder.Configuration["AzureAd:ClientSecret"];
 
+    var options = new TokenCredentialOptions { AuthorityHost = AzureAuthorityHosts.AzurePublicCloud };
+    var clientSecretCredential = new ClientSecretCredential(tenantId, clientId, clientSecret, options);
+
+    return new GraphServiceClient(clientSecretCredential, new[] { "https://graph.microsoft.com/.default" });
+});
+
+builder.Services.AddHostedService<ReminderEmailService>();
+builder.Services.AddScoped<EmailService>();
 var app = builder.Build();
 
 QuestPDF.Settings.License = LicenseType.Community;
