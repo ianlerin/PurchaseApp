@@ -308,7 +308,60 @@ namespace PurchaseBlazorApp2.Components.Repository
             }
         }
 
+        public async Task<HashSet<string>> GetRequisitionNumbersByDepartmentAsync(EDepartment department)
+        {
+            var requisitionNumbers = new HashSet<string>();
+            bool shouldCloseConnection = false;
+            var MyConnection = GetConnection();
 
+            try
+            {
+                if (MyConnection.State != System.Data.ConnectionState.Open)
+                {
+                    await MyConnection.OpenAsync();
+                    shouldCloseConnection = true;
+                }
+
+                using var command = new NpgsqlCommand(
+                    @"SELECT requisitionnumber, role
+              FROM pr_approval_table
+              WHERE approvestatus = @status",
+                    MyConnection);
+
+                command.Parameters.AddWithValue("@status", ESingleApprovalStatus.PendingAction.ToString());
+
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    string roleString = reader["role"]?.ToString() ?? string.Empty;
+
+                    // Split roles and check if department matches
+                    var departments = roleString
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(role => Enum.Parse<EDepartment>(role));
+
+                    if (departments.Contains(department))
+                    {
+                        string reqNumber = reader["requisitionnumber"]?.ToString() ?? string.Empty;
+                        if (!string.IsNullOrEmpty(reqNumber))
+                        {
+                            requisitionNumbers.Add(reqNumber); // HashSet auto-ignores duplicates
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"GetRequisitionNumbersByDepartmentAsync failed: {ex.Message}");
+            }
+            finally
+            {
+                if (shouldCloseConnection)
+                    await MyConnection.CloseAsync();
+            }
+
+            return requisitionNumbers;
+        }
 
         public async Task<List<ApprovalInfo>> InsertApprovalByRequisitionNumber(
             PurchaseRequisitionRecord Record,

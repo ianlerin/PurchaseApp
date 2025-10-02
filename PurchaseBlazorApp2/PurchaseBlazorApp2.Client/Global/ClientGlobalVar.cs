@@ -31,7 +31,7 @@ namespace PurchaseBlazorApp2.Components.Global
 
     public class ClientGlobalVar
     {
-        public event Action? OnLoginStateChanged;
+        public event Func<Task>? OnLoginStateChanged;
         public UserName UserName { get; set; }
         public bool IsLoggedIn { get; set; } = false;
         public Microsoft.AspNetCore.Components.WebAssembly.Authentication.AccessToken AccessToken { get; set; }

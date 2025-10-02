@@ -32,9 +32,9 @@
                 <div class="col-md-4">
                     @if (!string.IsNullOrEmpty(PurchaseRequisitionRecord.RequisitionNumber))
                     {
-                        <label for="ID" class="form-label">ID:</label>
-                        <InputText id="ID" @bind-Value="PurchaseRequisitionRecord.RequisitionNumber"
-                        class="form-control" readonly />
+                    <label for="ID" class="form-label">ID:</label>
+                    <InputText id="ID" @bind-Value="PurchaseRequisitionRecord.RequisitionNumber"
+                    class="form-control" readonly />
                     }
                 </div>
             </div>
@@ -65,50 +65,50 @@
 
                 @foreach (var item in PurchaseRequisitionRecord.ItemRequested)
                 {
-                    var index = PurchaseRequisitionRecord.ItemRequested.IndexOf(item);
+                var index = PurchaseRequisitionRecord.ItemRequested.IndexOf(item);
 
-                    <div class="mb-3 border p-3 rounded bg-light">
-                        <div class="row g-3 mb-2">
-                            <div class="col-md-6">
-                                <label class="form-label">Item</label>
-                                <ResizableInputTextArea @bind-Value="item.RequestItem"
-                                                        CssClass="form-control"
-                                                        Rows="1"
-                                                        Placeholder="Enter item descriptions here..."
-                                                        disabled="@(!bNewRequisition)" />
+                <div class="mb-3 border p-3 rounded bg-light">
+                    <div class="row g-3 mb-2">
+                        <div class="col-md-6">
+                            <label class="form-label">Item</label>
+                            <ResizableInputTextArea @bind-Value="item.RequestItem"
+                            CssClass="form-control"
+                            Rows="1"
+                            Placeholder="Enter item descriptions here..."
+                            disabled="@(!bNewRequisition)" />
 
-                                <ValidationMessage For="@(() => item.RequestItem)" class="text-danger" />
-                            </div>
-                            <div class="col-md-2">
-                                <label class="form-label">Unit Price</label>
-                                <InputNumber @bind-Value="item.UnitPrice"
-                                class="form-control"
-                                disabled="@(!bNewRequisition)" />
-                                <ValidationMessage For="@(() => item.UnitPrice)" class="text-danger" />
-                            </div>
-                            <div class="col-md-2">
-                                <label class="form-label">Quantity</label>
-                                <InputNumber @bind-Value="item.Quantity"
-                                class="form-control"
-                                disabled="@(!bNewRequisition)" />
-                                <ValidationMessage For="@(() => item.Quantity)" class="text-danger" />
-                            </div>
-                            <div class="col-md-2">
-                                <label class="form-label">Total Price</label>
-                                <InputNumber @bind-Value="item.TotalPrice"
-                                class="form-control"
-                                disabled="@(!bNewRequisition)" />
-                                <ValidationMessage For="@(() => item.TotalPrice)" class="text-danger" />
-                            </div>
-                            <div class="col-md-2 d-flex align-items-end">
-                                <button type="button" class="btn btn-danger w-100"
-                                @onclick="() => RemoveItem(index)"
-                                disabled="@(!bNewRequisition)">
-                                    Remove
-                                </button>
-                            </div>
+                            <ValidationMessage For="@(() => item.RequestItem)" class="text-danger" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Unit Price</label>
+                            <InputNumber @bind-Value="item.UnitPrice"
+                            class="form-control"
+                            disabled="@(!bNewRequisition)" />
+                            <ValidationMessage For="@(() => item.UnitPrice)" class="text-danger" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Quantity</label>
+                            <InputNumber @bind-Value="item.Quantity"
+                            class="form-control"
+                            disabled="@(!bNewRequisition)" />
+                            <ValidationMessage For="@(() => item.Quantity)" class="text-danger" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Total Price</label>
+                            <InputNumber @bind-Value="item.TotalPrice"
+                            class="form-control"
+                            disabled="@(!bNewRequisition)" />
+                            <ValidationMessage For="@(() => item.TotalPrice)" class="text-danger" />
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="button" class="btn btn-danger w-100"
+                            @onclick="() => RemoveItem(index)"
+                            disabled="@(!bNewRequisition)">
+                                Remove
+                            </button>
                         </div>
                     </div>
+                </div>
                 }
 
                 <button type="button"
@@ -152,13 +152,13 @@
             </div>
             @if (bIsProcurementManager)
             {
-                <!-- Approvals -->
-                <div class="mb-3">
-                    <PurchaseBlazorApp2.Client.Components.Helper.ApprovalArea Approvals="PurchaseRequisitionRecord.Approvals"
-                    bIsEditable="bIsProcurementManager&&bCanEditApproval"
-                    MyGlobalVar="GlobalVar" OnApprovalChanged="OnCheckboxChanged">
-                    </PurchaseBlazorApp2.Client.Components.Helper.ApprovalArea>
-                </div>
+            <!-- Approvals -->
+            <div class="mb-3">
+                <PurchaseBlazorApp2.Client.Components.Helper.ApprovalArea Approvals="PurchaseRequisitionRecord.Approvals"
+                bIsEditable="bIsProcurementManager&&bCanEditApproval"
+                MyGlobalVar="GlobalVar" OnApprovalChanged="OnCheckboxChanged">
+                </PurchaseBlazorApp2.Client.Components.Helper.ApprovalArea>
+            </div>
 
             }
 
@@ -168,34 +168,44 @@
 
                 @if (bNewRequisition)
                 {
-                    <button type="submit" class="btn btn-primary btn-lg" @onclick="AddPurchaseRequisitionRecord">
-                        Create
-                    </button>
-                    <button @onclick="OnQuotation" type="button" class="btn btn-secondary btn-lg">
-                        Quotation
-                    </button>
+                <button type="submit" class="btn btn-primary btn-lg" @onclick="AddPurchaseRequisitionRecord">
+                    Create
+                </button>
+                <button @onclick="OnQuotation" type="button" class="btn btn-secondary btn-lg">
+                    Quotation
+                </button>
                 }
                 @if (bIsProcurementManager && bCanEditApproval && IsSubmitted())
                 {
-                    <button type="submit" class="btn btn-primary btn-lg" @onclick="AddPurchaseRequisitionRecord">
-                        Edit
-                    </button>
-                    <button @onclick="OnQuotation" type="button" class="btn btn-secondary btn-lg">
-                        Quotation
-                    </button>
+                <button type="submit" class="btn btn-primary btn-lg" @onclick="AddPurchaseRequisitionRecord">
+                    Edit
+                </button>
+                <button @onclick="OnQuotation" type="button" class="btn btn-secondary btn-lg">
+                    Quotation
+                </button>
+                }
+                @if (bIsProcurementManager && !bCanEditApproval && IsSubmitted() && !string.IsNullOrEmpty(PurchaseRequisitionRecord.Rejectreason))
+                {
+                    <div class="form-group mt-3">
+                        <label for="RejectReason" class="form-label">Reject Reason</label>
+                        <InputText id="RejectReason"
+                                   @bind-Value="PurchaseRequisitionRecord.Rejectreason"
+                                   class="form-control" readonly />
+                    </div>
                 }
 
+                <!--
                 @if (bIsProcurementManager || bNewRequisition)
                 {
 
-                    @if(!IsSubmitted())
-                    {
-                        <button type="button" class="btn btn-primary btn-lg" @onclick="SaveAsDraft">Save Draft</button>
-                        <button type="button" class="btn btn-primary btn-lg" @onclick="LoadDraft">Load Draft</button>
-                    }
-
+                @if(!IsSubmitted())
+                {
+                <button type="button" class="btn btn-primary btn-lg" @onclick="SaveAsDraft">Save Draft</button>
+                <button type="button" class="btn btn-primary btn-lg" @onclick="LoadDraft">Load Draft</button>
                 }
 
+                }
+                -->
                 @if (bCanOpenPO)
                 {
                     @if (bIsProcurementManager)
@@ -215,11 +225,17 @@
                     <button @onclick="OnReject" class="btn btn-primary btn-lg">
                         Reject
                     </button>
+                    <div class="form-group mt-3">
+                        <label for="RejectReason" class="form-label">Reject Reason</label>
+                        <InputText id="RejectReason"
+                                   @bind-Value="PurchaseRequisitionRecord.Rejectreason"
+                                   class="form-control" />
+                    </div>
                 }
 
 
             </div>
-            <textarea readonly>@EmailSendStatus</textarea>
+            <textarea readonly rows="6" cols="60">@EmailSendStatus</textarea>
         </EditForm>
 
 
@@ -364,12 +380,17 @@
 
     private async Task OnSendEmailToRelevantParty()
     {
+        // refresh status before send
+        PurchaseRequisitionRecord.OnApprovalChanged();
+
         List<string> CCEmail = new List<string>();
         List<string> MainEmail = new List<string>();
         string currentEmail;
+
         switch (PurchaseRequisitionRecord.approvalstatus)
         {
-            case(EApprovalStatus.PreApproval):
+            case (EApprovalStatus.PreApproval):
+                await JS.InvokeVoidAsync("console.log", "Status: PreApproval");
 
                 MainEmail = await GetProcurementEmail();
                 currentEmail = await GetCurrentEmail();
@@ -378,12 +399,16 @@
                     CCEmail.Add(currentEmail);
                 }
                 break;
+
             case (EApprovalStatus.PendingApproval):
+                await JS.InvokeVoidAsync("console.log", "Status: PendingApproval");
 
                 MainEmail = await GetAllNeededForApprovalEmails();
                 CCEmail = await GetProcurementEmail();
                 break;
+
             case (EApprovalStatus.Approved):
+                await JS.InvokeVoidAsync("console.log", "Status: Approved");
 
                 MainEmail = await GetProcurementEmail();
                 currentEmail = await GetCurrentEmail();
@@ -392,7 +417,9 @@
                     CCEmail.Add(currentEmail);
                 }
                 break;
+
             case (EApprovalStatus.Rejected):
+                await JS.InvokeVoidAsync("console.log", "Status: Rejected");
 
                 MainEmail = await GetProcurementEmail();
                 currentEmail = await GetCurrentEmail();
@@ -401,8 +428,8 @@
                     CCEmail.Add(currentEmail);
                 }
                 break;
-
         }
+
         await SendEmail(MainEmail, CCEmail);
     }
 
@@ -793,6 +820,7 @@
         //
     }
 
+    /*
     private void SaveAsDraft()
     {
         StateStorage.Set("PR_Draft", PurchaseRequisitionRecord);
@@ -807,4 +835,5 @@
             PurchaseRequisitionRecord = Found;
         }
     }
+    */
 }

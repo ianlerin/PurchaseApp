@@ -6,7 +6,6 @@
 @using PurchaseBlazorApp2.Components.Global
 @inject HttpClient Http
 @inject IJSRuntime JS
-@inject ClientGlobalVar GlobalVar
 @inject IServiceProvider ServiceProvider
 @inject NavigationManager NavigationManager
 @inject ClientGlobalVar GlobalVar
@@ -167,6 +166,7 @@
                 }
                 if (GlobalVar != null)
                 {
+                    GlobalVar.SetUser(MyUser);
                     GlobalVar.StartTokenRefreshLoop(tokenProvider);
                 }
                 StateHasChanged();
