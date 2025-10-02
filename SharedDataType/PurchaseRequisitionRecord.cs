@@ -183,7 +183,7 @@ namespace PurchaseBlazorApp2.Components.Data
         public DateTime DeliveryDate { get; set; } = DateTime.MinValue;
         public DateTime UpdateDate { get; set; } = DateTime.MinValue;
         public string Requestor { get; set; }
-
+        public string Rejectreason { get; set; }
         public string Purpose { get; set; }
 
         public bool bSentReminder { get; set; }
