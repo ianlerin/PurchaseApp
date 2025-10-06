@@ -110,7 +110,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                     {
                         PurchaseOrderRecord MainInfo = new PurchaseOrderRecord();
                         InsertInfoOfBasicInfo(MainInfo, reader);
-                      
+                        MainInfo.ReceiveInfo = await GetReceiveInfo(MainInfo.PO_ID);
                         ToReturn.Add(MainInfo);
                     }
                 }
@@ -164,7 +164,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                     {
                         PurchaseOrderRecord MainInfo = new PurchaseOrderRecord();
                         InsertInfoOfBasicInfo(MainInfo, reader);
-                        
+                        MainInfo.ReceiveInfo= await GetReceiveInfo(MainInfo.PO_ID);
                         ToReturn.Add(MainInfo);
                     }
                 }
@@ -181,8 +181,110 @@ namespace PurchaseBlazorApp2.Components.Repository
             }
             return ToReturn;
         }
+        public async Task<ReceiveInfo> GetReceiveInfo(string poNumber)
+        {
+            ReceiveInfo? receive = new ReceiveInfo();
 
+            await using var connection = GetConnection();
+            await connection.OpenAsync();
 
+            var command = new NpgsqlCommand(
+                "SELECT imagebyte, photoformat, receive_date " +
+                "FROM receive WHERE po_id = @req",
+                connection);
+            command.Parameters.AddWithValue("@req", poNumber);
+
+            await using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                if (receive == null)
+                {
+                    receive = new ReceiveInfo
+                    {
+                        po_id = poNumber,
+                        ReceiveDate = reader["receive_date"] == DBNull.Value
+                            ? DateTime.Now
+                            : (DateTime)reader["receive_date"],
+                        SupportDocuments = new List<ImageUploadInfo>()
+                    };
+                }
+
+                var image = new ImageUploadInfo
+                {
+                    Data = reader["imagebyte"] as byte[] ?? Array.Empty<byte>(),
+                    DataFormat = reader["photoformat"]?.ToString() ?? string.Empty
+                };
+                receive.SupportDocuments.Add(image);
+            }
+
+            return receive;
+        }
+
+        private async Task<bool> InsertImage(PurchaseOrderRecord info, NpgsqlTransaction? externalTransaction = null)
+        {
+            bool shouldCloseConnection = false;
+            bool shouldDisposeTransaction = false;
+
+            try
+            {
+                if (Connection.State != System.Data.ConnectionState.Open)
+                {
+                    await Connection.OpenAsync();
+                    shouldCloseConnection = true;
+                }
+
+                var transaction = externalTransaction;
+                if (transaction == null)
+                {
+                    transaction = await Connection.BeginTransactionAsync();
+                    shouldDisposeTransaction = true;
+                }
+
+                // 1. Delete existing record
+                var deleteCmd = new NpgsqlCommand(
+                    "DELETE FROM receive WHERE po_id = @po_id",
+                    Connection, transaction);
+                deleteCmd.Parameters.AddWithValue("@po_id", info.PO_ID);
+                await deleteCmd.ExecuteNonQueryAsync();
+
+                // 2. Insert new records
+                foreach (ImageUploadInfo single in info.ReceiveInfo.SupportDocuments)
+                {
+                    var insertCmd = new NpgsqlCommand(
+                        "INSERT INTO receive (po_id, imagebyte, photoformat,receive_date) VALUES (@req, @doc, @format,@date)",
+                        Connection, transaction);
+                    insertCmd.Parameters.AddWithValue("@req", info.PO_ID);
+                    insertCmd.Parameters.AddWithValue("@date", info.ReceiveInfo.ReceiveDate);
+                    insertCmd.Parameters.AddWithValue("@doc", single.Data ?? Array.Empty<byte>());
+                    insertCmd.Parameters.AddWithValue("@format", single.DataFormat ?? string.Empty);
+                    await insertCmd.ExecuteNonQueryAsync();
+                }
+
+                if (shouldDisposeTransaction)
+                    await transaction.CommitAsync();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                if (externalTransaction == null)
+                {
+                    try
+                    {
+                        await Connection?.BeginTransaction()?.RollbackAsync();
+                    }
+                    catch { /* suppress rollback error */ }
+                }
+
+                Console.WriteLine($"InsertImage failed: {ex.Message}");
+                return false;
+            }
+            finally
+            {
+                if (shouldCloseConnection)
+                    await Connection.CloseAsync();
+            }
+        }
 
         private void InsertInfoOfBasicInfo<T>(T MainInfo, NpgsqlDataReader reader)
         {
@@ -191,7 +293,7 @@ namespace PurchaseBlazorApp2.Components.Repository
             {
                 foreach (var property in properties)
                 {
-                    if (property.Name == "ApprovalInfo" )
+                    if (property.Name == "ApprovalInfo"|| property.Name == "ReceiveInfo")
                         continue;
                     
 
@@ -294,7 +396,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                                 {
                                     string propName = prop.Name;
 
-                                    if (propName == "PO_ID"|| propName == "ApprovalInfo")
+                                    if (propName == "PO_ID"|| propName == "ApprovalInfo" || propName == "ReceiveInfo")
                                         continue;
 
                                     sqlCommand += propName + ",";
@@ -336,12 +438,15 @@ namespace PurchaseBlazorApp2.Components.Repository
                                     MySubmitResponse.bSuccess = true;
                                     MySubmitResponse.IDs.Add(SID);
                                 }
+                                Info.PO_ID= SID;
+                                await InsertImage(Info, transaction);
                             }
                         }
                     }
 
                     if (MySubmitResponse.bSuccess)
                         await transaction.CommitAsync();
+
                     else
                         await transaction.RollbackAsync();
                 }

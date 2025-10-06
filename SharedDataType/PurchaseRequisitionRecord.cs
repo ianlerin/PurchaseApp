@@ -112,8 +112,14 @@ namespace PurchaseBlazorApp2.Components.Data
 
     }
 
+    public class ReceiveInfo
+    {
+        public string? po_id { get; set; }
+        public List<ImageUploadInfo> SupportDocuments { get; set; } = new List<ImageUploadInfo>();
+        public DateTime ReceiveDate { get; set; } = DateTime.Now;
+    }
 
-    public class ImageUploadInfo
+public class ImageUploadInfo
     {
         public byte[] Data { get; set; }
         public string DataFormat {  get; set; }
@@ -165,13 +171,14 @@ namespace PurchaseBlazorApp2.Components.Data
         public DateTime DeliveryDate { get; set; } = DateTime.Now;
         public string? DeliveryMethod { get; set; }
         public string? PaymentMethod { get; set; }
-
+        public ReceiveInfo ReceiveInfo { get; set; } = new ReceiveInfo();
         public PurchaseOrderRecord()
         {
           mycompanyname = "LCDA MSB PINEAPPLE SDN BHD 202201032786 (1478483-W)";
           myaddress = "166, Kampung Kovil, Lot 931 Mk17, 14000 Bukit Mertajam, Penang, Malaysia";
           myemail = "lcdamsbpineapple@gmail.com, nitsei1@hotmail.com";
           tel = "604-5308419/ 5370081";
+          
         }
     }
 

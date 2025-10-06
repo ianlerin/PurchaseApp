@@ -65,7 +65,7 @@
         <button type="button" class="btn btn-outline-primary" @onclick="SearchSupplier">Find Supplier</button>
     </div>
 
-   
+
     <h5>Supplier Info</h5>
     <div class="mb-3">
         <label for="suppliercompany" class="form-label">Company</label>
@@ -135,6 +135,18 @@
         <InputText id="paymentmethod" class="form-control" @bind-Value="Record.PaymentMethod" />
     </div>
 
+
+    <h5>Receive Info</h5>
+    <label for="ReceiveDate" class="form-label">Receive Date</label>
+    <InputDate id="ReceiveDate" class="form-control" @bind-Value="Record.ReceiveInfo.ReceiveDate" />
+    <UploadImageHelper UploadedImages="@Record.ReceiveInfo.SupportDocuments"
+    SelectionType=UploadImageHelper.ESelectionType.None
+    Orientation="UploadImageHelper.EOrientation.Vertical"
+    bNewRequisition=true
+    ImageHeight="500"
+    ImageWidth="500" />
+
+
     <button type="submit" class="btn btn-primary">Save</button>
     <button type="button" class="btn btn-secondary ms-2" @onclick="ResetForm">Reset</button>
     <button type="button" @onclick="DownloadPdf">Download PDF</button>
@@ -166,74 +178,92 @@
     }
 
 
-    private PurchaseOrderRecord Record = new();
+    private PurchaseOrderRecord Record = null;
     private PurchaseRequisitionRecord PRRecord { get; set; } = new PurchaseRequisitionRecord();
 
     private string SearchSID { get; set; } = string.Empty;
     [Parameter] public string? RequisitionNumber { get; set; }
     protected override async Task OnInitializedAsync()
     {
-        Record = StateStorage.Get<PurchaseOrderRecord>("PO");
+        //Record = StateStorage.Get<PurchaseOrderRecord>("PO");
         PRRecord = StateStorage.Get<PurchaseRequisitionRecord>("PR");
 
+        await JS.InvokeVoidAsync("console.log", "Initial State:", new
+        {
+            RecordExists = Record != null,
+            PRRecordExists = PRRecord != null
+        });
 
+        if (PRRecord != null)
+        {
+            RequisitionNumber = PRRecord.RequisitionNumber;
+            await JS.InvokeVoidAsync("console.log", $"PRRecord found, RequisitionNumber = {RequisitionNumber}");
+        }
 
         if (Record != null)
         {
+            await JS.InvokeVoidAsync("console.log", $"Fetching PR details for RequisitionNumber={RequisitionNumber}");
             var response = await Http.PostAsJsonAsync(
-               NavigationManager.ToAbsoluteUri("api/pr/get-detail"), new List<string> { RequisitionNumber });
+                NavigationManager.ToAbsoluteUri("api/pr/get-detail"), new List<string> { RequisitionNumber });
+
             if (response.IsSuccessStatusCode)
             {
                 try
                 {
                     var Lists = await response.Content.ReadFromJsonAsync<List<PurchaseRequisitionRecord>>();
-                    if (Lists.Count > 0)
+                    await JS.InvokeVoidAsync("console.log", $"Received PR list count = {Lists?.Count}");
+
+                    if (Lists != null && Lists.Count > 0)
                     {
                         PRRecord = Lists[0];
                     }
-
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error deserializing response: {ex.Message}");
-
+                    await JS.InvokeVoidAsync("console.error", $"Error deserializing PR detail: {ex.Message}");
                 }
             }
         }
 
-        if (Record == null && PRRecord != null)
+        if (Record == null && !string.IsNullOrEmpty(RequisitionNumber))
         {
             Record = new PurchaseOrderRecord();
-            Record.PR_ID = PRRecord.RequisitionNumber;
+            Record.PR_ID = RequisitionNumber;
+
+            await JS.InvokeVoidAsync("console.log", $"Fetching PO for RequisitionNumber={RequisitionNumber}");
+
             var response = await Http.PostAsJsonAsync(
-             NavigationManager.ToAbsoluteUri("api/po/get_pr"), new List<string> { PRRecord.RequisitionNumber });
+                NavigationManager.ToAbsoluteUri("api/po/get_pr"), new List<string> { RequisitionNumber });
+
             if (response.IsSuccessStatusCode)
             {
                 try
                 {
                     var Lists = await response.Content.ReadFromJsonAsync<List<PurchaseOrderRecord>>();
-                    if (Lists.Count > 0)
+                    await JS.InvokeVoidAsync("console.log", $"Received PO list count = {Lists?.Count}");
+
+                    if (Lists != null && Lists.Count > 0)
                     {
                         Record = Lists[0];
                     }
-
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error deserializing response: {ex.Message}");
-
+                    await JS.InvokeVoidAsync("console.error", $"Error deserializing PO: {ex.Message}");
                 }
             }
         }
 
         if (PRRecord != null)
         {
-
             decimal subtotal = PRRecord.CalculateTotal();
             Record.SubTotal = subtotal;
 
-            EDepartment role = EDepartment.NotSpecified;
+            await JS.InvokeVoidAsync("console.log", $"Subtotal calculated = {subtotal}");
+
             var json = await JS.InvokeAsync<string>("getCookie", "userKey");
+            await JS.InvokeVoidAsync("console.log", "Cookie value:", json);
+
             if (!string.IsNullOrWhiteSpace(json))
             {
                 try
@@ -242,15 +272,21 @@
                     if (restoredUser != null)
                     {
                         Record.CreatedBy = restoredUser.Name;
+                        await JS.InvokeVoidAsync("console.log", $"Restored user: {restoredUser.Name}");
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
-
+                    await JS.InvokeVoidAsync("console.error", $"Error deserializing user cookie: {ex.Message}");
                 }
             }
-
         }
+
+        await JS.InvokeVoidAsync("console.log", "OnInitializedAsync finished", new
+        {
+            Record = Record,
+            PRRecord = PRRecord
+        });
     }
 
 

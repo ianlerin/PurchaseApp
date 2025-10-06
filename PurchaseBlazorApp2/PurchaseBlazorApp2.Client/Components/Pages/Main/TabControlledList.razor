@@ -1,9 +1,23 @@
 ﻿@page "/MainList_Client"
+
+@inject IJSRuntime JS
+
+@using PurchaseBlazorApp2.Components.Data
 <h3>TabControlledList</h3>
 
 <div class="tabs">
-    <button class="tab-button @(activeTab == "PR" ? "active" : "")" @onclick="@(() => activeTab = "PR")">PR</button>
-    <button class="tab-button @(activeTab == "PO" ? "active" : "")" @onclick="@(() => activeTab = "PO")">PO</button>
+    <button class="tab-button @(activeTab == "PR" ? "active" : "")"
+            @onclick="@(() => activeTab = "PR")">
+        PR
+    </button>
+
+    @if (bIsProcurementManager)
+    {
+        <button class="tab-button @(activeTab == "PO" ? "active" : "")"
+                @onclick="@(() => activeTab = "PO")">
+            PO
+        </button>
+    }
 </div>
 
 <div class="tab-content mt-3">
@@ -11,7 +25,7 @@
     {
         <PurchaseBlazorApp2.Client.Pages.PR.PurchaseRequisitionList />
     }
-    else if (activeTab == "PO")
+    else if (activeTab == "PO" && bIsProcurementManager)
     {
         <PurchaseBlazorApp2.Client.Pages.PO.POList />
     }
@@ -19,26 +33,45 @@
 
 <style>
     .tabs {
-        display: flex;
-        gap: 1rem;
-        border-bottom: 1px solid #ccc;
+    display: flex;
+    gap: 1rem;
+    border-bottom: 1px solid #ccc;
     }
 
     .tab-button {
-        background: none;
-        border: none;
-        padding: 0.5rem 1rem;
-        cursor: pointer;
-        font-weight: bold;
+    background: none;
+    border: none;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    font-weight: bold;
     }
 
-        .tab-button.active {
-            border-bottom: 2px solid blue;
-            color: blue;
-        }
+    .tab-button.active {
+    border-bottom: 2px solid blue;
+    color: blue;
+    }
 </style>
 
 
 @code {
     private string activeTab = "PR";
+    bool bIsProcurementManager = false;
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            HttpResponseMessage? response = new HttpResponseMessage();
+
+            EDepartment MyDepartment = await GeneralLibrary.GetCurrentDepartmentRole(JS);
+
+            bIsProcurementManager = MyDepartment == EDepartment.ProcurementManager;
+        }
+        catch(Exception Ex)
+        {
+            
+        }
+    }
+
 }
+
+

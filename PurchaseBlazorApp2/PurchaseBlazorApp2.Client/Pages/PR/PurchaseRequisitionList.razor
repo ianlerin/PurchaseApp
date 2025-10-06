@@ -88,8 +88,6 @@
     protected override async Task OnInitializedAsync()
     {
         IsLoading = true; // show loading
-        StateHasChanged();
-
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
         try
