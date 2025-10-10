@@ -32,9 +32,9 @@
                 <div class="col-md-4">
                     @if (!string.IsNullOrEmpty(PurchaseRequisitionRecord.RequisitionNumber))
                     {
-                    <label for="ID" class="form-label">ID:</label>
-                    <InputText id="ID" @bind-Value="PurchaseRequisitionRecord.RequisitionNumber"
-                    class="form-control" readonly />
+                        <label for="ID" class="form-label">ID:</label>
+                        <InputText id="ID" @bind-Value="PurchaseRequisitionRecord.RequisitionNumber"
+                        class="form-control" readonly />
                     }
                 </div>
             </div>
@@ -65,50 +65,50 @@
 
                 @foreach (var item in PurchaseRequisitionRecord.ItemRequested)
                 {
-                var index = PurchaseRequisitionRecord.ItemRequested.IndexOf(item);
+                    var index = PurchaseRequisitionRecord.ItemRequested.IndexOf(item);
 
-                <div class="mb-3 border p-3 rounded bg-light">
-                    <div class="row g-3 mb-2">
-                        <div class="col-md-6">
-                            <label class="form-label">Item</label>
-                            <ResizableInputTextArea @bind-Value="item.RequestItem"
-                            CssClass="form-control"
-                            Rows="1"
-                            Placeholder="Enter item descriptions here..."
-                            disabled="@(!bNewRequisition)" />
+                    <div class="mb-3 border p-3 rounded bg-light">
+                        <div class="row g-3 mb-2">
+                            <div class="col-md-6">
+                                <label class="form-label">Item</label>
+                                <ResizableInputTextArea @bind-Value="item.RequestItem"
+                                CssClass="form-control"
+                                Rows="1"
+                                Placeholder="Enter item descriptions here..."
+                                disabled="@(!bNewRequisition)" />
 
-                            <ValidationMessage For="@(() => item.RequestItem)" class="text-danger" />
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Unit Price</label>
-                            <InputNumber @bind-Value="item.UnitPrice"
-                            class="form-control"
-                            disabled="@(!bNewRequisition)" />
-                            <ValidationMessage For="@(() => item.UnitPrice)" class="text-danger" />
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Quantity</label>
-                            <InputNumber @bind-Value="item.Quantity"
-                            class="form-control"
-                            disabled="@(!bNewRequisition)" />
-                            <ValidationMessage For="@(() => item.Quantity)" class="text-danger" />
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Total Price</label>
-                            <InputNumber @bind-Value="item.TotalPrice"
-                            class="form-control"
-                            disabled="@(!bNewRequisition)" />
-                            <ValidationMessage For="@(() => item.TotalPrice)" class="text-danger" />
-                        </div>
-                        <div class="col-md-2 d-flex align-items-end">
-                            <button type="button" class="btn btn-danger w-100"
-                            @onclick="() => RemoveItem(index)"
-                            disabled="@(!bNewRequisition)">
-                                Remove
-                            </button>
+                                <ValidationMessage For="@(() => item.RequestItem)" class="text-danger" />
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Unit Price</label>
+                                <InputNumber @bind-Value="item.UnitPrice"
+                                class="form-control"
+                                disabled="@(!bNewRequisition)" />
+                                <ValidationMessage For="@(() => item.UnitPrice)" class="text-danger" />
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Quantity</label>
+                                <InputNumber @bind-Value="item.Quantity"
+                                class="form-control"
+                                disabled="@(!bNewRequisition)" />
+                                <ValidationMessage For="@(() => item.Quantity)" class="text-danger" />
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Total Price</label>
+                                <InputNumber @bind-Value="item.TotalPrice"
+                                class="form-control"
+                                disabled="@(!bNewRequisition)" />
+                                <ValidationMessage For="@(() => item.TotalPrice)" class="text-danger" />
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="button" class="btn btn-danger w-100"
+                                @onclick="() => RemoveItem(index)"
+                                disabled="@(!bNewRequisition)">
+                                    Remove
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
                 }
 
                 <button type="button"
@@ -152,13 +152,13 @@
             </div>
             @if (bIsProcurementManager)
             {
-            <!-- Approvals -->
-            <div class="mb-3">
-                <PurchaseBlazorApp2.Client.Components.Helper.ApprovalArea Approvals="PurchaseRequisitionRecord.Approvals"
-                bIsEditable="bIsProcurementManager&&bCanEditApproval"
-                MyGlobalVar="GlobalVar" OnApprovalChanged="OnCheckboxChanged">
-                </PurchaseBlazorApp2.Client.Components.Helper.ApprovalArea>
-            </div>
+                <!-- Approvals -->
+                <div class="mb-3">
+                    <PurchaseBlazorApp2.Client.Components.Helper.ApprovalArea Approvals="PurchaseRequisitionRecord.Approvals"
+                    bIsEditable="bIsProcurementManager&&bCanEditApproval"
+                    MyGlobalVar="GlobalVar" OnApprovalChanged="OnCheckboxChanged">
+                    </PurchaseBlazorApp2.Client.Components.Helper.ApprovalArea>
+                </div>
 
             }
 
@@ -168,44 +168,33 @@
 
                 @if (bNewRequisition)
                 {
-                <button type="submit" class="btn btn-primary btn-lg" @onclick="AddPurchaseRequisitionRecord">
-                    Create
-                </button>
-                <button @onclick="OnQuotation" type="button" class="btn btn-secondary btn-lg">
-                    Quotation
-                </button>
+                    <button type="submit" class="btn btn-primary btn-lg" @onclick="AddPurchaseRequisitionRecord">
+                        Create
+                    </button>
+                    <button type="button" class="btn btn-primary btn-lg" @onclick="SaveAsDraft">Save Draft</button>
+                    <button @onclick="OnQuotation" type="button" class="btn btn-secondary btn-lg">
+                        Quotation
+                    </button>
                 }
                 @if (bIsProcurementManager && bCanEditApproval && IsSubmitted())
                 {
-                <button type="submit" class="btn btn-primary btn-lg" @onclick="AddPurchaseRequisitionRecord">
-                    Edit
-                </button>
-                <button @onclick="OnQuotation" type="button" class="btn btn-secondary btn-lg">
-                    Quotation
-                </button>
+                    <button type="submit" class="btn btn-primary btn-lg" @onclick="AddPurchaseRequisitionRecord">
+                        Edit
+                    </button>
+                    <button @onclick="OnQuotation" type="button" class="btn btn-secondary btn-lg">
+                        Quotation
+                    </button>
                 }
                 @if (bIsProcurementManager && !bCanEditApproval && IsSubmitted() && !string.IsNullOrEmpty(PurchaseRequisitionRecord.Rejectreason))
                 {
                     <div class="form-group mt-3">
                         <label for="RejectReason" class="form-label">Reject Reason</label>
                         <InputText id="RejectReason"
-                                   @bind-Value="PurchaseRequisitionRecord.Rejectreason"
-                                   class="form-control" readonly />
+                        @bind-Value="PurchaseRequisitionRecord.Rejectreason"
+                        class="form-control" readonly />
                     </div>
                 }
 
-                <!--
-                @if (bIsProcurementManager || bNewRequisition)
-                {
-
-                @if(!IsSubmitted())
-                {
-                <button type="button" class="btn btn-primary btn-lg" @onclick="SaveAsDraft">Save Draft</button>
-                <button type="button" class="btn btn-primary btn-lg" @onclick="LoadDraft">Load Draft</button>
-                }
-
-                }
-                -->
                 @if (bCanOpenPO)
                 {
                     @if (bIsProcurementManager)
@@ -217,7 +206,7 @@
 
                 }
 
-                @if (bIsDepartmentMatchApproval)
+                @if (bIsDepartmentMatchApproval && bHaventApproveOrReject)
                 {
                     <button @onclick="OnApprove" class="btn btn-primary btn-lg">
                         Approve
@@ -228,8 +217,8 @@
                     <div class="form-group mt-3">
                         <label for="RejectReason" class="form-label">Reject Reason</label>
                         <InputText id="RejectReason"
-                                   @bind-Value="PurchaseRequisitionRecord.Rejectreason"
-                                   class="form-control" />
+                        @bind-Value="PurchaseRequisitionRecord.Rejectreason"
+                        class="form-control" />
                     </div>
                 }
 
@@ -252,7 +241,7 @@
     [Inject] IJSRuntime JS { get; set; }
     private bool bNewRequisition = false;
     private bool bCanOpenPO;
-
+    private bool bHaventApproveOrReject;
     private string EmailSendStatus;
 
 
@@ -282,6 +271,13 @@
 
     private async Task SendEmail(List<string> mainEmailList, List<string> ccList)
     {
+        if (mainEmailList == null || !mainEmailList.Any(e => !string.IsNullOrWhiteSpace(e)))
+        {
+            EmailSendStatus = "⚠️ No main recipients, email not sent.";
+            Console.WriteLine(EmailSendStatus);
+            return;
+        }
+
         // Convert lists to comma-separated strings for debugging
         string mainEmails = string.Join(", ", mainEmailList);
         string ccEmails = string.Join(", ", ccList);
@@ -542,9 +538,9 @@
 
         if (user.Identity?.IsAuthenticated ?? false)
         {
-            string name = user.FindFirst(c => c.Type == "name")?.Value;
+            string email = user.FindFirst(c => c.Type == "preferred_username" || c.Type == "email")?.Value;
 
-            PurchaseRequisitionRecord.Requestor = name;
+            PurchaseRequisitionRecord.Requestor = email ?? "Unknown";
         }
         PurchaseRequisitionRecord.UpdateDate = DateTime.Now;
         var response = await Http.PostAsJsonAsync(
@@ -558,7 +554,9 @@
             {
                 PurchaseRequisitionRecord.RequisitionNumber=PR_Ids[0];
             }
-
+            await OnSendEmailToRelevantParty();
+            await SubmitQuotation();
+            StateStorage.Remove("PR");
         }
         else
         {
@@ -567,9 +565,7 @@
 
             await JS.InvokeVoidAsync("alert", message);
         }
-        await OnSendEmailToRelevantParty();
-        await SubmitQuotation();
-        StateStorage.Remove("PR");
+
 
         StateHasChanged();
     }
@@ -583,7 +579,7 @@
         return false;
     }
 
-    
+
     protected override async Task OnInitializedAsync()
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -646,6 +642,15 @@
             bNewRequisition = true;
             PurchaseRequisitionRecord.Department = MyDepartment;
         }
+        if (PurchaseRequisitionRecord.approvalstatus == EApprovalStatus.Rejected || PurchaseRequisitionRecord.approvalstatus == EApprovalStatus.Approved)
+        {
+            bHaventApproveOrReject = false;
+        }
+        else
+        {
+            bHaventApproveOrReject = true;
+        }
+         
         bCanOpenPO = (PurchaseRequisitionRecord.prstatus == EPRStatus.ApprovedRequests);
         stopwatch.Stop();
         Console.WriteLine($"OnInitializedAsync took {stopwatch.ElapsedMilliseconds} ms");
@@ -820,13 +825,13 @@
         //
     }
 
-    /*
+    
     private void SaveAsDraft()
     {
-        StateStorage.Set("PR_Draft", PurchaseRequisitionRecord);
+        StateStorage.Set("PR", PurchaseRequisitionRecord);
 
     }
-
+    /*
     private void LoadDraft()
     {
         bool bTrue=StateStorage.TryGet<PurchaseRequisitionRecord>("PR_Draft", out PurchaseRequisitionRecord Found);

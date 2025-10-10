@@ -1,6 +1,7 @@
 ﻿using Npgsql;
 using PurchaseBlazorApp2.Components.Data;
 using PurchaseBlazorApp2.Components.Global;
+using PurchaseBlazorApp2.Resource;
 using ServiceStack;
 using System.Data;
 
@@ -18,7 +19,7 @@ namespace PurchaseBlazorApp2.Components.Repository
 
         private NpgsqlConnection GetConnection()
         {
-            return new NpgsqlConnection($"Server=localhost;Port=5432; User Id=postgres; Password=password; Database=purchase");
+            return new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432; User Id=postgres; Password=password; Database=purchase");
         }
 
         public async Task<List<DateTime>> GetDeliveryDatesAsync(List<string> requisitionNumbers)
@@ -301,7 +302,13 @@ namespace PurchaseBlazorApp2.Components.Repository
                     int RowNum = reader.GetOrdinal(property.Name);
                     if (RowNum >= 0)
                     {
-                        if (obj is EDepartment)
+                        if (obj is EPOStatus)
+                        {
+                            Enum.TryParse(reader[property.Name].ToString(), out EPOStatus Type);
+                            property.SetValue(MainInfo, Type);
+                        }
+
+                        else if (obj is EDepartment)
                         {
                             Enum.TryParse(reader[property.Name].ToString(), out EDepartment Type);
                             property.SetValue(MainInfo, Type);
@@ -416,7 +423,10 @@ namespace PurchaseBlazorApp2.Components.Repository
                                         decimal.TryParse(obj.ToString(), out decimal date);
                                         command.Parameters.AddWithValue("@" + propName, date);
                                     }
-
+                                    if (obj is EPOStatus)
+                                    { 
+                                        command.Parameters.AddWithValue("@" + propName, obj.ToString());
+                                    }
 
                                     else
                                     {

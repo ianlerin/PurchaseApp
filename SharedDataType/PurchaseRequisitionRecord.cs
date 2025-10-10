@@ -29,6 +29,12 @@ namespace PurchaseBlazorApp2.Components.Data
         ReleaseInvoiceForPayment
     }
 
+    public enum EPOStatus
+    {
+        GoodsNotReceived,
+        GoodsReceived
+    }
+
     public enum EPRStatus
     {
         PendingRequest,
@@ -139,8 +145,8 @@ public class ImageUploadInfo
         public string myemail { get; set; }
         public string tel { get; set; }
 
-
-
+        public EPOStatus POStatus { get; set; }
+        public bool bSentNotifiedEmail { get; set; }
         // supplier related info
 
         public string? suppliercompanyname { get; set; }
@@ -190,7 +196,7 @@ public class ImageUploadInfo
         public DateTime DeliveryDate { get; set; } = DateTime.MinValue;
         public DateTime UpdateDate { get; set; } = DateTime.MinValue;
         public string Requestor { get; set; }
-        public string Rejectreason { get; set; }
+        public string? Rejectreason { get; set; }
         public string Purpose { get; set; }
 
         public bool bSentReminder { get; set; }

@@ -1,6 +1,7 @@
 ﻿using Npgsql;
 using PurchaseBlazorApp2.Client.Pages.Quotation;
 using PurchaseBlazorApp2.Components.Data;
+using PurchaseBlazorApp2.Resource;
 using static PurchaseBlazorApp2.Client.Pages.Quotation.QuotationInfo;
 
 namespace PurchaseBlazorApp2.Components.Repository
@@ -15,7 +16,7 @@ namespace PurchaseBlazorApp2.Components.Repository
 
         private NpgsqlConnection GetConnection()
         {
-            return new NpgsqlConnection($"Server=localhost;Port=5432; User Id=postgres; Password=password; Database=purchase");
+            return new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432; User Id=postgres; Password=password; Database=purchase");
         }
 
 

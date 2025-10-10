@@ -42,13 +42,13 @@
                             </Template>
                         </RadzenDataGridColumn>
 
-                        <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Title="PR Status">
+                        <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Property="prstatus" Title="PR Status">
                             <Template Context="data">
                                 @data.prstatus.ToString()
                             </Template>
                         </RadzenDataGridColumn>
 
-                        <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Title="Approval Status">
+                        <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Property="approvalstatus" Title="Approval Status">
                             <Template Context="data">
                                 @data.approvalstatus.ToString()
                             </Template>

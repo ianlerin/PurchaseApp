@@ -135,16 +135,26 @@
         <InputText id="paymentmethod" class="form-control" @bind-Value="Record.PaymentMethod" />
     </div>
 
-
     <h5>Receive Info</h5>
-    <label for="ReceiveDate" class="form-label">Receive Date</label>
-    <InputDate id="ReceiveDate" class="form-control" @bind-Value="Record.ReceiveInfo.ReceiveDate" />
-    <UploadImageHelper UploadedImages="@Record.ReceiveInfo.SupportDocuments"
-    SelectionType=UploadImageHelper.ESelectionType.None
-    Orientation="UploadImageHelper.EOrientation.Vertical"
-    bNewRequisition=true
-    ImageHeight="500"
-    ImageWidth="500" />
+    <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="Record.POStatus"
+    TEnum="PurchaseBlazorApp2.Components.Data.EPOStatus"
+    >
+    </PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox>
+
+    @if (Record.POStatus == EPOStatus.GoodsReceived)
+    {
+        
+        <label for="ReceiveDate" class="form-label">Receive Date</label>
+        <InputDate id="ReceiveDate" class="form-control" @bind-Value="Record.ReceiveInfo.ReceiveDate" />
+        <UploadImageHelper UploadedImages="@Record.ReceiveInfo.SupportDocuments"
+        SelectionType=UploadImageHelper.ESelectionType.None
+        Orientation="UploadImageHelper.EOrientation.Vertical"
+        bNewRequisition=true
+        ImageHeight="500"
+        ImageWidth="500" />
+        <textarea readonly rows="6" cols="60">@EmailSendStatus</textarea>
+    }
+
 
 
     <button type="submit" class="btn btn-primary">Save</button>
@@ -180,7 +190,7 @@
 
     private PurchaseOrderRecord Record = null;
     private PurchaseRequisitionRecord PRRecord { get; set; } = new PurchaseRequisitionRecord();
-
+    public string EmailSendStatus{ get; set; }
     private string SearchSID { get; set; } = string.Empty;
     [Parameter] public string? RequisitionNumber { get; set; }
     protected override async Task OnInitializedAsync()
@@ -200,30 +210,7 @@
             await JS.InvokeVoidAsync("console.log", $"PRRecord found, RequisitionNumber = {RequisitionNumber}");
         }
 
-        if (Record != null)
-        {
-            await JS.InvokeVoidAsync("console.log", $"Fetching PR details for RequisitionNumber={RequisitionNumber}");
-            var response = await Http.PostAsJsonAsync(
-                NavigationManager.ToAbsoluteUri("api/pr/get-detail"), new List<string> { RequisitionNumber });
 
-            if (response.IsSuccessStatusCode)
-            {
-                try
-                {
-                    var Lists = await response.Content.ReadFromJsonAsync<List<PurchaseRequisitionRecord>>();
-                    await JS.InvokeVoidAsync("console.log", $"Received PR list count = {Lists?.Count}");
-
-                    if (Lists != null && Lists.Count > 0)
-                    {
-                        PRRecord = Lists[0];
-                    }
-                }
-                catch (Exception ex)
-                {
-                    await JS.InvokeVoidAsync("console.error", $"Error deserializing PR detail: {ex.Message}");
-                }
-            }
-        }
 
         if (Record == null && !string.IsNullOrEmpty(RequisitionNumber))
         {
@@ -250,6 +237,31 @@
                 catch (Exception ex)
                 {
                     await JS.InvokeVoidAsync("console.error", $"Error deserializing PO: {ex.Message}");
+                }
+            }
+        }
+
+        if (Record != null)
+        {
+            await JS.InvokeVoidAsync("console.log", $"Fetching PR details for RequisitionNumber={RequisitionNumber}");
+            var response = await Http.PostAsJsonAsync(
+                NavigationManager.ToAbsoluteUri("api/pr/get-detail"), new List<string> { RequisitionNumber });
+
+            if (response.IsSuccessStatusCode)
+            {
+                try
+                {
+                    var Lists = await response.Content.ReadFromJsonAsync<List<PurchaseRequisitionRecord>>();
+                    await JS.InvokeVoidAsync("console.log", $"Received PR list count = {Lists?.Count}");
+
+                    if (Lists != null && Lists.Count > 0)
+                    {
+                        PRRecord = Lists[0];
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await JS.InvokeVoidAsync("console.error", $"Error deserializing PR detail: {ex.Message}");
                 }
             }
         }
@@ -281,12 +293,91 @@
                 }
             }
         }
-
+        else
+        {
+            await JS.InvokeVoidAsync("console.error", "No PrRecord");
+        }
         await JS.InvokeVoidAsync("console.log", "OnInitializedAsync finished", new
         {
             Record = Record,
             PRRecord = PRRecord
         });
+    }
+
+
+    private async Task SendGoodsArrivalNotification(List<string> mainEmailList, List<string> ccList)
+    {
+        if (mainEmailList == null || !mainEmailList.Any(e => !string.IsNullOrWhiteSpace(e)))
+        {
+            EmailSendStatus = "⚠️ No recipient (requestor), email not sent.";
+            Console.WriteLine(EmailSendStatus);
+            return;
+        }
+
+        // Convert lists to readable strings for logging/debug
+        string mainEmails = string.Join(", ", mainEmailList);
+        string ccEmails = string.Join(", ", ccList);
+
+        await JS.InvokeVoidAsync("console.log", $"Main Emails: {mainEmails}");
+        await JS.InvokeVoidAsync("console.log", $"CC Emails: {ccEmails}");
+
+        // Create a return URL for the requestor to view their requisition record
+        var encodedReturnUrl = Uri.EscapeDataString(
+            $"purchaserequisitionrecords_client/create/{PRRecord.RequisitionNumber}");
+
+        var requisitionUrl = $"{NavigationManager.BaseUri}authentication/login?returnUrl={encodedReturnUrl}";
+
+        // ✅ Updated subject and message body
+        var emailRequest = new EmailRequest
+            {
+                To = mainEmailList,
+                Cc = ccList,
+                Subject = $"Goods Arrived: Purchase Requisition #{PRRecord.RequisitionNumber}",
+                Body = $@"
+        <html>
+            <body style='font-family:Segoe UI, Arial, sans-serif; color:#333; font-size:14px;'>
+                <p>Good news! The items you requested in Purchase Requisition
+                   <strong>{PRRecord.RequisitionNumber}</strong> have arrived.</p>
+                <p>You may review the delivery details using the link below:</p>
+                <p style='margin:20px 0;'>
+                    <a href='{requisitionUrl}'
+                       style='background-color:#28a745; color:#ffffff; padding:10px 20px;
+                              text-decoration:none; border-radius:5px; display:inline-block;'>
+                        View Requisition
+                    </a>
+                </p>
+                <p>If the button above doesn't work, copy and paste this link into your browser:</p>
+                <p><a href='{requisitionUrl}'>{requisitionUrl}</a></p>
+                <p>Thank you,<br/>Procurement Team</p>
+            </body>
+        </html>",
+                IsHtml = true
+            };
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/email/send", emailRequest);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var toList = string.Join(", ", mainEmailList.Where(e => !string.IsNullOrWhiteSpace(e)));
+                var ccListStr = string.Join(", ", ccList.Where(e => !string.IsNullOrWhiteSpace(e)));
+
+                EmailSendStatus = $"✅ Notification email sent successfully!\nTo: {toList}\nCc: {ccListStr}";
+                Console.WriteLine("✅ Goods arrival email sent successfully!");
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"❌ Failed to send email: {response.StatusCode} - {error}");
+                EmailSendStatus = $"❌ Failed to send email: {response.StatusCode}";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Exception sending email: {ex.Message}");
+            EmailSendStatus = $"❌ Exception: {ex.Message}";
+        }
     }
 
 
@@ -326,10 +417,21 @@
         }
     }
 
+    private async Task OnNotifyGoodsReceived()
+    {
+        if (Record.POStatus == EPOStatus.GoodsReceived && !Record.bSentNotifiedEmail)
+        {
+            List<string> MainList = new List<string> { PRRecord.Requestor };
+            await SendGoodsArrivalNotification(MainList, new List<string>());
+        }
+        Record.bSentNotifiedEmail = true;
+    }
+
     private async Task HandleValidSubmit()
     {
         try
         {
+            await OnNotifyGoodsReceived();
             var payload = new List<PurchaseOrderRecord> { Record };
             var response = await Http.PostAsJsonAsync("api/po/submit", payload);
 
@@ -352,6 +454,7 @@
                         };
                     await Http.PostAsJsonAsync("api/pr/edit-deliverydate", DeliveryDatePayload);
                     await JS.InvokeVoidAsync("alert", $"✅ Purchase Order saved successfully! ID: {Record.PO_ID}");
+                    
                 }
                 else
                 {

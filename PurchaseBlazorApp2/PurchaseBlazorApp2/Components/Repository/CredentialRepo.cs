@@ -9,6 +9,7 @@ using Npgsql;
 using PurchaseBlazorApp2.Components.Data;
 using PurchaseBlazorApp2.Components.Global;
 using ServiceStack;
+using PurchaseBlazorApp2.Resource;
 
 namespace PurchaseBlazorApp2.Components.Repository
 {
@@ -19,7 +20,7 @@ namespace PurchaseBlazorApp2.Components.Repository
         private NpgsqlConnection Connection;
         public CredentialRepo()
         {
-            Connection = new NpgsqlConnection($"Server=localhost;Port=5432; User Id=postgres; Password=password; Database=purchase");
+            Connection = new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432; User Id=postgres; Password=password; Database=purchase");
         }
 
         public async Task<bool> RegisterAsync(UserName info)
