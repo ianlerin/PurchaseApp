@@ -59,6 +59,12 @@ namespace PurchaseBlazorApp2.Components.Repository
                             Enum.TryParse(reader[property.Name].ToString(), out EApprovalStatus Type);
                             property.SetValue(MainInfo, Type);
                         }
+
+                        else if (obj is EPaymentStatus)
+                        {
+                            Enum.TryParse(reader[property.Name].ToString(), out EPaymentStatus Type);
+                            property.SetValue(MainInfo, Type);
+                        }
                         else if (obj is DateTime)
                         {
                             DateTime.TryParse(reader[property.Name].ToString(), out DateTime Date);
@@ -100,7 +106,7 @@ namespace PurchaseBlazorApp2.Components.Repository
             {
                 await Connection.OpenAsync();
 
-                string query = "SELECT requisitionnumber, requestdate, prstatus, approvalstatus, burgent,deliverydate FROM prtable";
+                string query = "SELECT requisitionnumber, requestdate, prstatus, approvalstatus, burgent,deliverydate,paymentstatus FROM prtable";
 
                 var command = new NpgsqlCommand { Connection = Connection };
 
@@ -142,6 +148,10 @@ namespace PurchaseBlazorApp2.Components.Repository
                         // approvalstatus enum
                         if (Enum.TryParse(reader["approvalstatus"]?.ToString() ?? string.Empty, out EApprovalStatus approvalStatus))
                             MainInfo.approvalstatus = approvalStatus;
+
+                        if (Enum.TryParse(reader["paymentstatus"]?.ToString() ?? string.Empty, out EPaymentStatus paymentStatus))
+                            MainInfo.paymentstatus = paymentStatus;
+                        
 
                         // burgent bool
                         MainInfo.burgent = reader["burgent"] != DBNull.Value && (bool)reader["burgent"];
@@ -810,7 +820,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                                         DateTime.TryParse(obj.ToString(), out DateTime date);
                                         command.Parameters.AddWithValue("@" + propName, date);
                                     }
-                                    else if (obj is EDepartment || obj is ETask || obj is EPRStatus || obj is EApprovalStatus)
+                                    else if (obj is EDepartment || obj is ETask || obj is EPRStatus || obj is EPaymentStatus || obj is EApprovalStatus)
                                     {
                                         command.Parameters.AddWithValue("@" + propName, obj.ToString());
                                     }

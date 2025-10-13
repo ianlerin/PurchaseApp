@@ -27,5 +27,10 @@ namespace PurchaseBlazorApp2.Client
             }
             return role;
         }
+
+        static public Task<string> GetAccessTokenAsync(string accessToken,Uri uri, Dictionary<string, object>? context = null, CancellationToken token = default)
+        {
+            return Task.FromResult(accessToken);
+        }
     }
 }

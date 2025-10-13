@@ -2,6 +2,7 @@
 @page "/authentication/login"
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using Microsoft.Graph
 @using PurchaseBlazorApp2.Components.Data
 @using PurchaseBlazorApp2.Components.Global
 @inject HttpClient Http
@@ -49,6 +50,13 @@
     private bool startLogin = false;
     private bool remoteAuthServiceAvailable = false;
 
+    public class GraphUser
+    {
+        public string DisplayName { get; set; } = "";
+        public string JobTitle { get; set; } = "";
+        public string Department { get; set; } = "";
+    }
+
     protected override async Task OnInitializedAsync()
     {
         startLogin = false;
@@ -93,6 +101,7 @@
 
     private void StartLogin() => startLogin = true;
 
+
     private async Task HandleLogInSucceeded(RemoteAuthenticationState state)
     {
         await JS.InvokeVoidAsync("console.log", "HandleLogInSucceeded triggered");
@@ -100,86 +109,125 @@
         try
         {
             authState = await AuthStateProvider.GetAuthenticationStateAsync();
-            if(authState==null)
+            if (authState == null)
             {
-                await JS.InvokeVoidAsync("console.log", "HandleLogInSucceeded no authstate");
+                await JS.InvokeVoidAsync("console.log", "HandleLogInSucceeded: no auth state");
                 return;
             }
-            if (authState?.User.Identity?.IsAuthenticated == true)
+
+            if (authState.User.Identity?.IsAuthenticated != true)
             {
-                await JS.InvokeVoidAsync("console.log", "HandleLogInSucceeded has authstate");
-                var tokenProvider = ServiceProvider.GetService<IAccessTokenProvider>();
+                await JS.InvokeVoidAsync("console.log", "HandleLogInSucceeded: not authenticated");
+                return;
+            }
 
-                if (tokenProvider != null)
+            await JS.InvokeVoidAsync("console.log", "HandleLogInSucceeded: user authenticated");
+
+            var tokenProvider = ServiceProvider.GetService<IAccessTokenProvider>();
+            if (tokenProvider == null)
+            {
+                await JS.InvokeVoidAsync("console.log", "HandleLogInSucceeded: no token provider");
+                return;
+            }
+
+            var tokenResult = await tokenProvider.RequestAccessToken();
+            if (!tokenResult.TryGetToken(out var token))
+            {
+                await JS.InvokeVoidAsync("console.log", "HandleLogInSucceeded: failed to get token");
+                return;
+            }
+
+            await JS.InvokeVoidAsync("console.log", $"✅ Access token acquired: {token.Value[..20]}...");
+
+            // --- 🔹 Retrieve user info from Microsoft Graph ---
+            string jobTitle = "(No Job Title)";
+            string department = "(No Department)";
+            string displayName = authState.User.Identity?.Name ?? "(Unknown User)";
+
+            try
+            {
+
+                var request = new HttpRequestMessage(HttpMethod.Get, "https://graph.microsoft.com/v1.0/me?$select=displayName,jobTitle,department,mail,userPrincipalName");
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token.Value);
+
+                var response = await Http.SendAsync(request);
+                if (response.IsSuccessStatusCode)
                 {
-                    var tokenResult = await tokenProvider.RequestAccessToken();
-                    if (tokenResult.TryGetToken(out var token))
-                    {
-                        await JS.InvokeVoidAsync("console.log", $"login, ✅ Access token acquired: {token.Value[..20]}...");
-                    }
-                    else
-                    {
-                        await JS.InvokeVoidAsync("console.log", "no token");
-                    }
+                    var json = await response.Content.ReadAsStringAsync();
+                    var me = await response.Content.ReadFromJsonAsync<GraphUser>();
+                    department = me.Department;
+                    jobTitle = me.JobTitle;
+                    await JS.InvokeVoidAsync("console.log", $"Graph /me: {json}");
                 }
                 else
                 {
-                    await JS.InvokeVoidAsync("console.log", "no token provider");
+                    await JS.InvokeVoidAsync("console.error", $"Graph API failed: {response.StatusCode}");
                 }
+            }
+            catch (Exception ex)
+            {
+                await JS.InvokeVoidAsync("console.error", $"❌ Failed to retrieve Microsoft Graph user info: {ex.Message}");
+            }
 
-                var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-                var user = authState.User;
-                EDepartment MyDepartment = EDepartment.NotSpecified;
-                string email = user.FindFirst(c => c.Type == "preferred_username" || c.Type == "email")?.Value;
+            // --- 🔹 Retrieve department from your backend ---
+            string email = authState.User.FindFirst(c => c.Type == "preferred_username" || c.Type == "email")?.Value ?? "";
+            EDepartment MyDepartment = EDepartment.NotSpecified;
+
+            try
+            {
                 var response = await Http.PostAsJsonAsync(
-       NavigationManager.ToAbsoluteUri("api/login/getrole"), (email));
+                    NavigationManager.ToAbsoluteUri("api/login/getrole"),
+                    email
+                );
                 MyDepartment = await response.Content.ReadFromJsonAsync<EDepartment>();
+            }
+            catch (Exception ex)
+            {
+                await JS.InvokeVoidAsync("console.error", $"Error retrieving department from backend: {ex.Message}");
+            }
 
-
-                UserName MyUser = new UserName(authState.User.Identity?.Name ?? "", "");
-                MyUser.Role = MyDepartment;
-                if (JS is not null)
+            // --- 🔹 Build and store user data ---
+            var MyUser = new UserName(displayName, "")
                 {
-                    await JS.InvokeVoidAsync("console.log", "setCookie");
-                    string jsonUser = System.Text.Json.JsonSerializer.Serialize(MyUser);
-                    await JS.InvokeVoidAsync("setCookie", "userKey", jsonUser, 1);
-                }
-                await JS.InvokeVoidAsync("console.log", $"👤 Logged in as: {authState.User.Identity?.Name}");
+                    Role = MyDepartment,
+                    JobTitle = jobTitle,
+                    Department = department
+                };
 
-                // ✅ Read returnUrl from query string and navigate there
-                var uri = new Uri(NavigationManager.Uri);
-                var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
-                var returnUrl = query["returnUrl"];
+            if (JS != null)
+            {
+                await JS.InvokeVoidAsync("console.log", "Setting cookie for user");
+                string jsonUser = System.Text.Json.JsonSerializer.Serialize(MyUser);
+                await JS.InvokeVoidAsync("setCookie", "userKey", jsonUser, 1);
+            }
 
-                if (!string.IsNullOrEmpty(returnUrl))
-                {
-                    // Ensure it starts with '/' so it's a relative path
-                    if (!returnUrl.StartsWith("/"))
-                        returnUrl = "/" + returnUrl;
+            GlobalVar?.SetUser(MyUser);
+            GlobalVar?.StartTokenRefreshLoop(tokenProvider);
 
-                    NavigationManager.NavigateTo(returnUrl, forceLoad: true);
-                }
-                else
-                {
-                    // Fallback if no returnUrl provided
-                    NavigationManager.NavigateTo("/");
-                }
-                if (GlobalVar != null)
-                {
-                    GlobalVar.SetUser(MyUser);
-                    GlobalVar.StartTokenRefreshLoop(tokenProvider);
-                }
-                StateHasChanged();
+            await JS.InvokeVoidAsync("console.log", $"👤 Logged in as: {displayName}");
+
+            // --- 🔹 Handle return URL redirection ---
+            var uri = new Uri(NavigationManager.Uri);
+            var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+            var returnUrl = query["returnUrl"];
+
+            if (!string.IsNullOrEmpty(returnUrl))
+            {
+                if (!returnUrl.StartsWith("/"))
+                    returnUrl = "/" + returnUrl;
+
+                NavigationManager.NavigateTo(returnUrl, forceLoad: true);
             }
             else
             {
-
-                await JS.InvokeVoidAsync("console.log", "HandleLogInSucceeded not authenticate");
+                NavigationManager.NavigateTo("/");
             }
+
+            StateHasChanged();
         }
         catch (Exception ex)
         {
-            await JS.InvokeVoidAsync("console.error", $"Error during HandleLogInSucceeded: {ex.Message}");
+            await JS.InvokeVoidAsync("console.error", $"❌ Error during HandleLogInSucceeded: {ex.Message}");
         }
     }
 }

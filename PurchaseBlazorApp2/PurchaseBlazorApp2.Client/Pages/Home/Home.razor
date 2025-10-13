@@ -2,6 +2,7 @@
 @page "/"
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using Microsoft.Graph
 @using PurchaseBlazorApp2.Components.Global
 @inject IAccessTokenProvider TokenProvider
 @inject AuthenticationStateProvider AuthStateProvider
@@ -18,6 +19,8 @@
             <div class="p-4 border rounded">
                 <p><b>Email:</b> @email</p>
                 <p><b>Name:</b> @name</p>
+                <p><b>JobTitle:</b> @GlobalVar.UserName.JobTitle</p>
+                <p><b>Department:</b> @GlobalVar.UserName.Department</p>
                 <p><b>Role:</b> @role</p>
             </div>
         }
@@ -41,7 +44,7 @@
         if (!firstRender || hasLoaded) return; // Run only once
         hasLoaded = true;
 
-        isLoading = true;
+
 
         try
         {
@@ -74,23 +77,25 @@
                     Console.WriteLine("⚠️ No userKey cookie found.");
                 }
 
-
-                if (OperatingSystem.IsBrowser())
-                {
-                    var tokenResult = await TokenProvider.RequestAccessToken();
-                    if (tokenResult.TryGetToken(out var token))
-                    {
-                        var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
-                        var jwt = handler.ReadJwtToken(token.Value);
-                        team ??= jwt.Claims.FirstOrDefault(c => c.Type == "team")?.Value;
-                    }
-                }
             }
+
         }
         finally
         {
-            isLoading = false;
-            StateHasChanged();
+            _ = Task.Run(async () =>
+        {
+            while (GlobalVar.UserName == null)
+            {
+                await Task.Delay(2000);
+            }
+
+
+            await InvokeAsync(() =>
+            {
+                isLoading = false;
+                StateHasChanged();
+            });
+        });
         }
     }
 }

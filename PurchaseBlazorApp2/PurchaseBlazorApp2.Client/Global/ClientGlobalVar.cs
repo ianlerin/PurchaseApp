@@ -17,6 +17,9 @@ namespace PurchaseBlazorApp2.Components.Global
     {
         public string Name { get; set; }
         public string Password { get; set; }
+        public string Email { get; set; }
+        public string Department { get; set; }
+        public string JobTitle { get; set; }
         public UserName(string _Name, string _Password)
         {
             Name = _Name;

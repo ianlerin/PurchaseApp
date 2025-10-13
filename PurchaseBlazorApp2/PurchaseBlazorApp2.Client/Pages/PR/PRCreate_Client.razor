@@ -5,6 +5,7 @@
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
 @using PurchaseBlazorApp2.Components.Data
 @using PurchaseBlazorApp2.Components.Global
+@using System.Globalization;
 @using Radzen
 @using Radzen.Blazor
 @using static PurchaseBlazorApp2.Client.Pages.Quotation.QuotationInfo
@@ -50,14 +51,7 @@
                 </div>
             </div>
 
-            <div class="mb-3">
-                <label for="purpose" class="form-label">Purpose:</label>
-                <InputText id="purpose"
-                @bind-Value="PurchaseRequisitionRecord.Purpose"
-                class="form-control"
-                disabled="@(!bNewRequisition)" />
-                <ValidationMessage For="() => PurchaseRequisitionRecord.Purpose" class="text-danger" />
-            </div>
+
 
             <!-- Items Section -->
             <div class="mb-3">
@@ -85,7 +79,21 @@
                                 class="form-control"
                                 disabled="@(!bNewRequisition)" />
                                 <ValidationMessage For="@(() => item.UnitPrice)" class="text-danger" />
+
+
+
                             </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Currency</label>
+                                <RadzenDropDown @bind-Value="item.Currency"
+                                                Data="@CurrencyList"
+                                                TextProperty="Text"
+                                                ValueProperty="Value"
+                                                AllowFiltering="true"
+                                                FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                                Placeholder="Select currency" />
+                            </div>
+
                             <div class="col-md-2">
                                 <label class="form-label">Quantity</label>
                                 <InputNumber @bind-Value="item.Quantity"
@@ -118,16 +126,22 @@
                     Add Item
                 </button>
             </div>
-
+            <div class="mb-3">
+                <label for="purpose" class="form-label">Purpose:</label>
+                <InputText id="purpose"
+                @bind-Value="PurchaseRequisitionRecord.Purpose"
+                class="form-control"
+                disabled="@(!bNewRequisition)" />
+                <ValidationMessage For="() => PurchaseRequisitionRecord.Purpose" class="text-danger" />
+            </div>
             <!-- Department -->
             <div class="row mb-3">
                 <div class="col-md-4">
                     <label for="department" class="form-label">Department:</label>
-                    <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="PurchaseRequisitionRecord.Department"
-                    TEnum="PurchaseBlazorApp2.Components.Data.EDepartment"
-                    Disabled="@(!bNewRequisition)">
-                    </PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox>
-                    <ValidationMessage For="() => PurchaseRequisitionRecord.Department" class="text-danger" />
+                    <InputText id="purpose"
+                    @bind-Value="PurchaseRequisitionRecord.Department"
+                    class="form-control"
+                    readonly />
                 </div>
             </div>
 
@@ -139,17 +153,7 @@
                 <label for="burgent" class="form-check-label">Urgent</label>
             </div>
 
-            <!-- Task type -->
-            <div class="row mb-3">
-                <div class="col-md-4">
-                    <label for="tasktype" class="form-label">Task Type:</label>
-                    <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="PurchaseRequisitionRecord.TaskType"
-                    TEnum="PurchaseBlazorApp2.Components.Data.ETask"
-                    Disabled="@(!bNewRequisition)">
-                    </PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox>
-                    <ValidationMessage For="() => PurchaseRequisitionRecord.TaskType" class="text-danger" />
-                </div>
-            </div>
+
             @if (bIsProcurementManager)
             {
                 <!-- Approvals -->
@@ -244,30 +248,43 @@
     private bool bHaventApproveOrReject;
     private string EmailSendStatus;
 
-
     private bool bCanEditApproval;
     private bool bIsProcurementManager;
 
     private bool bIsDepartmentMatchApproval;
 
-    //private bool _resizedOnFirstRender = false;
+    public class CurrencyItem
+    {
+        public string Text { get; set; } = string.Empty;  // "US Dollar (USD)"
+        public string Value { get; set; } = string.Empty; // "USD"
+    }
 
-    // private ElementReference requestItemRef;
+    private List<CurrencyItem> CurrencyList = CultureInfo
+        .GetCultures(CultureTypes.AllCultures)
+        .Select(c =>
+        {
+            try
+            {
+                var region = new RegionInfo(c.Name);
+                return new CurrencyItem
+                    {
+                        Text = $"{region.CurrencyEnglishName} ({region.ISOCurrencySymbol})",
+                        Value = region.ISOCurrencySymbol
+                    };
+            }
+            catch
+            {
+                return null;
+            }
+        })
+        .Where(x => x != null)
+        .GroupBy(x => x.Value)  // remove duplicates
+        .Select(g => g.First())
+        .OrderBy(x => x.Text)
+        .ToList();
+    private List<CurrencyItem> filteredCurrencyList;
+    
 
-    // // for scalable text area
-    // private async Task ResizeTextArea(ChangeEventArgs e)
-    // {
-    //     await JS.InvokeVoidAsync("autoResizeTextArea", requestItemRef);
-    // }
-
-    // protected override async Task OnAfterRenderAsync(bool firstRender)
-    // {
-    //     if (!string.IsNullOrEmpty(requestItemRef.Id) && !_resizedOnFirstRender)
-    //     {
-    //         _resizedOnFirstRender=true;
-    //         await JS.InvokeVoidAsync("autoResizeTextArea", requestItemRef);
-    //     }
-    // }
 
     private async Task SendEmail(List<string> mainEmailList, List<string> ccList)
     {
@@ -583,7 +600,7 @@
     protected override async Task OnInitializedAsync()
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-
+        filteredCurrencyList = CurrencyList;
         EDepartment MyDepartment = await GetCurrentDepartmentRole();
         bIsProcurementManager = (MyDepartment == EDepartment.ProcurementManager);
 
@@ -640,7 +657,7 @@
 
             }
             bNewRequisition = true;
-            PurchaseRequisitionRecord.Department = MyDepartment;
+            PurchaseRequisitionRecord.Department = GlobalVar.UserName.Department;
         }
         if (PurchaseRequisitionRecord.approvalstatus == EApprovalStatus.Rejected || PurchaseRequisitionRecord.approvalstatus == EApprovalStatus.Approved)
         {
