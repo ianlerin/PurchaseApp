@@ -15,7 +15,7 @@
 
     <div class="mb-3">
         <label for="sid" class="form-label">Supplier ID</label>
-        <InputText id="sid" class="form-control" @bind-Value="Record.SID" />
+        <InputText id="sid" class="form-control" @bind-Value="Record.SID" readonly/>
         <ValidationMessage For="@(() => Record.SID)" class="text-danger" />
     </div>
 

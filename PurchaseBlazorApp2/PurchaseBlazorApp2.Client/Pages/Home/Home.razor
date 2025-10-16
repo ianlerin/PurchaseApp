@@ -2,6 +2,7 @@
 @page "/"
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using Microsoft.Graph
 @using PurchaseBlazorApp2.Components.Global
 @inject IAccessTokenProvider TokenProvider
 @inject AuthenticationStateProvider AuthStateProvider
@@ -15,9 +16,11 @@
         }
         else
         {
-            <div class="p-4 border rounded">
+            <div class="p-4 border rounded my-breakable">
                 <p><b>Email:</b> @email</p>
                 <p><b>Name:</b> @name</p>
+                <p><b>JobTitle:</b> @MyUser.JobTitle</p>
+                <p><b>Department:</b> @MyUser.Department</p>
                 <p><b>Role:</b> @role</p>
             </div>
         }
@@ -30,19 +33,35 @@
 @code {
     private bool isLoading = true;
     private bool hasLoaded = false;
-
+    private bool stopUsernameCheck = false;
     private string? email;
     private string? name;
     private string? role;
     private string? team;
+    UserName? MyUser;
+
+
+    private async void CheckUserName()
+    {
+        string userKey = await JS.InvokeAsync<string>("getCookie", "userKey");
+        if (!string.IsNullOrWhiteSpace(userKey))
+        {
+            MyUser = System.Text.Json.JsonSerializer.Deserialize<UserName>(userKey);
+        }
+
+        if (MyUser != null)
+        {
+            isLoading = false;
+        }
+       
+    }
+
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender || hasLoaded) return; // Run only once
+
+        await JS.InvokeVoidAsync("console.log", "home,OnAfterRenderAsync");
         hasLoaded = true;
-
-        isLoading = true;
-
         try
         {
             var authState = await AuthStateProvider.GetAuthenticationStateAsync();
@@ -74,23 +93,30 @@
                     Console.WriteLine("⚠️ No userKey cookie found.");
                 }
 
-
-                if (OperatingSystem.IsBrowser())
-                {
-                    var tokenResult = await TokenProvider.RequestAccessToken();
-                    if (tokenResult.TryGetToken(out var token))
-                    {
-                        var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
-                        var jwt = handler.ReadJwtToken(token.Value);
-                        team ??= jwt.Claims.FirstOrDefault(c => c.Type == "team")?.Value;
-                    }
-                }
             }
+
         }
         finally
         {
-            isLoading = false;
-            StateHasChanged();
+            if (isLoading)
+            {
+                _ = Task.Run(async () =>
+     {
+       
+         while (isLoading)
+         {
+             CheckUserName();
+             await Task.Delay(2000);
+         }
+
+
+         await InvokeAsync(() =>
+         {
+             StateHasChanged();
+         });
+     });
+            }
+         
         }
     }
 }

@@ -5,6 +5,8 @@
 @using PurchaseBlazorApp2.Components.Data
 @using QuestPDF.Fluent;
 @using QuestPDF.Helpers
+@using Radzen
+@using Radzen.Blazor
 @using QuestPDF.Infrastructure;
 @using PurchaseBlazorApp2.Components.Global
 @using SharedDataType
@@ -61,7 +63,15 @@
 
     <h5>Supplier Lookup</h5>
     <div class="input-group mb-3">
-        <InputText @bind-Value="SearchSID" class="form-control" placeholder="Enter Supplier SID" />
+        <RadzenDropDown @bind-Value="SearchSID"
+                        Data="@FoundSupplierLookupInfos"
+                        TextProperty="DisplayName"
+                        ValueProperty="ID"
+                        AllowFiltering="true"
+                        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                        Placeholder="Select supplier"
+                        Style="width:100%"
+                        TValue="string" />
         <button type="button" class="btn btn-outline-primary" @onclick="SearchSupplier">Find Supplier</button>
     </div>
 
@@ -143,7 +153,7 @@
 
     @if (Record.POStatus == EPOStatus.GoodsReceived)
     {
-        
+
         <label for="ReceiveDate" class="form-label">Receive Date</label>
         <InputDate id="ReceiveDate" class="form-control" @bind-Value="Record.ReceiveInfo.ReceiveDate" />
         <UploadImageHelper UploadedImages="@Record.ReceiveInfo.SupportDocuments"
@@ -186,8 +196,8 @@
             return doc.GeneratePdf();
         }
     }
-
-
+   
+    List<SupplierLookUpInfo> FoundSupplierLookupInfos = new List<SupplierLookUpInfo>();
     private PurchaseOrderRecord Record = null;
     private PurchaseRequisitionRecord PRRecord { get; set; } = new PurchaseRequisitionRecord();
     public string EmailSendStatus{ get; set; }
@@ -210,7 +220,7 @@
             await JS.InvokeVoidAsync("console.log", $"PRRecord found, RequisitionNumber = {RequisitionNumber}");
         }
 
-
+        FoundSupplierLookupInfos = await Http.GetFromJsonAsync<List<SupplierLookUpInfo>>("api/supplier/getallname") ?? new();
 
         if (Record == null && !string.IsNullOrEmpty(RequisitionNumber))
         {

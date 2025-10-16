@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using PurchaseBlazorApp2.Components.Data;
 using PurchaseBlazorApp2.Components.Repository;
 using SharedDataType;
 using static PurchaseBlazorApp2.Client.Pages.Quotation.QuotationInfo;
@@ -26,6 +27,16 @@ namespace PurchaseBlazorApp2.Controller
             List<SupplierRecord> Suppliers = await Repo.GetAllSuppliersAsync();
             return Ok(Suppliers);
         }
+
+        [HttpGet("getallname")]
+        public async Task<ActionResult<List<SupplierLookUpInfo>>> GetAllSupplierName()
+        {
+
+            SupplierRepository Repo = new SupplierRepository();
+            List<SupplierLookUpInfo> SupplierNames = await Repo.AsyncGetAllSupplierName();
+            return Ok(SupplierNames);
+        }
+
         [HttpGet("get/{sid}")]
         public async Task<ActionResult<SupplierRecord>> GetSupplierById(string sid)
         {
