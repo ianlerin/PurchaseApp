@@ -8,7 +8,7 @@
 @rendermode InteractiveAuto
 <h3>Purchase Requisition List</h3>
 
-<div class="container mt-4 mb-4">
+<div class="container-fluid mt-4 mb-4">
     <div class="row">
         <div class="col-md-12">
 
@@ -23,59 +23,71 @@
             }
             else
             {
-                <RadzenDataGrid Data="@Records" TItem="PurchaseRequisitionRecord" AllowSorting="true"
-                Class="shadow-sm border rounded p-3">
-                    <Columns>
-                        <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Property="RequisitionNumber" Title="Requisition No." />
+                <div style="overflow-x:auto;">
+                    <RadzenDataGrid Data="@Records"
+                    TItem="PurchaseRequisitionRecord"
+                    AllowSorting="true"
+                    Style="min-width:1500px;"
+                    Class="shadow-sm border rounded p-3">
+                        <Columns>
+                            <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Property="RequisitionNumber" Title="Requisition No." Width="150px" />
 
-                        <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Property="RequestDate" Title="Request Date">
-                            <Template Context="data">
-                                @data.RequestDate.ToString("dd/MM/yyyy")
-                            </Template>
-                        </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Property="RequestDate" Title="Date" Width="150px">
+                                <Template Context="data">
+                                    @data.RequestDate.ToString("dd/MM/yyyy")
+                                </Template>
+                            </RadzenDataGridColumn>
 
-                        <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Property="DeliveryDate" Title="Delivery Date">
-                            <Template Context="data">
-                                @(data.DeliveryDate == DateTime.MinValue
-                                            ? string.Empty
-                                            : data.DeliveryDate.ToString("dd/MM/yyyy"))
-                            </Template>
-                        </RadzenDataGridColumn>
-
-                        <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Property="prstatus" Title="PR Status">
-                            <Template Context="data">
-                                @data.prstatus.ToString()
-                            </Template>
-                        </RadzenDataGridColumn>
-
-                        <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Property="approvalstatus" Title="Approval Status">
-                            <Template Context="data">
-                                @data.approvalstatus.ToString()
-                            </Template>
-                        </RadzenDataGridColumn>
-
-                        <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Title="Requested Item">
-                            <Template Context="data">
-                                @(data.ItemRequested != null && data.ItemRequested.Count > 0
+                            <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Title="Requested Item" Width="200px">
+                                <Template Context="data">
+                                    @(data.ItemRequested != null && data.ItemRequested.Count > 0
                                             ? data.ItemRequested[0].RequestItem
                                             : "-")
-                            </Template>
-                        </RadzenDataGridColumn>
+                                </Template>
+                            </RadzenDataGridColumn>
 
-                        <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Title="Urgent">
-                            <Template Context="data">
-                                @(data.burgent ? "Yes" : "No")
-                            </Template>
-                        </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Title="Urgent" Width="100px">
+                                <Template Context="data">
+                                    @(data.burgent ? "Yes" : "No")
+                                </Template>
+                            </RadzenDataGridColumn>
 
-                        <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Title="Actions">
-                            <Template Context="record">
-                                <RadzenButton Text="View" Icon="visibility"
-                                Click="@(() => OnViewClicked(record))" />
-                            </Template>
-                        </RadzenDataGridColumn>
-                    </Columns>
-                </RadzenDataGrid>
+                            <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Property="approvalstatus" Title="Approval Status" Width="150px">
+                                <Template Context="data">
+                                    @data.approvalstatus.ToString()
+                                </Template>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Property="prstatus" Title="PR Status" Width="150px">
+                                <Template Context="data">
+                                    @data.prstatus.ToString()
+                                </Template>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Property="DeliveryDate" Title="Delivery Date" Width="150px">
+                                <Template Context="data">
+                                    @(data.DeliveryDate == DateTime.MinValue
+                                            ? string.Empty
+                                            : data.DeliveryDate.ToString("dd/MM/yyyy"))
+                                </Template>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Property="paymentstatus" Title="Payment Status" Width="150px">
+                                <Template Context="data">
+                                    @data.paymentstatus.ToString()
+                                </Template>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Title="Actions" Width="100px">
+                                <Template Context="record">
+                                    <RadzenButton Text="View" Icon="visibility"
+                                    Click="@(() => OnViewClicked(record))" />
+                                </Template>
+                            </RadzenDataGridColumn>
+                        </Columns>
+                    </RadzenDataGrid>
+                </div>
+
             }
         </div>
     </div>
@@ -114,10 +126,13 @@
                 {
                     await JS.InvokeVoidAsync("console.log", $"Load Records {Record}");
                 }
+                if(StringRecords.Count()>0)
+                {
+                    response = await Http.PostAsJsonAsync(
+    NavigationManager.ToAbsoluteUri("api/pr/get-list-partial"),
+    StringRecords);
+                }
 
-                response = await Http.PostAsJsonAsync(
-                    NavigationManager.ToAbsoluteUri("api/pr/get-list-partial"),
-                    StringRecords);
             }
 
             if (response.IsSuccessStatusCode)

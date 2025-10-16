@@ -1,0 +1,5 @@
+﻿.my-breakable {
+    word-break: break-all; /* forces break anywhere if needed */
+    overflow-wrap: anywhere; /* modern alternative to break-word */
+    white-space: normal; /* allow wrapping normally */
+}

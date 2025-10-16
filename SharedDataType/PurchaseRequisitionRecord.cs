@@ -46,6 +46,7 @@ namespace PurchaseBlazorApp2.Components.Data
 
     public enum EApprovalStatus
     {
+       Creation,
        PreApproval,
        PendingApproval,
        Approved,
@@ -58,6 +59,20 @@ namespace PurchaseBlazorApp2.Components.Data
         Rejected,
         Approved
     }
+    public enum EPaymentStatus
+    {
+        PendingInvoice,
+        PendingPayment,
+        Paid
+    }
+
+    public class SupplierLookUpInfo
+    {
+        public string ID { get; set; }
+        public string Name { get; set; }
+        public string DisplayName => $"{ID}:{Name}";
+    }
+
 
     public class EmailRequest
     {
@@ -110,6 +125,9 @@ namespace PurchaseBlazorApp2.Components.Data
 
         private decimal _TotalPrice;
         public decimal TotalPrice { get { return _TotalPrice; } set { _TotalPrice = value; } }
+
+        public string Currency { get; set; } = "";
+
 
         private void OnRecalculateTotalPrice()
         {
@@ -204,7 +222,7 @@ public class ImageUploadInfo
 
         private bool _burgent = false;
         public bool burgent { get { return _burgent; } set { _burgent = value; } }
-        public EDepartment Department { get; set; }
+        public string Department { get; set; }
 
         private List<RequestItemInfo> _ItemRequested = new List<RequestItemInfo>();
         public List<RequestItemInfo> ItemRequested { get { return _ItemRequested; } set { _ItemRequested = value; } }
@@ -216,7 +234,7 @@ public class ImageUploadInfo
         private ETask _TaskType;
         public ETask TaskType { get { return _TaskType; } set { _TaskType = value; OnTaskTypeChanged(); } }
 
-
+        public EPaymentStatus paymentstatus { get; set; }
 
         private List<ApprovalInfo> _Approvals = new List<ApprovalInfo>();
         public List<ApprovalInfo> Approvals { get { return _Approvals; } set { _Approvals = value; } }

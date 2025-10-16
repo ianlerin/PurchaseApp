@@ -50,6 +50,42 @@ namespace PurchaseBlazorApp2.Components.Repository
             return suppliers;
         }
 
+        public async Task<List<SupplierLookUpInfo>> AsyncGetAllSupplierName()
+        {
+            var suppliers = new List<SupplierLookUpInfo>();
+
+            try
+            {
+                await Connection.OpenAsync();
+
+                string query = "SELECT sid, companyname FROM supplier";
+
+                using (var cmd = new NpgsqlCommand(query, Connection))
+                using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        var supplier = new SupplierLookUpInfo
+                        {
+                            ID = reader["sid"].ToString(),
+                            Name = reader["companyname"].ToString()
+                        };
+                        suppliers.Add(supplier);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("GetAllSupplierLookUpsAsync: " + ex.Message);
+            }
+            finally
+            {
+                Connection.Close();
+            }
+
+            return suppliers;
+        }
+
         public async Task<SupplierRecord?> GetSupplierByIdAsync(string sid)
         {
             SupplierRecord? supplier = null;
@@ -140,8 +176,27 @@ namespace PurchaseBlazorApp2.Components.Repository
             try
             {
                 Connection.Open();
+
+
+
                 foreach (var record in records)
                 {
+                    // Check if SID is empty
+                    if (string.IsNullOrWhiteSpace(record.SID))
+                    {
+                        // Fetch next sequence value
+                        string seqQuery = "SELECT nextval('supplierid')";
+                        long seqValue;
+
+                        using (var seqCmd = new NpgsqlCommand(seqQuery, Connection))
+                        {
+                            seqValue = (long)(await seqCmd.ExecuteScalarAsync());
+                        }
+
+                        // Format Supplier ID
+                        record.SID = $"Supplier_{seqValue}";
+                    }
+
                     string sqlCommand = "INSERT INTO supplier (";
                     string sqlValues = "VALUES (";
                     string sqlUpdate = "ON CONFLICT (sid) DO UPDATE SET ";

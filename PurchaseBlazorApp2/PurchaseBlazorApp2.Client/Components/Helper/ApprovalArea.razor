@@ -56,7 +56,7 @@ else
                     <!-- Multi-select version -->
                     <MultiSelectEnumDropDown TEnum="EDepartment"
                     Value="@approval.Departments"
-                    ValueChanged="@((List<EDepartment> list) => OnDepartmentsChanged(approval, list))"  Disabled=@(approval.ApproveStatus != ESingleApprovalStatus.PendingAction)/>
+                                             ValueChanged="@((List<EDepartment> list) => OnDepartmentsChanged(approval, list))" Disabled=@(!bIsEditable) />
                 }
                 else
                 {
