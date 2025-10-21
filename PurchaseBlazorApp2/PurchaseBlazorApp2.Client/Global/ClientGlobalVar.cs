@@ -7,31 +7,8 @@ using System.Text.Json;
 
 namespace PurchaseBlazorApp2.Components.Global
 {
-    public class CredentialSubmitResponse
-    {
-        public bool bSuccess { get; set; }
-        public UserName MyName { get; set; }= new UserName();
-    }
 
-    public class UserName
-    {
-        public string Name { get; set; }
-        public string Password { get; set; }
-        public string Email { get; set; }
-        public string Department { get; set; }
-        public string JobTitle { get; set; }
 
-        public UserName(string _Name, string _Password)
-        {
-            Name = _Name;
-            Password = _Password;   
-        }
-        public UserName()
-        {
-
-        }
-        public EDepartment Role { get; set; }
-    }
 
     public class ClientGlobalVar
     {

@@ -7,9 +7,7 @@
 @inject NavigationManager NavigationManager
 @inject ClientStateStorage StateStorage
 @inject HttpClient Http
-<h3>Create Quotation</h3>
-
-<p><strong>PR ID:</strong> @Quotation.pr_id</p>
+<h3>Quotation</h3>
 
 <!-- Image Upload Component -->
 @if (IsLoading)
@@ -24,13 +22,12 @@ else
     SelectionType=UploadImageHelper.ESelectionType.SingleSelect
     OnImageSelected="HandleImageSelected"
     SelectedIndex="SelectedIndex"
-    Orientation="UploadImageHelper.EOrientation.Vertical"
+    Orientation="UploadImageHelper.EOrientation.Horizontal"
     ImageHeight="500"
     ImageWidth="500"
     bNewRequisition="bnewrequisition" />
 }
 
-<button class="btn btn-primary" @onclick="BacktoPR">Back</button>
 @code {
     [Inject] IJSRuntime JS { get; set; }
 
@@ -42,7 +39,7 @@ else
 
     bool IsLoading = false;
 
-    private QuotationRecord Quotation = new QuotationRecord();
+    public QuotationRecord Quotation = new QuotationRecord();
 
     public int SelectedIndex = 0;
 

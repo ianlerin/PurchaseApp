@@ -4,6 +4,8 @@ using PurchaseBlazorApp2.Components.Global;
 using PurchaseBlazorApp2.Resource;
 using ServiceStack;
 using System.Data;
+using System.Data.Common;
+using System.Transactions;
 
 
 
@@ -112,6 +114,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                         PurchaseOrderRecord MainInfo = new PurchaseOrderRecord();
                         InsertInfoOfBasicInfo(MainInfo, reader);
                         MainInfo.ReceiveInfo = await GetReceiveInfo(MainInfo.PO_ID);
+                        MainInfo.InvoiceInfo = await GetInvoiceInfo(MainInfo.PO_ID);
                         ToReturn.Add(MainInfo);
                     }
                 }
@@ -166,6 +169,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                         PurchaseOrderRecord MainInfo = new PurchaseOrderRecord();
                         InsertInfoOfBasicInfo(MainInfo, reader);
                         MainInfo.ReceiveInfo= await GetReceiveInfo(MainInfo.PO_ID);
+                        MainInfo.InvoiceInfo = await GetInvoiceInfo(MainInfo.PO_ID);
                         ToReturn.Add(MainInfo);
                     }
                 }
@@ -182,6 +186,56 @@ namespace PurchaseBlazorApp2.Components.Repository
             }
             return ToReturn;
         }
+
+        public async Task<InvoiceInfo?> GetInvoiceInfo(string poNumber)
+        {
+            InvoiceInfo? invoice = new InvoiceInfo();
+
+            try
+            {
+                await using var connection = GetConnection();
+                await connection.OpenAsync();
+
+                var command = new NpgsqlCommand(
+                    "SELECT imagebyte, photoformat, paymentstatus " +
+                    "FROM po_invoice_image_table WHERE requisitionnumber = @req",
+                    connection);
+                command.Parameters.AddWithValue("@req", poNumber);
+
+                await using var reader = await command.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    var statusText = reader["paymentstatus"]?.ToString() ?? "PendingInvoice";
+                    EPaymentStatus status;
+
+                    if (!Enum.TryParse(statusText, true, out status))
+                        status = EPaymentStatus.PendingInvoice;
+
+                    invoice = new InvoiceInfo
+                    {
+                        po_id = poNumber,
+                        PaymentStatus = status,
+                        SupportDocuments = new List<ImageUploadInfo>()
+                    };
+                    var image = new ImageUploadInfo
+                    {
+                        Data = reader["imagebyte"] as byte[] ?? Array.Empty<byte>(),
+                        DataFormat = reader["photoformat"]?.ToString() ?? string.Empty
+                    };
+
+                    invoice.SupportDocuments.Add(image);
+                }
+
+                return invoice;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"GetInvoiceInfo failed for PO {poNumber}: {ex.Message}");
+                return null;
+            }
+        }
+
         public async Task<ReceiveInfo> GetReceiveInfo(string poNumber)
         {
             ReceiveInfo? receive = new ReceiveInfo();
@@ -221,6 +275,138 @@ namespace PurchaseBlazorApp2.Components.Repository
             return receive;
         }
 
+
+        private async Task<bool> InsertInvoiceInfo(string poId, string prId, InvoiceInfo info, NpgsqlTransaction? externalTransaction = null)
+        {
+            bool shouldCloseConnection = false;
+            bool shouldDisposeTransaction = false;
+
+            try
+            {
+                if (Connection.State != System.Data.ConnectionState.Open)
+                {
+                    await Connection.OpenAsync();
+                    shouldCloseConnection = true;
+                }
+
+                var transaction = externalTransaction ?? await Connection.BeginTransactionAsync();
+                if (externalTransaction == null)
+                    shouldDisposeTransaction = true;
+
+                // 1️⃣ Delete all existing invoice images for this PO
+                using (var deleteCmd = new NpgsqlCommand(
+                    @"DELETE FROM po_invoice_image_table 
+              WHERE requisitionnumber = @requisitionnumber;",
+                    Connection, transaction))
+                {
+                    deleteCmd.Parameters.AddWithValue("@requisitionnumber", poId);
+                    await deleteCmd.ExecuteNonQueryAsync();
+                }
+
+                // 2️⃣ Insert all new invoice image records
+                foreach (var single in info.SupportDocuments)
+                {
+                    using (var insertCmd = new NpgsqlCommand(
+                        @"INSERT INTO po_invoice_image_table 
+                    (requisitionnumber, imagebyte, photoformat, paymentstatus)
+                  VALUES (@requisitionnumber, @imagebyte, @photoformat, @paymentstatus);",
+                        Connection, transaction))
+                    {
+                        insertCmd.Parameters.AddWithValue("@requisitionnumber", poId);
+                        insertCmd.Parameters.AddWithValue("@imagebyte", single.Data ?? Array.Empty<byte>());
+                        insertCmd.Parameters.AddWithValue("@photoformat", single.DataFormat ?? string.Empty);
+                        insertCmd.Parameters.AddWithValue("@paymentstatus", info.PaymentStatus.ToString());
+
+                        await insertCmd.ExecuteNonQueryAsync();
+                    }
+                }
+
+                // 3️⃣ Update PR payment status
+                var prRepository = new PRRepository();
+                await prRepository.UpdatePaymentStatus(prId, info.PaymentStatus);
+
+                if (shouldDisposeTransaction)
+                    await transaction.CommitAsync();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                if (shouldDisposeTransaction)
+                {
+                    try
+                    {
+                        await externalTransaction.RollbackAsync();
+                    }
+                    catch { /* ignore rollback errors */ }
+                }
+
+                Console.WriteLine($"InsertInvoiceInfo (delete-insert) failed: {ex.Message}");
+                return false;
+            }
+            finally
+            {
+                if (shouldCloseConnection)
+                    await Connection.CloseAsync();
+            }
+        }
+
+        public async Task<bool> UpdatePaymentStatus(string RequisitionNumber)
+        {
+            try
+            {
+                List<PurchaseOrderRecord> OrderRecords=await GetRecordsAsyncWithPR(new List<string> { RequisitionNumber });
+                if (OrderRecords.Count > 0)
+                {
+                    return await UpdatePaymentStatus(OrderRecords[0]);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"UpdateDeliveryDateAsync Exception: {ex.Message}");
+                return false;
+            }
+            finally
+            {
+                await Connection.CloseAsync();
+            }
+            return false;
+        }
+
+        public async Task<bool> UpdatePaymentStatus(PurchaseOrderRecord OrderRecord)
+        {
+            try
+            {
+                await Connection.OpenAsync();
+
+                string query = @"
+            UPDATE po_invoice_image_table
+            SET paymentstatus = @paymentstatus
+            WHERE requisitionnumber = @requisitionnumber;";
+
+                using (var command = new NpgsqlCommand(query, Connection))
+                {
+                    command.Parameters.AddWithValue("@paymentstatus", OrderRecord.InvoiceInfo.PaymentStatus.ToString());
+                    command.Parameters.AddWithValue("@requisitionnumber", OrderRecord.PO_ID);
+
+                    int rowsAffected = await command.ExecuteNonQueryAsync();
+                    var prRepository = new PRRepository();
+                    await prRepository.UpdatePaymentStatus(OrderRecord.PR_ID, OrderRecord.InvoiceInfo.PaymentStatus);
+                    return rowsAffected > 0; // true if updated
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"UpdateDeliveryDateAsync Exception: {ex.Message}");
+                return false;
+            }
+            finally
+            {
+                await Connection.CloseAsync();
+            }
+        }
+
         private async Task<bool> InsertImage(PurchaseOrderRecord info, NpgsqlTransaction? externalTransaction = null)
         {
             bool shouldCloseConnection = false;
@@ -234,30 +420,32 @@ namespace PurchaseBlazorApp2.Components.Repository
                     shouldCloseConnection = true;
                 }
 
-                var transaction = externalTransaction;
-                if (transaction == null)
-                {
-                    transaction = await Connection.BeginTransactionAsync();
+                var transaction = externalTransaction ?? await Connection.BeginTransactionAsync();
+                if (externalTransaction == null)
                     shouldDisposeTransaction = true;
-                }
 
-                // 1. Delete existing record
-                var deleteCmd = new NpgsqlCommand(
-                    "DELETE FROM receive WHERE po_id = @po_id",
+                // 1️⃣ Delete old records for this PO_ID
+                var deleteCmd = new NpgsqlCommand(@"
+            DELETE FROM receive 
+            WHERE po_id = @po_id;",
                     Connection, transaction);
+
                 deleteCmd.Parameters.AddWithValue("@po_id", info.PO_ID);
                 await deleteCmd.ExecuteNonQueryAsync();
 
-                // 2. Insert new records
-                foreach (ImageUploadInfo single in info.ReceiveInfo.SupportDocuments)
+                // 2️⃣ Insert new records
+                foreach (var single in info.ReceiveInfo.SupportDocuments)
                 {
-                    var insertCmd = new NpgsqlCommand(
-                        "INSERT INTO receive (po_id, imagebyte, photoformat,receive_date) VALUES (@req, @doc, @format,@date)",
+                    var insertCmd = new NpgsqlCommand(@"
+                INSERT INTO receive (po_id, imagebyte, photoformat, receive_date)
+                VALUES (@po_id, @imagebyte, @photoformat, @receive_date);",
                         Connection, transaction);
-                    insertCmd.Parameters.AddWithValue("@req", info.PO_ID);
-                    insertCmd.Parameters.AddWithValue("@date", info.ReceiveInfo.ReceiveDate);
-                    insertCmd.Parameters.AddWithValue("@doc", single.Data ?? Array.Empty<byte>());
-                    insertCmd.Parameters.AddWithValue("@format", single.DataFormat ?? string.Empty);
+
+                    insertCmd.Parameters.AddWithValue("@po_id", info.PO_ID);
+                    insertCmd.Parameters.AddWithValue("@imagebyte", single.Data ?? Array.Empty<byte>());
+                    insertCmd.Parameters.AddWithValue("@photoformat", single.DataFormat ?? string.Empty);
+                    insertCmd.Parameters.AddWithValue("@receive_date", info.ReceiveInfo.ReceiveDate);
+
                     await insertCmd.ExecuteNonQueryAsync();
                 }
 
@@ -268,16 +456,16 @@ namespace PurchaseBlazorApp2.Components.Repository
             }
             catch (Exception ex)
             {
-                if (externalTransaction == null)
+                if (shouldDisposeTransaction)
                 {
                     try
                     {
-                        await Connection?.BeginTransaction()?.RollbackAsync();
+                        await externalTransaction.RollbackAsync();
                     }
                     catch { /* suppress rollback error */ }
                 }
 
-                Console.WriteLine($"InsertImage failed: {ex.Message}");
+                Console.WriteLine($"InsertImage (delete-insert) failed: {ex.Message}");
                 return false;
             }
             finally
@@ -286,7 +474,6 @@ namespace PurchaseBlazorApp2.Components.Repository
                     await Connection.CloseAsync();
             }
         }
-
         private void InsertInfoOfBasicInfo<T>(T MainInfo, NpgsqlDataReader reader)
         {
             var properties = typeof(T).GetProperties();
@@ -294,7 +481,7 @@ namespace PurchaseBlazorApp2.Components.Repository
             {
                 foreach (var property in properties)
                 {
-                    if (property.Name == "ApprovalInfo"|| property.Name == "ReceiveInfo")
+                    if (property.Name == "ApprovalInfo"|| property.Name == "ReceiveInfo"|| property.Name == "InvoiceInfo")
                         continue;
                     
 
@@ -403,7 +590,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                                 {
                                     string propName = prop.Name;
 
-                                    if (propName == "PO_ID"|| propName == "ApprovalInfo" || propName == "ReceiveInfo")
+                                    if (propName == "PO_ID"|| propName == "ApprovalInfo" || propName == "ReceiveInfo" || propName == "InvoiceInfo")
                                         continue;
 
                                     sqlCommand += propName + ",";
@@ -450,6 +637,9 @@ namespace PurchaseBlazorApp2.Components.Repository
                                 }
                                 Info.PO_ID= SID;
                                 await InsertImage(Info, transaction);
+                                await InsertInvoiceInfo(Info.PO_ID, Info.PR_ID, Info.InvoiceInfo,transaction);
+                                var prRepository = new PRRepository();
+                                await prRepository.UpdatePOID(Info.PR_ID, Info.PO_ID);
                             }
                         }
                     }

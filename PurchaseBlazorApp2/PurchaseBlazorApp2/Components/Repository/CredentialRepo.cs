@@ -7,7 +7,6 @@ using Microsoft.Kiota.Abstractions;
 using Microsoft.Kiota.Http.HttpClientLibrary;
 using Npgsql;
 using PurchaseBlazorApp2.Components.Data;
-using PurchaseBlazorApp2.Components.Global;
 using ServiceStack;
 using PurchaseBlazorApp2.Resource;
 

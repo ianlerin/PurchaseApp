@@ -1,4 +1,5 @@
 ﻿@page "/purchaserequisitionrecords_client/list"
+@using Genesis.UserService
 @using PurchaseBlazorApp2.Components.Data
 @inject HttpClient Http
 @using Radzen.Blazor
@@ -24,6 +25,12 @@
             else
             {
                 <div style="overflow-x:auto;">
+
+                    <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="FilterType"
+                                                                                 TEnum="PurchaseBlazorApp2.Components.Data.EFilterPRType">
+                    </PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox>
+
+
                     <RadzenDataGrid Data="@Records"
                     TItem="PurchaseRequisitionRecord"
                     AllowSorting="true"
@@ -41,8 +48,8 @@
                             <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Title="Requested Item" Width="200px">
                                 <Template Context="data">
                                     @(data.ItemRequested != null && data.ItemRequested.Count > 0
-                                            ? data.ItemRequested[0].RequestItem
-                                            : "-")
+                                                    ? data.ItemRequested[0].RequestItem
+                                                    : "-")
                                 </Template>
                             </RadzenDataGridColumn>
 
@@ -67,8 +74,8 @@
                             <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Property="DeliveryDate" Title="Delivery Date" Width="150px">
                                 <Template Context="data">
                                     @(data.DeliveryDate == DateTime.MinValue
-                                            ? string.Empty
-                                            : data.DeliveryDate.ToString("dd/MM/yyyy"))
+                                                    ? string.Empty
+                                                    : data.DeliveryDate.ToString("dd/MM/yyyy"))
                                 </Template>
                             </RadzenDataGridColumn>
 
@@ -78,10 +85,31 @@
                                 </Template>
                             </RadzenDataGridColumn>
 
-                            <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Title="Actions" Width="100px">
+                            <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Title="Actions" Width="160px">
                                 <Template Context="record">
-                                    <RadzenButton Text="View" Icon="visibility"
-                                    Click="@(() => OnViewClicked(record))" />
+                                    <div style="display: flex; gap: 6px;">
+                                        <RadzenButton Text="View"
+                                        Icon="visibility"
+                                        Click="@(() => OnViewClicked(record))"
+                                        Style="min-width:70px;" />
+                                        @if(bProcurementOrFinance)
+                                        {
+                                            <RadzenButton Text="Action"
+                                                          Icon="visibility"
+                                                          Click="@(() => OnActionClicked(record))"
+                                                          Style="min-width:70px;" />
+                                        }
+                                        @if(record.paymentstatus!=EPaymentStatus.PendingInvoice)
+                                        {
+                                                <RadzenButton Text="Finance"
+                                                          Icon="visibility"
+                                                          Click="@(() => OnFinanceClicked(record))"
+                                                          Style="min-width:70px;" />
+
+                                        }
+                                    
+                                     
+                                    </div>
                                 </Template>
                             </RadzenDataGridColumn>
                         </Columns>
@@ -96,8 +124,22 @@
 @code {
     private List<PurchaseRequisitionRecord> Records = new();
     private bool IsLoading = true;
+    private bool bProcurementOrFinance = false;
+
+    private EFilterPRType _FilterType = EFilterPRType.CreatedBy;
+    public EFilterPRType FilterType { get { return _FilterType; } set { _FilterType = value; OnSetFilterType(); } }
 
     protected override async Task OnInitializedAsync()
+    {
+        await ReloadList();
+    }
+
+    private void OnSetFilterType()
+    {
+        ReloadList();
+    }
+
+    private async Task ReloadList()
     {
         IsLoading = true; // show loading
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -107,9 +149,12 @@
             HttpResponseMessage? response = new HttpResponseMessage();
 
             EDepartment MyDepartment = await GeneralLibrary.GetCurrentDepartmentRole(JS);
-
-            bool bIsProcurement = MyDepartment == EDepartment.ProcurementManager;
-            if (bIsProcurement)
+            if(MyDepartment == EDepartment.ProcurementManager||MyDepartment == EDepartment.Finance)
+            {
+                  bProcurementOrFinance = true;
+            }
+         
+            if (bProcurementOrFinance)
             {
                 response = await Http.PostAsJsonAsync(
                     NavigationManager.ToAbsoluteUri("api/pr/get-list-partial"),
@@ -117,16 +162,12 @@
             }
             else
             {
-                var ListToRetrieveResponse = await Http.PostAsJsonAsync(
-                    NavigationManager.ToAbsoluteUri("api/pr/get-needapproval"), MyDepartment
-                    );
-                HashSet<string> Hashrecords = await ListToRetrieveResponse.Content.ReadFromJsonAsync<HashSet<string>>();
-                List<string> StringRecords = Hashrecords.ToList();
-                foreach(string Record in StringRecords)
+                List<string> StringRecords = await GetRecordsToView();
+                foreach (string Record in StringRecords)
                 {
                     await JS.InvokeVoidAsync("console.log", $"Load Records {Record}");
                 }
-                if(StringRecords.Count()>0)
+                if (StringRecords.Count() > 0)
                 {
                     response = await Http.PostAsJsonAsync(
     NavigationManager.ToAbsoluteUri("api/pr/get-list-partial"),
@@ -164,6 +205,8 @@
                 await JS.InvokeVoidAsync("console.error", $"HTTP error {response.StatusCode}: {error}");
                 Records = new List<PurchaseRequisitionRecord>();
             }
+            UserHelperService helperService = new UserHelperService(JS);
+            bProcurementOrFinance = await helperService.GetIsProcurementAsync();
         }
         catch (HttpRequestException ex)
         {
@@ -185,8 +228,63 @@
         StateHasChanged();
     }
 
+    private async Task<List<string>> GetRecordsToView()
+    {
+        EDepartment MyDepartment = await GeneralLibrary.GetCurrentDepartmentRole(JS);
+        List<string> MyHashSet = new List<string>();
+        switch (FilterType)
+        {
+            case(EFilterPRType.Approval):
+                var ApprovalSearch = await Http.PostAsJsonAsync(
+                       NavigationManager.ToAbsoluteUri("api/pr/get-needapproval"), MyDepartment
+                       );
+                HashSet<string> ApprovalHashrecords = await ApprovalSearch.Content.ReadFromJsonAsync<HashSet<string>>();
+                MyHashSet = ApprovalHashrecords.ToList();
+                break;
+
+            case (EFilterPRType.CreatedBy):
+                UserName name=await GetCurrentUser();
+                var CreatedBy = await Http.PostAsJsonAsync(
+                          NavigationManager.ToAbsoluteUri("api/pr/get-createdby"), name.Email
+                          );
+                HashSet<string> FilterHashrecords = await CreatedBy.Content.ReadFromJsonAsync<HashSet<string>>();
+                MyHashSet = FilterHashrecords.ToList();
+                break;
+        }
+        return MyHashSet;
+    }
+
+    private async Task<UserName?> GetCurrentUser()
+    {
+        UserName restoredUser = new UserName();
+        var json = await JS.InvokeAsync<string>("getCookie", "userKey");
+        if (!string.IsNullOrWhiteSpace(json))
+        {
+            try
+            {
+                restoredUser = System.Text.Json.JsonSerializer.Deserialize<UserName>(json);
+
+            }
+            catch (Exception Ex)
+            {
+
+            }
+        }
+        return restoredUser;
+    }
+
+     private void OnFinanceClicked(PurchaseRequisitionRecord record)
+    {
+       
+        NavigationManager.NavigateTo($"/finance-record/{record.po_id}");
+    }
+
     private void OnViewClicked(PurchaseRequisitionRecord record)
     {
         NavigationManager.NavigateTo($"/purchaserequisitionrecords_client/create/{record.RequisitionNumber}");
+    }
+    private void OnActionClicked(PurchaseRequisitionRecord record)
+    {
+        NavigationManager.NavigateTo($"/pr-preapproval/{record.RequisitionNumber}");
     }
 }

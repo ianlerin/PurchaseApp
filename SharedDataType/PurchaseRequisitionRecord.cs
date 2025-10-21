@@ -6,6 +6,13 @@ using System.Numerics;
 
 namespace PurchaseBlazorApp2.Components.Data
 {
+    public enum EFilterPRType
+    {
+        Approval,
+        CreatedBy
+
+    }
+
     public enum EDepartment
     {
         NotSpecified,
@@ -15,8 +22,8 @@ namespace PurchaseBlazorApp2.Components.Data
         ManagingDirector,
         AccountsSecurity,
         AccountsHQ,
-        Admin
-       
+        Admin,
+        Finance
     }
 
     public enum ETask
@@ -65,7 +72,32 @@ namespace PurchaseBlazorApp2.Components.Data
         PendingPayment,
         Paid
     }
+    public class CredentialSubmitResponse
+    {
+        public bool bSuccess { get; set; }
+        public UserName MyName { get; set; } = new UserName();
+    }
 
+
+    public class UserName
+    {
+        public string Name { get; set; }
+        public string Password { get; set; }
+        public string Email { get; set; }
+        public string Department { get; set; }
+        public string JobTitle { get; set; }
+
+        public UserName(string _Name, string _Password)
+        {
+            Name = _Name;
+            Password = _Password;
+        }
+        public UserName()
+        {
+
+        }
+        public EDepartment Role { get; set; }
+    }
     public class SupplierLookUpInfo
     {
         public string ID { get; set; }
@@ -143,14 +175,78 @@ namespace PurchaseBlazorApp2.Components.Data
         public DateTime ReceiveDate { get; set; } = DateTime.Now;
     }
 
-public class ImageUploadInfo
+
+    public class InvoiceInfo
+    {
+        public string? po_id { get; set; }
+        public List<ImageUploadInfo> SupportDocuments { get; set; } = new List<ImageUploadInfo>();
+        private EPaymentStatus _PaymentStatus;
+        public EPaymentStatus PaymentStatus
+        {
+            get { return _PaymentStatus; }
+            set
+            {
+                if (_PaymentStatus == EPaymentStatus.PendingPayment && value == EPaymentStatus.Paid)
+                {
+                    bShouldSendEmail = true;
+                }
+
+                else if (_PaymentStatus == EPaymentStatus.PendingInvoice && value == EPaymentStatus.PendingPayment)
+                {
+                    bShouldSendEmail = true;
+                }
+                else
+                {
+                    bShouldSendEmail = false;
+                }
+
+                _PaymentStatus = value;
+            }
+        }
+        public bool bShouldSendEmail = false;
+    }
+
+    public class ImageUploadInfo
     {
         public byte[] Data { get; set; }
         public string DataFormat {  get; set; }
         public Guid Id { get; set; } = Guid.NewGuid();
     }
 
-    public class PurchaseOrderRecord
+    public class FinanceRecord
+    {
+        [Key]
+        public string? PO_ID { get; set; }
+        private EPaymentStatus _PaymentStatus = EPaymentStatus.PendingPayment;
+        public EPaymentStatus PaymentStatus { get { return _PaymentStatus; } set { 
+                if(_PaymentStatus==EPaymentStatus.PendingPayment&& value == EPaymentStatus.Paid)
+                {
+                    bShouldSendEmail = true;
+                }
+
+                else if (_PaymentStatus == EPaymentStatus.PendingInvoice && value == EPaymentStatus.PendingPayment)
+                {
+                    bShouldSendEmail = true;
+                }
+                else
+                {
+                    bShouldSendEmail = false;
+                }
+
+                    _PaymentStatus = value; } }
+
+        public bool bShouldSendEmail = false;
+        public Dictionary<decimal, FinanceRecordUpdate> FinanceRecordLists { get; set; } = new Dictionary<decimal, FinanceRecordUpdate>();
+    }
+
+    public class FinanceRecordUpdate
+    {
+        public List<ImageUploadInfo> SupportDocuments { get; set; } = new List<ImageUploadInfo>();
+        public DateTime AddDate { get; set; } = DateTime.Now;
+      
+    }
+
+        public class PurchaseOrderRecord
     {
         [Key]
         public string? PO_ID { get; set; }
@@ -196,6 +292,9 @@ public class ImageUploadInfo
         public string? DeliveryMethod { get; set; }
         public string? PaymentMethod { get; set; }
         public ReceiveInfo ReceiveInfo { get; set; } = new ReceiveInfo();
+
+        public InvoiceInfo InvoiceInfo { get; set; } = new InvoiceInfo();
+        
         public PurchaseOrderRecord()
         {
           mycompanyname = "LCDA MSB PINEAPPLE SDN BHD 202201032786 (1478483-W)";

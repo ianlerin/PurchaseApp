@@ -1,6 +1,7 @@
 ﻿@page "/purchaseorder"
 @page "/purchaseorder_client/print/{RequisitionNumber}"
 @using System.ComponentModel.DataAnnotations
+@using Genesis.EmailService
 @using Microsoft.AspNetCore.Components.Forms
 @using PurchaseBlazorApp2.Components.Data
 @using QuestPDF.Fluent;
@@ -164,6 +165,18 @@
         ImageWidth="500" />
         <textarea readonly rows="6" cols="60">@EmailSendStatus</textarea>
     }
+    @if (Record.InvoiceInfo != null)
+    {
+        <h5>Invoice Info</h5>
+      
+        <UploadImageHelper UploadedImages="@Record.InvoiceInfo.SupportDocuments"
+                           SelectionType=UploadImageHelper.ESelectionType.None
+                           Orientation="UploadImageHelper.EOrientation.Vertical"
+                           bNewRequisition=true
+                           ImageHeight="500"
+                           ImageWidth="500" />
+        <button type="button" class="btn btn-primary" @onclick="ToFinance">Route To Finance</button>
+    }
 
 
 
@@ -196,7 +209,7 @@
             return doc.GeneratePdf();
         }
     }
-   
+
     List<SupplierLookUpInfo> FoundSupplierLookupInfos = new List<SupplierLookUpInfo>();
     private PurchaseOrderRecord Record = null;
     private PurchaseRequisitionRecord PRRecord { get; set; } = new PurchaseRequisitionRecord();
@@ -464,7 +477,7 @@
                         };
                     await Http.PostAsJsonAsync("api/pr/edit-deliverydate", DeliveryDatePayload);
                     await JS.InvokeVoidAsync("alert", $"✅ Purchase Order saved successfully! ID: {Record.PO_ID}");
-                    
+
                 }
                 else
                 {
@@ -475,6 +488,7 @@
             {
                 await JS.InvokeVoidAsync("alert", $"❌ API call failed: {response.StatusCode}");
             }
+            
         }
         catch (Exception ex)
         {
@@ -486,8 +500,16 @@
     private void ResetForm()
     {
         Record = new PurchaseOrderRecord();
-       
+
     }
+    private async Task ToFinance()
+    {
+        Record.InvoiceInfo.PaymentStatus = EPaymentStatus.PendingPayment;
+        await HandleValidSubmit();
+        EmailWorkflowService MyEmailHelper = new EmailWorkflowService(Http, NavigationManager, JS);
+        await MyEmailHelper.SendEmailToRelevantPartyFinance(Record);
+    }
+
     private async Task DownloadPdf()
     {
         var pdfBytes = await Http.GetByteArrayAsync($"api/pdf/purchase/{Record.PO_ID}");

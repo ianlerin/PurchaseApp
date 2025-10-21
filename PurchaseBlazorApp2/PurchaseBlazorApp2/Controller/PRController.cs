@@ -58,6 +58,13 @@ namespace PurchaseBlazorApp2.Controller
             var Result = await PRRepository.GetRequisitionNumbersByDepartmentAsync(Department);
             return Ok(Result);
         }
-        
+
+        [HttpPost("get-createdby")]
+        public async Task<ActionResult<HashSet<string>>> GetRecordsAsync([FromBody] string CreatedBy)
+        {
+            var Result = await PRRepository.GetRequisitionNumbersByCreatedByAsync(CreatedBy);
+            return Ok(Result);
+        }
+
     }
 }

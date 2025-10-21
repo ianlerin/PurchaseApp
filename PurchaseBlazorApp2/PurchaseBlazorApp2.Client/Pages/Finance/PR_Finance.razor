@@ -1,0 +1,249 @@
+﻿@page "/finance-record/{PO_ID}"
+@using PurchaseBlazorApp2.Components.Data
+@using PurchaseBlazorApp2.Client.Components.Helper
+@using System.ComponentModel.DataAnnotations
+
+@inject NavigationManager NavigationManager
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<h2 class="text-xl font-semibold mb-4">Finance Record Entry - @PO_ID</h2>
+
+@if (string.IsNullOrWhiteSpace(PO_ID))
+{
+    <div class="alert alert-danger">
+        Invalid access — PO ID is required.
+    </div>
+}
+else
+{
+    <div class="card p-4 rounded-2xl shadow-md bg-white space-y-4">
+
+        <!-- PO ID (readonly) -->
+        <div>
+            <label class="font-medium">PO ID:</label>
+            <input class="form-control w-100" value="@PO_ID" readonly />
+        </div>
+
+        <!-- Payment Status -->
+        <div>
+            <label class="font-medium">Payment Status:</label>
+            <EnumDropDownBox @bind-Value="FinanceRecord.PaymentStatus"
+                             TEnum="EPaymentStatus" />
+        </div>
+
+        <hr />
+
+        <!-- InvoiceInfo -->
+        <h4 class="font-semibold mt-3">InvoiceInfo</h4>
+        @if(PurchaseOrderRecord!=null)
+        {
+        <UploadImageHelper UploadedImages="@PurchaseOrderRecord.InvoiceInfo.SupportDocuments"
+                           SelectionType=UploadImageHelper.ESelectionType.None
+                           Orientation="UploadImageHelper.EOrientation.Vertical"
+                           bNewRequisition=false
+                           ImageHeight="500"
+                           ImageWidth="500" />
+        }
+
+
+        <!-- Finance Record Updates -->
+        <h4 class="font-semibold mt-3">Finance Record Updates</h4>
+
+        @if (FinanceRecord.FinanceRecordLists == null || FinanceRecord.FinanceRecordLists.Count == 0)
+        {
+            <p class="text-muted">No updates added yet.</p>
+        }
+        else
+        {
+            @foreach (var kvp in FinanceRecord.FinanceRecordLists.OrderBy(k => k.Key))
+            {
+                var updatePercent = kvp.Key;
+                var update = kvp.Value;
+
+                <div class="border rounded-xl p-3 mb-3 bg-light">
+                    <div class="flex justify-between items-center mb-2">
+                        <h5 class="font-medium">Update @updatePercent%</h5>
+                        <button class="btn btn-sm btn-danger"
+                                @onclick="() => RemoveUpdate(updatePercent)">
+                            Remove
+                        </button>
+                    </div>
+
+                    <!-- Update Percent (key editor) -->
+                    <div class="mb-2">
+                        <label>Update Percent:</label>
+                        <input type="number"
+                               step="0.01"
+                               class="form-control w-50"
+                               value="@updatePercent"
+                               @onchange="(e) => ChangeUpdateKey(updatePercent, e.Value?.ToString())" />
+                    </div>
+
+                    <!-- Add Date -->
+                    <div class="mb-2">
+                        <label>Add Date:</label>
+                        <InputDate 
+                               class="form-control w-50"
+                                   @bind-Value="update.AddDate" />
+                    </div>
+
+                    <!-- Support Documents -->
+                    <div class="mb-2">
+                        <label>Support Documents:</label>
+                        <UploadImageHelper UploadedImages="@update.SupportDocuments" bNewRequisition=bCanEdit></UploadImageHelper>
+                    </div>
+                </div>
+            }
+        }
+
+        <button class="btn btn-primary" @onclick="AddUpdate" disabled="@(!bCanEdit)">
+            Add Update
+        </button>
+
+        <hr />
+
+        <button class="btn btn-success" @onclick="SaveRecord" disabled="@(!bCanEdit)">
+            Save Record
+        </button>
+    </div>
+}
+
+@code {
+    [Parameter] public string? PO_ID { get; set; }
+    private bool bCanEdit = false;
+    private FinanceRecord FinanceRecord = new();
+    private PurchaseOrderRecord PurchaseOrderRecord = new();
+    protected async override void OnInitialized()
+    {
+        if (string.IsNullOrWhiteSpace(PO_ID))
+        {
+            // Prevent access without PO_ID
+            NavigationManager.NavigateTo("/error?msg=PO_ID missing");
+            return;
+        }
+
+        try
+        {
+            var url = NavigationManager.ToAbsoluteUri($"api/finance/get?requisitionNumber={PO_ID}");
+            var record = await Http.GetFromJsonAsync<FinanceRecord>(url);
+
+            if (record != null)
+            {
+                FinanceRecord = record;
+            }
+            EDepartment MyDepartment = await GeneralLibrary.GetCurrentDepartmentRole(JS);
+            if (MyDepartment==EDepartment.Finance)
+            {
+                await JS.InvokeVoidAsync("console.log", $"PR_Finance,OnInitialized, finance department");
+                bCanEdit = true;
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("console.log", $"PR_Finance,OnInitialized, not finance department");
+            }
+
+        }
+        catch (Exception ex)
+        {
+
+            await JS.InvokeVoidAsync("console.log", $"PR_Finance,OnInitialized, exception{ex}");
+        }
+
+        // Initialize record with provided PO_ID
+        FinanceRecord.PO_ID = PO_ID;
+        await SetupPO(PO_ID);
+        StateHasChanged();
+    }
+
+    private async Task SetupPO(string PO_ID)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(PO_ID))
+            {
+                return;
+            }
+
+            // Prepare the request payload
+            var requisitionNumbers = new List<string> { PO_ID };
+
+            // Call the API endpoint
+            var response = await Http.PostAsJsonAsync("api/po/get", requisitionNumbers);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var poRecords = await response.Content.ReadFromJsonAsync<List<PurchaseOrderRecord>>();
+
+                if (poRecords != null && poRecords.Count > 0)
+                {
+                    var po = poRecords.First();
+                    Console.WriteLine($"✅ Successfully loaded PO {po.PO_ID}");
+
+                    
+                    PurchaseOrderRecord = po; 
+                }
+                else
+                {
+                    Console.WriteLine($"⚠️ No record found for PO {PO_ID}");
+                }
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"❌ Failed to load PO {PO_ID}: {response.StatusCode} - {error}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Exception in SetupPO: {ex.Message}");
+        }
+    }
+
+    private void AddUpdate()
+    {
+        decimal newKey = 0m;
+        while (FinanceRecord.FinanceRecordLists.ContainsKey(newKey))
+            newKey += 10m; // auto increment key if exists
+
+        FinanceRecord.FinanceRecordLists[newKey] = new FinanceRecordUpdate();
+    }
+
+    private async void ChangeUpdateKey(decimal oldKey, string? newKeyText)
+    {
+        if (decimal.TryParse(newKeyText, out var newKey))
+        {
+            if (FinanceRecord.FinanceRecordLists.ContainsKey(newKey))
+            {
+
+                await JS.InvokeVoidAsync("alert", $"Update percent {newKey}% already exists!");
+                return;
+            }
+
+
+            var item = FinanceRecord.FinanceRecordLists[oldKey];
+            FinanceRecord.FinanceRecordLists.Remove(oldKey);
+            FinanceRecord.FinanceRecordLists[newKey] = item;
+        }
+    }
+
+    private void RemoveUpdate(decimal updatePercent)
+    {
+        FinanceRecord.FinanceRecordLists.Remove(updatePercent);
+    }
+    private async void SaveRecord()
+    {
+
+        var response = await Http.PostAsJsonAsync("api/finance/submit", FinanceRecord);
+
+        if (response.IsSuccessStatusCode)
+        {
+            await JS.InvokeVoidAsync("alert", $"FinanceSubmitSuccess!");
+        }
+    }
+    private void SendEmailToPurchaseManager()
+    {
+        
+    }
+
+}

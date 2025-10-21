@@ -8,14 +8,18 @@
 {
     <!-- Editable Upload -->
     <RadzenUpload ChooseText="Upload Files"
-    Multiple="true"
-    Accept="image/*,application/pdf"
-    Change="OnUploadChange"
-    Style="margin-bottom: 10px;" />
+                  Multiple="true"
+                  Accept="image/*,application/pdf"
+                  Change="OnUploadChange"
+                  Style="margin-bottom: 10px;" />
 }
+
 @if (UploadedImages.Count > 0)
 {
-    <div class="@GetContainerClass()">
+    <!-- Flex container for images -->
+    <div class="@GetContainerClass()"
+         style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-start; align-items: flex-start;">
+
         @foreach (var image in UploadedImages)
         {
             var index = UploadedImages.FindIndex(x => x.Id == image.Id);
@@ -27,24 +31,28 @@
             };
 
             <div class="border p-2 position-relative"
-            style="width:@ImageWidthPx; background-color:@(isSelected ? "#e6f2ff" : "transparent");">
+                 style="flex: 1 1 300px; max-width:@ImageWidthPx; background-color:@(isSelected ? "#e6f2ff" : "transparent");">
 
                 @if (image.DataFormat.StartsWith("image/"))
                 {
                     <!-- Show as Image -->
                     <img src="@GetImageSrc(image)"
-                    class="img-thumbnail"
-                    style="width: 100%; height: auto; max-height:@ImageHeightPx; cursor:pointer;"
-                    @onclick="@(() => ShowZoom(image))" />
+                         class="img-thumbnail"
+                         style="width: 100%; height: auto; max-height:@ImageHeightPx; cursor:pointer;"
+                         @onclick="@(() => ShowZoom(image))" />
                 }
                 else if (image.DataFormat == "application/pdf")
                 {
                     <!-- Show as PDF Preview -->
-                    <iframe src="@GetImageSrc(image)"
-                    style="width: 100%; height:@ImageHeightPx; border:none; cursor:pointer;"
-                    title="PDF Preview"
-                    @onclick="@(() => OpenPdf(image))">
-                    </iframe>
+                    <div style="position: relative; width: 100%; height:@ImageHeightPx;">
+                        <iframe src="@GetImageSrc(image)"
+                                style="width: 100%; height:100%; border:none;"
+                                title="PDF Preview">
+                        </iframe>
+                        <div style="position: absolute; top:0; left:0; width:100%; height:100%; cursor:pointer;"
+                             @onclick="@(() => ShowZoom(image))">
+                        </div>
+                    </div>
                 }
                 else
                 {
@@ -54,7 +62,8 @@
                 @if (SelectionType != ESelectionType.None)
                 {
                     <button class="btn btn-sm @(isSelected ? "btn-success" : "btn-primary") w-100 mt-1"
-                    @onclick="@(() => SelectImage(image.Id))">
+                            @onclick="@(() => SelectImage(image.Id))" disabled="@(!bNewRequisition)">
+                        
                         @(isSelected ? "Selected" : "Select")
                     </button>
                 }
@@ -62,11 +71,10 @@
                 @if (bNewRequisition)
                 {
                     <button class="btn btn-sm btn-danger position-absolute top-0 end-0"
-                    @onclick="@(() => RemoveImage(image.Id))">
+                            @onclick="@(() => RemoveImage(image.Id))">
                         ✕
                     </button>
                 }
-
             </div>
         }
     </div>
@@ -107,6 +115,7 @@ else
     [Parameter] public int ImageWidth { get; set; } = 150;
     [Parameter] public int ImageHeight { get; set; } = 150;
 
+    private ImageUploadInfo? ZoomedUploadInfo;
     private string? ZoomedImageSrc;
     private bool IsZoomVisible;
 
@@ -175,9 +184,11 @@ else
         SelectedIndexChanged.InvokeAsync(SelectedIndex);
     }
 
-    private void ShowZoom(ImageUploadInfo image)
+    private async void ShowZoom(ImageUploadInfo image)
     {
+        ZoomedUploadInfo=image;
         ZoomedImageSrc = GetImageSrc(image);
+        await JS.InvokeVoidAsync("console.log", $"zoom {ZoomedImageSrc}");
         IsZoomVisible = true;
     }
 

@@ -21,8 +21,11 @@
                         <Template Context="record">
                             <RadzenButton Text="View" Icon="visibility"
                             Click="@(() => OnViewClicked(record))" />
-                            <RadzenButton Text="Delete" Icon="delete"
-                            Click="@(() => OnDeleteClicked(record))" />
+                             @if (record.InvoiceInfo?.PaymentStatus != EPaymentStatus.PendingInvoice)
+                             {
+                            <RadzenButton Text="FinanceAction" Icon="action"
+                            Click="@(() => OnFinanceClicked(record))" />
+                             }
                         </Template>
                     </RadzenDataGridColumn>
                 </Columns>
@@ -68,8 +71,9 @@
 
     }
 
-    private void OnDeleteClicked(PurchaseOrderRecord record)
+    private void OnFinanceClicked(PurchaseOrderRecord record)
     {
-      
+        StateStorage.Set("PO", record);
+        NavigationManager.NavigateTo($"/finance-record/{record.PO_ID}");
     }
 }

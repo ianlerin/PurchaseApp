@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PurchaseBlazorApp2.Components.Data;
-using PurchaseBlazorApp2.Components.Global;
 using PurchaseBlazorApp2.Components.Repository;
 
 namespace PurchaseBlazorApp2.Controller
