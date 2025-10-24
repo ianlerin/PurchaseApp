@@ -34,7 +34,7 @@
                     <RadzenDataGrid Data="@Records"
                     TItem="PurchaseRequisitionRecord"
                     AllowSorting="true"
-                    Style="min-width:1500px;"
+                    Style="min-width:1800px;"
                     Class="shadow-sm border rounded p-3">
                         <Columns>
                             <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Property="RequisitionNumber" Title="Requisition No." Width="150px" />
@@ -85,7 +85,7 @@
                                 </Template>
                             </RadzenDataGridColumn>
 
-                            <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Title="Actions" Width="160px">
+                            <RadzenDataGridColumn TItem="PurchaseRequisitionRecord" Title="Actions" Width="350px">
                                 <Template Context="record">
                                     <div style="display: flex; gap: 6px;">
                                         <RadzenButton Text="View"
@@ -99,7 +99,7 @@
                                                           Click="@(() => OnActionClicked(record))"
                                                           Style="min-width:70px;" />
                                         }
-                                        @if(record.paymentstatus!=EPaymentStatus.PendingInvoice)
+                                        @if(bProcurementOrFinance&&record.paymentstatus!=EPaymentStatus.PendingInvoice)
                                         {
                                                 <RadzenButton Text="Finance"
                                                           Icon="visibility"
@@ -151,9 +151,15 @@
             EDepartment MyDepartment = await GeneralLibrary.GetCurrentDepartmentRole(JS);
             if(MyDepartment == EDepartment.ProcurementManager||MyDepartment == EDepartment.Finance)
             {
-                  bProcurementOrFinance = true;
+                await JS.InvokeVoidAsync("console.log", $"ReloadList procurement or finance");
+                bProcurementOrFinance = true;
             }
-         
+            else
+            {
+                
+                await JS.InvokeVoidAsync("console.log", $"ReloadList not procurement or finance");
+            }
+
             if (bProcurementOrFinance)
             {
                 response = await Http.PostAsJsonAsync(
@@ -205,8 +211,7 @@
                 await JS.InvokeVoidAsync("console.error", $"HTTP error {response.StatusCode}: {error}");
                 Records = new List<PurchaseRequisitionRecord>();
             }
-            UserHelperService helperService = new UserHelperService(JS);
-            bProcurementOrFinance = await helperService.GetIsProcurementAsync();
+          
         }
         catch (HttpRequestException ex)
         {

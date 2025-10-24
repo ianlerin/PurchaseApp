@@ -1,4 +1,5 @@
 ﻿@page "/finance-record/{PO_ID}"
+@using Genesis.EmailService
 @using PurchaseBlazorApp2.Components.Data
 @using PurchaseBlazorApp2.Client.Components.Helper
 @using System.ComponentModel.DataAnnotations
@@ -17,96 +18,134 @@
 }
 else
 {
-    <div class="card p-4 rounded-2xl shadow-md bg-white space-y-4">
+    <div class="container mt-4">
 
-        <!-- PO ID (readonly) -->
-        <div>
-            <label class="font-medium">PO ID:</label>
-            <input class="form-control w-100" value="@PO_ID" readonly />
+    <!-- ============================= -->
+    <!-- 1️⃣  PURCHASE ORDER INFO -->
+    <!-- ============================= -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white fw-bold">
+            Purchase Order Information
         </div>
-
-        <!-- Payment Status -->
-        <div>
-            <label class="font-medium">Payment Status:</label>
-            <EnumDropDownBox @bind-Value="FinanceRecord.PaymentStatus"
-                             TEnum="EPaymentStatus" />
-        </div>
-
-        <hr />
-
-        <!-- InvoiceInfo -->
-        <h4 class="font-semibold mt-3">InvoiceInfo</h4>
-        @if(PurchaseOrderRecord!=null)
-        {
-        <UploadImageHelper UploadedImages="@PurchaseOrderRecord.InvoiceInfo.SupportDocuments"
-                           SelectionType=UploadImageHelper.ESelectionType.None
-                           Orientation="UploadImageHelper.EOrientation.Vertical"
-                           bNewRequisition=false
-                           ImageHeight="500"
-                           ImageWidth="500" />
-        }
-
-
-        <!-- Finance Record Updates -->
-        <h4 class="font-semibold mt-3">Finance Record Updates</h4>
-
-        @if (FinanceRecord.FinanceRecordLists == null || FinanceRecord.FinanceRecordLists.Count == 0)
-        {
-            <p class="text-muted">No updates added yet.</p>
-        }
-        else
-        {
-            @foreach (var kvp in FinanceRecord.FinanceRecordLists.OrderBy(k => k.Key))
-            {
-                var updatePercent = kvp.Key;
-                var update = kvp.Value;
-
-                <div class="border rounded-xl p-3 mb-3 bg-light">
-                    <div class="flex justify-between items-center mb-2">
-                        <h5 class="font-medium">Update @updatePercent%</h5>
-                        <button class="btn btn-sm btn-danger"
-                                @onclick="() => RemoveUpdate(updatePercent)">
-                            Remove
-                        </button>
-                    </div>
-
-                    <!-- Update Percent (key editor) -->
-                    <div class="mb-2">
-                        <label>Update Percent:</label>
-                        <input type="number"
-                               step="0.01"
-                               class="form-control w-50"
-                               value="@updatePercent"
-                               @onchange="(e) => ChangeUpdateKey(updatePercent, e.Value?.ToString())" />
-                    </div>
-
-                    <!-- Add Date -->
-                    <div class="mb-2">
-                        <label>Add Date:</label>
-                        <InputDate 
-                               class="form-control w-50"
-                                   @bind-Value="update.AddDate" />
-                    </div>
-
-                    <!-- Support Documents -->
-                    <div class="mb-2">
-                        <label>Support Documents:</label>
-                        <UploadImageHelper UploadedImages="@update.SupportDocuments" bNewRequisition=bCanEdit></UploadImageHelper>
-                    </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">PO ID</label>
+                        <input class="form-control" value="@PO_ID" readonly />
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================= -->
+    <!-- 2️⃣  INVOICE INFO -->
+    <!-- ============================= -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-info text-white fw-bold">
+            Invoice Information
+        </div>
+        <div class="card-body">
+            @if (PurchaseOrderRecord != null)
+            {
+                <UploadImageHelper UploadedImages="@PurchaseOrderRecord.InvoiceInfo.SupportDocuments"
+                                   SelectionType="UploadImageHelper.ESelectionType.None"
+                                   Orientation="UploadImageHelper.EOrientation.Vertical"
+                                   bNewRequisition="false"
+                                   ImageHeight="400"
+                                   ImageWidth="400" />
             }
-        }
+            else
+            {
+                <p class="text-muted">No invoice info available.</p>
+            }
+        </div>
+    </div>
 
-        <button class="btn btn-primary" @onclick="AddUpdate" disabled="@(!bCanEdit)">
-            Add Update
-        </button>
+    <!-- ============================= -->
+    <!-- 3️⃣  FINANCE RECORD UPDATES -->
+    <!-- ============================= -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-secondary text-white fw-bold">
+            Finance Record Updates
+        </div>
+        <div class="card-body">
+            @if (FinanceRecord.FinanceRecordLists == null || FinanceRecord.FinanceRecordLists.Count == 0)
+            {
+                <p class="text-muted">No updates added yet.</p>
+            }
+            else
+            {
+                @foreach (var kvp in FinanceRecord.FinanceRecordLists.OrderBy(k => k.Key))
+                {
+                    var updatePercent = kvp.Key;
+                    var update = kvp.Value;
 
-        <hr />
+                    <div class="border rounded p-3 mb-3 bg-light">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold mb-0">Update @updatePercent%</h5>
+                            <button class="btn btn-sm btn-danger"
+                                    @onclick="() => RemoveUpdate(updatePercent)">
+                                Remove
+                            </button>
+                        </div>
 
-        <button class="btn btn-success" @onclick="SaveRecord" disabled="@(!bCanEdit)">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Update Percent</label>
+                                    <input type="number"
+                                           step="0.01"
+                                           class="form-control w-50"
+                                           value="@updatePercent"
+                                           @onchange="(e) => ChangeUpdateKey(updatePercent, e.Value?.ToString())" />
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Add Date</label>
+                                <InputDate class="form-control"
+                                           @bind-Value="update.AddDate" />
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            <label class="form-label fw-bold">Support Documents</label>
+                            <UploadImageHelper UploadedImages="@update.SupportDocuments"
+                                               bNewRequisition="@bCanEdit" />
+                        </div>
+                    </div>
+                }
+            }
+
+            <div class="text-end mt-3">
+                <button class="btn btn-primary"
+                        @onclick="AddUpdate"
+                        disabled="@(!bCanEdit)">
+                    Add Update
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================= -->
+    <!-- 4️⃣  ACTION BUTTONS -->
+    <!-- ============================= -->
+    <div class="text-center mt-4 mb-5">
+        <button class="btn btn-success btn-lg me-3 px-4"
+                @onclick="SaveRecord"
+                disabled="@(!bCanEdit)">
             Save Record
         </button>
+
+        @if (FinanceRecord.PaymentStatus == EPaymentStatus.Paid)
+        {
+            <button class="btn btn-primary btn-lg px-4"
+                    @onclick="NotifyPaid"
+                    disabled="@(!bCanEdit)">
+                Notify Paid
+            </button>
+        }
     </div>
+
+</div>
 }
 
 @code {
@@ -180,7 +219,7 @@ else
                     var po = poRecords.First();
                     Console.WriteLine($"✅ Successfully loaded PO {po.PO_ID}");
 
-                    
+
                     PurchaseOrderRecord = po; 
                 }
                 else
@@ -231,7 +270,7 @@ else
     {
         FinanceRecord.FinanceRecordLists.Remove(updatePercent);
     }
-    private async void SaveRecord()
+    private async Task SaveRecord()
     {
 
         var response = await Http.PostAsJsonAsync("api/finance/submit", FinanceRecord);
@@ -241,6 +280,15 @@ else
             await JS.InvokeVoidAsync("alert", $"FinanceSubmitSuccess!");
         }
     }
+    private async void NotifyPaid()
+    {
+        PurchaseOrderRecord.InvoiceInfo.PaymentStatus = EPaymentStatus.Paid;
+        FinanceRecord.PaymentStatus = EPaymentStatus.Paid;
+        await SaveRecord();
+        EmailWorkflowService MyEmailHelper = new EmailWorkflowService(Http, NavigationManager, JS);
+        await MyEmailHelper.SendEmailToRelevantPartyFinance(PurchaseOrderRecord);
+    }
+
     private void SendEmailToPurchaseManager()
     {
         

@@ -1,0 +1,19 @@
+﻿body {
+
+}
+
+.editable-field {
+    background-color: #ffffff;
+    border-color: #0d6efd; /* Bootstrap primary color */
+    transition: box-shadow 0.2s ease;
+}
+
+    .editable-field:focus {
+        box-shadow: 0 0 4px rgba(13, 110, 253, 0.5);
+    }
+
+/* Read-only or disabled fields: greyed out */
+.readonly-field {
+    background-color: #f0f0f0;
+    color: #6c757d;
+}

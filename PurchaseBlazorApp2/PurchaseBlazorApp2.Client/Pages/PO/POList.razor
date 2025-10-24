@@ -17,15 +17,15 @@
                 <Columns>
                     <RadzenDataGridColumn TItem="PurchaseOrderRecord" Property="PO_ID" Title="Requisition " />
                     <RadzenDataGridColumn TItem="PurchaseOrderRecord" Property="PR_ID" Title="PR" />
-                    <RadzenDataGridColumn TItem="PurchaseOrderRecord" Title="Actions">
+                    <RadzenDataGridColumn TItem="PurchaseOrderRecord" Title="Actions" Width="500px">
                         <Template Context="record">
                             <RadzenButton Text="View" Icon="visibility"
-                            Click="@(() => OnViewClicked(record))" />
-                             @if (record.InvoiceInfo?.PaymentStatus != EPaymentStatus.PendingInvoice)
-                             {
-                            <RadzenButton Text="FinanceAction" Icon="action"
-                            Click="@(() => OnFinanceClicked(record))" />
-                             }
+                                          Click="@(() => OnViewClicked(record))" class="px-4" />
+                            @if (record.InvoiceInfo?.PaymentStatus != EPaymentStatus.PendingInvoice)
+                            {
+                                <RadzenButton Text="Finance"
+                                              Click="@(() => OnFinanceClicked(record))" class="px-4" />
+                            }
                         </Template>
                     </RadzenDataGridColumn>
                 </Columns>

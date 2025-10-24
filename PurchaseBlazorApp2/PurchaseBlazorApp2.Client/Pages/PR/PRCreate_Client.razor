@@ -80,13 +80,32 @@
                                     </div>
 
                                     <div class="col-md-2">
+                                        <label class="form-label">Currency</label>
+                                        <RadzenDropDown @bind-Value="item.Currency"
+                                                        Data="@CurrencyList"
+                                                        TextProperty="Text"
+                                                        ValueProperty="Value"
+                                                        AllowFiltering="true"
+                                                        Disabled="true" />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Unit Price</label>
+                                        <InputNumber @bind-Value="item.UnitPrice"
+                                                     class="form-control"
+                                                     readonly />
+                                    </div>
+                                    <div class="col-md-2">
                                         <label class="form-label">Quantity</label>
                                         <InputNumber @bind-Value="item.Quantity"
                                                      class="form-control"
-                                                     disabled="@(!bNewRequisition)" />
-                                        <ValidationMessage For="@(() => item.Quantity)"
-                                                           class="text-danger" />
+                                                     readonly />
                                     </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Total Price</label>
+                                        <InputNumber @bind-Value="item.TotalPrice"
+                                                     class="form-control"
+                                                     readonly />
+                                                     </div>
 
                                     <div class="col-md-2 d-flex align-items-end">
                                         <button type="button"

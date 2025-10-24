@@ -351,14 +351,15 @@ namespace PurchaseBlazorApp2.Components.Repository
             }
         }
 
-        public async Task<bool> UpdatePaymentStatus(string RequisitionNumber)
+        public async Task<bool> UpdatePaymentStatus(string RequisitionNumber,EPaymentStatus Status)
         {
             try
             {
-                List<PurchaseOrderRecord> OrderRecords=await GetRecordsAsyncWithPR(new List<string> { RequisitionNumber });
+                List<PurchaseOrderRecord> OrderRecords=await GetRecordsAsync(new List<string> { RequisitionNumber });
                 if (OrderRecords.Count > 0)
                 {
-                    return await UpdatePaymentStatus(OrderRecords[0]);
+                    PurchaseOrderRecord OrderRecord = OrderRecords[0];
+                    return await UpdatePaymentStatus(OrderRecord.PR_ID, OrderRecord.PO_ID, Status);
                 }
 
             }
@@ -374,7 +375,7 @@ namespace PurchaseBlazorApp2.Components.Repository
             return false;
         }
 
-        public async Task<bool> UpdatePaymentStatus(PurchaseOrderRecord OrderRecord)
+        public async Task<bool> UpdatePaymentStatus(string PR_ID,string PO_ID,EPaymentStatus Status)
         {
             try
             {
@@ -387,12 +388,12 @@ namespace PurchaseBlazorApp2.Components.Repository
 
                 using (var command = new NpgsqlCommand(query, Connection))
                 {
-                    command.Parameters.AddWithValue("@paymentstatus", OrderRecord.InvoiceInfo.PaymentStatus.ToString());
-                    command.Parameters.AddWithValue("@requisitionnumber", OrderRecord.PO_ID);
+                    command.Parameters.AddWithValue("@paymentstatus", Status.ToString());
+                    command.Parameters.AddWithValue("@requisitionnumber", PO_ID);
 
                     int rowsAffected = await command.ExecuteNonQueryAsync();
                     var prRepository = new PRRepository();
-                    await prRepository.UpdatePaymentStatus(OrderRecord.PR_ID, OrderRecord.InvoiceInfo.PaymentStatus);
+                    await prRepository.UpdatePaymentStatus(PR_ID, Status);
                     return rowsAffected > 0; // true if updated
                 }
             }

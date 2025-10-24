@@ -125,7 +125,7 @@ namespace Genesis.EmailService
                     <a href='{approvalUrl}'
                        style='background-color:#007bff; color:#ffffff; padding:10px 20px;
                               text-decoration:none; border-radius:5px; display:inline-block;'>
-                        View Purchase Order
+                        View Finance Action
                     </a>
                 </p>
                 <p>If the button above doesn't work, you can access it directly using this link:</p>

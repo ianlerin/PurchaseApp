@@ -1,10 +1,21 @@
-﻿@if (Visible)
+﻿@using PurchaseBlazorApp2.Components.Data
+@if (Visible)
 {
     <div class="modal-backdrop" @onclick="Close">
         <div class="modal-image-container" @onclick:stopPropagation="true">
             <!-- Close button -->
-           
-            <img src="@ImageSrc" class="modal-image" />
+            @if (ImageSrc.DataFormat.StartsWith("image/"))
+    {
+            <img src="@GetImageSrc(ImageSrc)" class="modal-image" />
+    }
+            @if (ImageSrc.DataFormat.StartsWith("application/pdf"))
+            {
+                <div class="iframe-wrapper">
+                    <iframe src="@GetImageSrc(ImageSrc)"
+                            style="width:100%; height:100%; border:none;">
+                    </iframe>
+                </div>
+            }
             <div class="modal-close-container">
                 <button class="modal-close-btn" @onclick="Close">Close ✕</button>
             </div>
@@ -13,10 +24,14 @@
 }
 
 @code {
-    [Parameter] public string? ImageSrc { get; set; }
+    [Parameter] public ImageUploadInfo? ImageSrc { get; set; }
     [Parameter] public bool Visible { get; set; }
     [Parameter] public EventCallback OnClose { get; set; }
-
+    private string GetImageSrc(ImageUploadInfo uploadInfo)
+    {
+        var base64 = Convert.ToBase64String(uploadInfo.Data);
+        return $"data:{uploadInfo.DataFormat};base64,{base64}";
+    }
     private async Task Close()
     {
         Visible = false;

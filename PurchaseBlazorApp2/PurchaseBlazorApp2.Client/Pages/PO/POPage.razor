@@ -11,180 +11,272 @@
 @using QuestPDF.Infrastructure;
 @using PurchaseBlazorApp2.Components.Global
 @using SharedDataType
-
-<h3>Create Purchase Order</h3>
-
 @inject NavigationManager NavigationManager
 @inject ClientStateStorage StateStorage
 @inject HttpClient Http
 @inject IJSRuntime JS
 
+
+<h3 class="mb-4">Create Purchase Order</h3>
+
 <EditForm Model="Record" OnValidSubmit="HandleValidSubmit">
     <DataAnnotationsValidator />
     <ValidationSummary class="text-danger" />
 
-    <h5>Purchase Order Info</h5>
-    <div class="mb-3">
-        <label for="poid" class="form-label">PO ID</label>
-        <InputText id="poid" class="form-control" @bind-Value="Record.PO_ID" readonly/>
+    <!-- ============================= -->
+    <!-- 1️⃣  PURCHASE ORDER INFORMATION -->
+    <!-- ============================= -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white fw-bold">
+            Purchase Order Information
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="poid" class="form-label">PO ID</label>
+                <InputText id="poid" class="form-control" @bind-Value="Record.PO_ID" readonly />
+            </div>
+
+            <div class="mb-3">
+                <label for="prid" class="form-label">PR ID</label>
+                <InputText id="prid" class="form-control" @bind-Value="Record.PR_ID" />
+            </div>
+
+            <div class="mb-3">
+                <label for="createdby" class="form-label">Created By</label>
+                <InputText id="createdby" class="form-control" @bind-Value="Record.CreatedBy" />
+            </div>
+        </div>
     </div>
 
-    <div class="mb-3">
-        <label for="prid" class="form-label">PR ID</label>
-        <InputText id="prid" class="form-control" @bind-Value="Record.PR_ID" />
+    <!-- ============================= -->
+    <!-- 2️⃣  COMPANY INFORMATION -->
+    <!-- ============================= -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-success text-white fw-bold">
+            Company Information
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="companyname" class="form-label">Company Name</label>
+                <InputText id="companyname" class="form-control" @bind-Value="Record.mycompanyname" />
+            </div>
+
+            <div class="mb-3">
+                <label for="address" class="form-label">Address</label>
+                <InputText id="address" class="form-control" @bind-Value="Record.myaddress" />
+            </div>
+
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <InputText id="email" class="form-control" @bind-Value="Record.myemail" />
+            </div>
+
+            <div class="mb-3">
+                <label for="tel" class="form-label">Telephone</label>
+                <InputText id="tel" class="form-control" @bind-Value="Record.tel" />
+            </div>
+        </div>
     </div>
 
-    <div class="mb-3">
-        <label for="createdby" class="form-label">Created By</label>
-        <InputText id="createdby" class="form-control" @bind-Value="Record.CreatedBy" />
+    <!-- ============================= -->
+    <!-- 3️⃣  SUPPLIER LOOKUP -->
+    <!-- ============================= -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-warning text-dark fw-bold">
+            Supplier Lookup
+        </div>
+        <div class="card-body">
+            <div class="input-group mb-3">
+                <RadzenDropDown @bind-Value="SearchSID"
+                                Data="@FoundSupplierLookupInfos"
+                                TextProperty="DisplayName"
+                                ValueProperty="ID"
+                                AllowFiltering="true"
+                                FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                Placeholder="Select supplier"
+                                Style="width:100%"
+                                TValue="string" />
+                <button type="button" class="btn btn-outline-primary" @onclick="SearchSupplier">Find Supplier</button>
+            </div>
+        </div>
     </div>
 
-    <h5>Company Info</h5>
-
-    <div class="mb-3">
-        <label for="companyname" class="form-label">Company Name</label>
-        <InputText id="companyname" class="form-control" @bind-Value="Record.mycompanyname" />
+    <!-- ============================= -->
+    <!-- 4️⃣  SUPPLIER INFORMATION -->
+    <!-- ============================= -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-info text-white fw-bold">
+            Supplier Information
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="suppliercompany" class="form-label">Company</label>
+                <InputText id="suppliercompany" class="form-control" @bind-Value="Record.suppliercompanyname" />
+            </div>
+            <div class="mb-3">
+                <label for="supplierperson" class="form-label">Contact Person</label>
+                <InputText id="supplierperson" class="form-control" @bind-Value="Record.suppliercontactperson" />
+            </div>
+            <div class="mb-3">
+                <label for="suppliercontact" class="form-label">Contact</label>
+                <InputText id="suppliercontact" class="form-control" @bind-Value="Record.suppliercontact" />
+            </div>
+            <div class="mb-3">
+                <label for="supplieremail" class="form-label">Email</label>
+                <InputText id="supplieremail" type="email" class="form-control" @bind-Value="Record.supplieremail" />
+            </div>
+        </div>
     </div>
 
-    <div class="mb-3">
-        <label for="address" class="form-label">Address</label>
-        <InputText id="address" class="form-control" @bind-Value="Record.myaddress" />
+    <!-- ============================= -->
+    <!-- 5️⃣  SHIP TO -->
+    <!-- ============================= -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-secondary text-white fw-bold">
+            Ship To
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="shipcompany" class="form-label">Ship To Company</label>
+                <InputText id="shipcompany" class="form-control" @bind-Value="Record.shiptocompanyname" />
+            </div>
+            <div class="mb-3">
+                <label for="warehouseaddress" class="form-label">Warehouse Address</label>
+                <InputText id="warehouseaddress" class="form-control" @bind-Value="Record.warehouseaddress" />
+            </div>
+            <div class="mb-3">
+                <label for="receivingperson" class="form-label">Receiving Person</label>
+                <InputText id="receivingperson" class="form-control" @bind-Value="Record.receivingperson" />
+            </div>
+            <div class="mb-3">
+                <label for="shippingcontact" class="form-label">Shipping Contact</label>
+                <InputText id="shippingcontact" class="form-control" @bind-Value="Record.shippingcontact" />
+            </div>
+        </div>
     </div>
 
-    <div class="mb-3">
-        <label for="email" class="form-label">Email</label>
-        <InputText id="email"  class="form-control" @bind-Value="Record.myemail" />
+    <!-- ============================= -->
+    <!-- 6️⃣  ADDITIONAL INFO -->
+    <!-- ============================= -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light fw-bold">
+            Additional Information
+        </div>
+        <div class="card-body">
+            <label for="remark" class="form-label">Remark</label>
+            <InputText id="remark" class="form-control" @bind-Value="Record.remark" />
+        </div>
     </div>
 
-    <div class="mb-3">
-        <label for="tel" class="form-label">Telephone</label>
-        <InputText id="tel" class="form-control" @bind-Value="Record.tel" />
+    <!-- ============================= -->
+    <!-- 7️⃣  FINANCIAL -->
+    <!-- ============================= -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-danger text-white fw-bold">
+            Financial
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="subtotal" class="form-label">SubTotal</label>
+                <InputNumber id="subtotal" class="form-control" @bind-Value="Record.SubTotal" readonly />
+            </div>
+            <div class="mb-3">
+                <label for="tax" class="form-label">Tax (%)</label>
+                <InputNumber id="tax" class="form-control" @bind-Value="Record.Tax" />
+            </div>
+            <div class="mb-3">
+                <label>Total</label>
+                <span class="ms-2 fw-bold">@Record.GetTotal()</span>
+            </div>
+        </div>
     </div>
 
-
-    <h5>Supplier Lookup</h5>
-    <div class="input-group mb-3">
-        <RadzenDropDown @bind-Value="SearchSID"
-                        Data="@FoundSupplierLookupInfos"
-                        TextProperty="DisplayName"
-                        ValueProperty="ID"
-                        AllowFiltering="true"
-                        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
-                        Placeholder="Select supplier"
-                        Style="width:100%"
-                        TValue="string" />
-        <button type="button" class="btn btn-outline-primary" @onclick="SearchSupplier">Find Supplier</button>
+    <!-- ============================= -->
+    <!-- 8️⃣  DELIVERY INFORMATION -->
+    <!-- ============================= -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-dark text-white fw-bold">
+            Delivery Information
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="deliverydate" class="form-label">Delivery Date</label>
+                <InputDate id="deliverydate" class="form-control" @bind-Value="Record.DeliveryDate" />
+            </div>
+            <div class="mb-3">
+                <label for="deliverymethod" class="form-label">Delivery Method</label>
+                <InputText id="deliverymethod" class="form-control" @bind-Value="Record.DeliveryMethod" />
+            </div>
+            <div class="mb-3">
+                <label for="paymentmethod" class="form-label">Payment Method</label>
+                <InputText id="paymentmethod" class="form-control" @bind-Value="Record.PaymentMethod" />
+            </div>
+        </div>
     </div>
 
+    <!-- ============================= -->
+    <!-- 9️⃣  RECEIVE INFORMATION -->
+    <!-- ============================= -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-secondary text-white fw-bold">
+            Receive Information
+        </div>
+        <div class="card-body">
+            <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="Record.POStatus"
+                                                                         TEnum="PurchaseBlazorApp2.Components.Data.EPOStatus" />
 
-    <h5>Supplier Info</h5>
-    <div class="mb-3">
-        <label for="suppliercompany" class="form-label">Company</label>
-        <InputText id="suppliercompany" class="form-control" @bind-Value="Record.suppliercompanyname" />
-    </div>
-    <div class="mb-3">
-        <label for="supplierperson" class="form-label">Contact Person</label>
-        <InputText id="supplierperson" class="form-control" @bind-Value="Record.suppliercontactperson" />
-    </div>
-    <div class="mb-3">
-        <label for="suppliercontact" class="form-label">Contact</label>
-        <InputText id="suppliercontact" class="form-control" @bind-Value="Record.suppliercontact" />
-    </div>
-    <div class="mb-3">
-        <label for="supplieremail" class="form-label">Email</label>
-        <InputText id="supplieremail" type="email" class="form-control" @bind-Value="Record.supplieremail" />
-    </div>
+            @if (Record.POStatus == EPOStatus.GoodsReceived)
+            {
+                <label for="ReceiveDate" class="form-label mt-3">Receive Date</label>
+                <InputDate id="ReceiveDate" class="form-control" @bind-Value="Record.ReceiveInfo.ReceiveDate" />
 
-    <h5>Ship To</h5>
-    <div class="mb-3">
-        <label for="shipcompany" class="form-label">Ship To Company</label>
-        <InputText id="shipcompany" class="form-control" @bind-Value="Record.shiptocompanyname" />
-    </div>
-    <div class="mb-3">
-        <label for="warehouseaddress" class="form-label">Warehouse Address</label>
-        <InputText id="warehouseaddress" class="form-control" @bind-Value="Record.warehouseaddress" />
-    </div>
-    <div class="mb-3">
-        <label for="receivingperson" class="form-label">Receiving Person</label>
-        <InputText id="receivingperson" class="form-control" @bind-Value="Record.receivingperson" />
-    </div>
-    <div class="mb-3">
-        <label for="shippingcontact" class="form-label">Shipping Contact</label>
-        <InputText id="shippingcontact" class="form-control" @bind-Value="Record.shippingcontact" />
+                <UploadImageHelper UploadedImages="@Record.ReceiveInfo.SupportDocuments"
+                                   SelectionType=UploadImageHelper.ESelectionType.None
+                                   Orientation="UploadImageHelper.EOrientation.Vertical"
+                                   bNewRequisition=true
+                                   ImageHeight="500"
+                                   ImageWidth="500" />
+
+                <textarea readonly rows="6" cols="60" class="form-control mt-2">@EmailSendStatus</textarea>
+            }
+        </div>
     </div>
 
-
-    <h5>Additional Info</h5>
-    <label for="remark" class="form-label">Remark</label>
-    <InputText id="remark" class="form-control" @bind-Value="Record.remark" />
-
-    <h5>Financial</h5>
-    <div class="mb-3">
-        <label for="subtotal" class="form-label">SubTotal</label>
-        <InputNumber id="subtotal" class="form-control" @bind-Value="Record.SubTotal" readonly/>
-    </div>
-    <div class="mb-3">
-        <label for="tax" class="form-label">Tax (%)</label>
-        <InputNumber id="tax" class="form-control" @bind-Value="Record.Tax" />
-    </div>
-    <div class="mb-3">
-        <label>Total</label>
-        <span class="ms-2 fw-bold">@Record.GetTotal()</span>
-    </div>
-
-    <h5>Delivery</h5>
-    <div class="mb-3">
-        <label for="deliverydate" class="form-label">Delivery Date</label>
-        <InputDate id="deliverydate" class="form-control" @bind-Value="Record.DeliveryDate" />
-    </div>
-    <div class="mb-3">
-        <label for="deliverymethod" class="form-label">Delivery Method</label>
-        <InputText id="deliverymethod" class="form-control" @bind-Value="Record.DeliveryMethod" />
-    </div>
-    <div class="mb-3">
-        <label for="paymentmethod" class="form-label">Payment Method</label>
-        <InputText id="paymentmethod" class="form-control" @bind-Value="Record.PaymentMethod" />
-    </div>
-
-    <h5>Receive Info</h5>
-    <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="Record.POStatus"
-    TEnum="PurchaseBlazorApp2.Components.Data.EPOStatus"
-    >
-    </PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox>
-
-    @if (Record.POStatus == EPOStatus.GoodsReceived)
-    {
-
-        <label for="ReceiveDate" class="form-label">Receive Date</label>
-        <InputDate id="ReceiveDate" class="form-control" @bind-Value="Record.ReceiveInfo.ReceiveDate" />
-        <UploadImageHelper UploadedImages="@Record.ReceiveInfo.SupportDocuments"
-        SelectionType=UploadImageHelper.ESelectionType.None
-        Orientation="UploadImageHelper.EOrientation.Vertical"
-        bNewRequisition=true
-        ImageHeight="500"
-        ImageWidth="500" />
-        <textarea readonly rows="6" cols="60">@EmailSendStatus</textarea>
-    }
+    <!-- ============================= -->
+    <!-- 🔟  INVOICE INFORMATION -->
+    <!-- ============================= -->
     @if (Record.InvoiceInfo != null)
     {
-        <h5>Invoice Info</h5>
-      
-        <UploadImageHelper UploadedImages="@Record.InvoiceInfo.SupportDocuments"
-                           SelectionType=UploadImageHelper.ESelectionType.None
-                           Orientation="UploadImageHelper.EOrientation.Vertical"
-                           bNewRequisition=true
-                           ImageHeight="500"
-                           ImageWidth="500" />
-        <button type="button" class="btn btn-primary" @onclick="ToFinance">Route To Finance</button>
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-info text-white fw-bold">
+                Invoice Information
+            </div>
+            <div class="card-body">
+                <UploadImageHelper UploadedImages="@Record.InvoiceInfo.SupportDocuments"
+                                   SelectionType=UploadImageHelper.ESelectionType.None
+                                   Orientation="UploadImageHelper.EOrientation.Vertical"
+                                   bNewRequisition=true
+                                   ImageHeight="500"
+                                   ImageWidth="500" />
+
+                @if (Record.InvoiceInfo.PaymentStatus == EPaymentStatus.PendingInvoice)
+                {
+                    <button type="button" class="btn btn-primary mt-3" @onclick="ToFinance">Route To Finance</button>
+                }
+            </div>
+        </div>
     }
 
+    <!-- ============================= -->
+    <!-- 🔘  ACTION BUTTONS -->
+    <!-- ============================= -->
+    <div class="text-end mb-5">
+        <button type="submit" class="btn btn-primary">Save</button>
+        <button type="button" class="btn btn-secondary ms-2" @onclick="ResetForm">Reset</button>
+        <button type="button" class="btn btn-outline-dark ms-2" @onclick="DownloadPdf">Download PDF</button>
+    </div>
 
-
-    <button type="submit" class="btn btn-primary">Save</button>
-    <button type="button" class="btn btn-secondary ms-2" @onclick="ResetForm">Reset</button>
-    <button type="button" @onclick="DownloadPdf">Download PDF</button>
 </EditForm>
-
 
 
 @code {

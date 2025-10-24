@@ -53,7 +53,7 @@ namespace PurchaseBlazorApp2.Components.Repository
 
 
                     PORepository PORepository = new PORepository();
-                    await PORepository.UpdatePaymentStatus(info.PO_ID);
+                    await PORepository.UpdatePaymentStatus(info.PO_ID,EPaymentStatus.Paid);
                     return true;
                 }
                 catch (Exception exInner)

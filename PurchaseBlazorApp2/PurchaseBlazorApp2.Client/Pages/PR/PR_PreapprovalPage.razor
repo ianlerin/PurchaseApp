@@ -77,12 +77,14 @@ else
                                                     Data="@CurrencyList"
                                                     TextProperty="Text"
                                                     ValueProperty="Value"
-                                                    AllowFiltering="true" />
+                                                    AllowFiltering="true"
+                                                    Disabled="@(!bNewRequisition)" />
                                 </div>
                                 <div class="col-md-2">
                                     <label class="form-label">Unit Price</label>
                                     <InputNumber @bind-Value="item.UnitPrice"
-                                                 class="form-control" />
+                                                 class="form-control"
+                                                 Disabled="@( !bNewRequisition )" />
                                 </div>
                                 <div class="col-md-2">
                                     <label class="form-label">Quantity</label>
@@ -93,7 +95,8 @@ else
                                 <div class="col-md-2">
                                     <label class="form-label">Total Price</label>
                                     <InputNumber @bind-Value="item.TotalPrice"
-                                                 class="form-control" />
+                                                 class="form-control"
+                                                 Disabled="@( !bNewRequisition )" />
                                 </div>
                             </div>
                         </div>
@@ -129,7 +132,7 @@ else
             </div>
             <div class="card-body">
                 <ApprovalArea Approvals="PurchaseRequisitionRecord.Approvals"
-                              bIsEditable="true"
+                              bIsEditable=@bNewRequisition
                               OnApprovalChanged="OnCheckboxChanged">
                 </ApprovalArea>
             </div>
@@ -138,13 +141,17 @@ else
         <!-- ============================= -->
         <!-- 5️⃣  ACTION BUTTON SECTION -->
         <!-- ============================= -->
-        <div class="text-center mt-4">
-            <button type="submit"
-                    class="btn btn-primary btn-lg px-5"
-                    @onclick="AddPurchaseRequisitionRecord">
-                Edit
-            </button>
-        </div>
+        @if (bNewRequisition)
+        {
+            <div class="text-center mt-4">
+                <button type="submit"
+                        class="btn btn-primary btn-lg px-5"
+                        @onclick="AddPurchaseRequisitionRecord">
+                    Edit
+                </button>
+            </div>
+        }
+        
     </div>
 }
 
