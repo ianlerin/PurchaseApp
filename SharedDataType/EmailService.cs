@@ -62,7 +62,7 @@ namespace Genesis.EmailService
                     mainList = await GetProcurementEmailsAsync();
                     if (!string.IsNullOrWhiteSpace(currentEmail))
                         ccList.Add(currentEmail);
-                    await SendEmailAsync(record, mainList, ccList);
+                    await SendApprovalNotificationEmailAsync(record, mainList, ccList);
                     break;
             }
 
@@ -81,7 +81,7 @@ namespace Genesis.EmailService
 
             switch (PORecord.InvoiceInfo.PaymentStatus)
             {
-                case (EPaymentStatus.PendingInvoice):
+                case (EPaymentStatus.PendingPayment):
                 mainList = await GetFinanceEmailsAsync();
                 await SendPaymentReadyEmailAsync(PORecord.PO_ID, mainList, ccList);
                 break;
@@ -296,6 +296,105 @@ namespace Genesis.EmailService
             }
         }
 
+        /// <summary>
+        /// Sends an email with to notify approved
+        /// </summary>
+        private async Task SendApprovalNotificationEmailAsync(PurchaseRequisitionRecord record, List<string> mainEmailList, List<string> ccList)
+        {
+            if (mainEmailList == null || !mainEmailList.Any(e => !string.IsNullOrWhiteSpace(e)))
+            {
+                EmailSendStatus = "⚠️ No main recipients, email not sent.";
+                Console.WriteLine(EmailSendStatus);
+                return;
+            }
+
+            // Log for debug
+            string mainEmails = string.Join(", ", mainEmailList);
+            string ccEmails = string.Join(", ", ccList);
+            await _js.InvokeVoidAsync("console.log", $"Main Emails: {mainEmails}");
+            await _js.InvokeVoidAsync("console.log", $"CC Emails: {ccEmails}");
+
+            // URL to view requisition details
+            string encodedReturnUrl = Uri.EscapeDataString(
+                $"pr-preapproval/{record.RequisitionNumber}");
+            string requisitionUrl = $"{_navigation.BaseUri}authentication/login?returnUrl={encodedReturnUrl}";
+
+            // Determine email subject and body content
+            string subject;
+            string actionMessage;
+            string color;
+
+            switch (record.approvalstatus)
+            {
+                case EApprovalStatus.Approved:
+                    subject = $"Purchase Requisition #{record.RequisitionNumber} has been approved ✅";
+                    actionMessage = "has been <strong style='color:green;'>approved</strong>.";
+                    color = "green";
+                    break;
+
+                case EApprovalStatus.Rejected:
+                    subject = $"Purchase Requisition #{record.RequisitionNumber} has been rejected ❌";
+                    actionMessage = "has been <strong style='color:red;'>rejected</strong>.";
+                    color = "red";
+                    break;
+
+                default:
+                    // Only send for Approved or Rejected
+                    EmailSendStatus = "ℹ️ Email not sent — status is neither Approved nor Rejected.";
+                    Console.WriteLine(EmailSendStatus);
+                    return;
+            }
+
+            string body = $@"
+        <html>
+            <body style='font-family:Segoe UI, Arial, sans-serif; color:#333; font-size:14px;'>
+                <p>Hello Procurement Manager,</p>
+                <p>The purchase requisition (<strong>{record.RequisitionNumber}</strong>) {actionMessage}</p>
+                <p>You can review the full details below:</p>
+                <p style='margin:20px 0;'>
+                    <a href='{requisitionUrl}'
+                       style='background-color:#007bff; color:#ffffff; padding:10px 20px;
+                              text-decoration:none; border-radius:5px; display:inline-block;'>
+                        View Requisition
+                    </a>
+                </p>
+                <p>If the button above doesn't work, copy and paste this link:</p>
+                <p><a href='{requisitionUrl}'>{requisitionUrl}</a></p>
+                <p>Thank you,<br/>Procurement System</p>
+            </body>
+        </html>";
+
+            var emailRequest = new EmailRequest
+            {
+                To = mainEmailList,
+                Cc = ccList,
+                Subject = subject,
+                Body = body,
+                IsHtml = true
+            };
+
+            try
+            {
+                var response = await _http.PostAsJsonAsync("api/email/send", emailRequest);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    EmailSendStatus = $"✅ {record.approvalstatus} notification sent successfully!\nTo: {mainEmails}\nCc: {ccEmails}";
+                    Console.WriteLine(EmailSendStatus);
+                }
+                else
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    EmailSendStatus = $"❌ Failed to send {record.approvalstatus} notification: {response.StatusCode}";
+                    Console.WriteLine($"❌ {EmailSendStatus}: {error}");
+                }
+            }
+            catch (Exception ex)
+            {
+                EmailSendStatus = $"❌ Exception sending {record.approvalstatus} notification: {ex.Message}";
+                Console.WriteLine(EmailSendStatus);
+            }
+        }
         /// <summary>
         /// Sends an email with a generated link for approval.
         /// </summary>

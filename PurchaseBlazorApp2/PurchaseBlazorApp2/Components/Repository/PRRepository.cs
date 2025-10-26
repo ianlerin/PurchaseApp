@@ -291,7 +291,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                 await MyConnection.OpenAsync();
 
                 var command = new NpgsqlCommand(
-                    "SELECT itemrequested, unitprice,quantity,totalprice FROM pr_requestitem_table WHERE requisitionnumber = @req",
+                    "SELECT itemrequested, unitprice,quantity,totalprice,currency FROM pr_requestitem_table WHERE requisitionnumber = @req",
                     MyConnection, externalTransaction);
                 command.Parameters.AddWithValue("@req", requisitionNumber);
 
@@ -300,6 +300,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                 {
                     RequestItemInfo ItemInfo = new RequestItemInfo();
                     ItemInfo.RequestItem = reader["itemrequested"]?.ToString() ?? string.Empty;
+                    ItemInfo.Currency = reader["currency"]?.ToString() ?? string.Empty;
                     ItemInfo.UnitPrice = reader["unitprice"] != DBNull.Value ? Convert.ToDecimal(reader["unitprice"]) : 0m;
                     ItemInfo.Quantity = reader["quantity"] != DBNull.Value ? Convert.ToDecimal(reader["quantity"]) : 0m;
                     ItemInfo.TotalPrice = reader["totalprice"] != DBNull.Value ? Convert.ToDecimal(reader["totalprice"]) : 0m;
@@ -677,10 +678,11 @@ namespace PurchaseBlazorApp2.Components.Repository
                 foreach (RequestItemInfo item in info.ItemRequested)
                 {
                     var insertCmd = new NpgsqlCommand(
-                        "INSERT INTO pr_requestitem_table (requisitionnumber, itemrequested,unitprice,quantity,totalprice) VALUES (@req, @itemrequested,@unitprice,@quantity,@totalprice)",
+                        "INSERT INTO pr_requestitem_table (requisitionnumber, itemrequested,unitprice,currency,quantity,totalprice) VALUES (@req, @itemrequested,@unitprice,@currency,@quantity,@totalprice)",
                         Connection, transaction);
                     insertCmd.Parameters.AddWithValue("@req", info.RequisitionNumber);
                     insertCmd.Parameters.AddWithValue("@itemrequested", item.RequestItem);
+                    insertCmd.Parameters.AddWithValue("@currency", item.Currency);
                     insertCmd.Parameters.AddWithValue("@unitprice", item.UnitPrice);
                     insertCmd.Parameters.AddWithValue("@quantity", item.Quantity);
                     insertCmd.Parameters.AddWithValue("@totalprice", item.TotalPrice);

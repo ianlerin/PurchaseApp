@@ -135,7 +135,19 @@ else
                               bIsEditable=@bNewRequisition
                               OnApprovalChanged="OnCheckboxChanged">
                 </ApprovalArea>
+                @if (PurchaseRequisitionRecord.approvalstatus == EApprovalStatus.Rejected)
+                {
+                    <div class="form-group mt-3">
+                        <label class="form-label">Reject Reason</label>
+                        <InputText @bind-Value="PurchaseRequisitionRecord.Rejectreason"
+                                   class="form-control"
+                                   readonly />
+                    </div>
+                }
             </div>
+
+          
+
         </div>
 
         <!-- ============================= -->
@@ -149,8 +161,17 @@ else
                         @onclick="AddPurchaseRequisitionRecord">
                     Edit
                 </button>
+                
+
             </div>
         }
+        @if (PurchaseRequisitionRecord.approvalstatus == EApprovalStatus.Approved)
+        {
+            <button @onclick="CreatePO" class="btn btn-primary btn-lg px-5">
+                View PO
+            </button>
+        }
+
         
     </div>
 }
@@ -291,6 +312,12 @@ else
 
 
         StateHasChanged();
+    }
+
+    private void CreatePO()
+    {
+        NavigationManager.NavigateTo($"/purchaseorder_client/print/{PurchaseRequisitionRecord.RequisitionNumber}");
+
     }
 
     private async Task SubmitQuotation()
