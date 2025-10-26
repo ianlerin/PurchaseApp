@@ -106,7 +106,7 @@ namespace PurchaseBlazorApp2.Components.Repository
             {
                 await Connection.OpenAsync();
 
-                string query = "SELECT requisitionnumber, requestdate, prstatus, approvalstatus, burgent,deliverydate,paymentstatus FROM prtable";
+                string query = "SELECT requisitionnumber, requestdate, prstatus, approvalstatus, burgent,deliverydate,paymentstatus,po_id FROM prtable";
 
                 var command = new NpgsqlCommand { Connection = Connection };
 
@@ -155,6 +155,7 @@ namespace PurchaseBlazorApp2.Components.Repository
 
                         // burgent bool
                         MainInfo.burgent = reader["burgent"] != DBNull.Value && (bool)reader["burgent"];
+                        MainInfo.po_id= reader["po_id"]?.ToString() ?? string.Empty;
                         MainInfo.ItemRequested= await GetRequestedItemByRequisitionNumber(MainInfo.RequisitionNumber);
                         ToReturn.Add(MainInfo);
                     }
@@ -290,7 +291,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                 await MyConnection.OpenAsync();
 
                 var command = new NpgsqlCommand(
-                    "SELECT itemrequested, unitprice,quantity,totalprice FROM pr_requestitem_table WHERE requisitionnumber = @req",
+                    "SELECT itemrequested, unitprice,quantity,totalprice,currency FROM pr_requestitem_table WHERE requisitionnumber = @req",
                     MyConnection, externalTransaction);
                 command.Parameters.AddWithValue("@req", requisitionNumber);
 
@@ -299,6 +300,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                 {
                     RequestItemInfo ItemInfo = new RequestItemInfo();
                     ItemInfo.RequestItem = reader["itemrequested"]?.ToString() ?? string.Empty;
+                    ItemInfo.Currency = reader["currency"]?.ToString() ?? string.Empty;
                     ItemInfo.UnitPrice = reader["unitprice"] != DBNull.Value ? Convert.ToDecimal(reader["unitprice"]) : 0m;
                     ItemInfo.Quantity = reader["quantity"] != DBNull.Value ? Convert.ToDecimal(reader["quantity"]) : 0m;
                     ItemInfo.TotalPrice = reader["totalprice"] != DBNull.Value ? Convert.ToDecimal(reader["totalprice"]) : 0m;
@@ -318,6 +320,52 @@ namespace PurchaseBlazorApp2.Components.Repository
 
             }
         }
+
+
+        public async Task<HashSet<string>> GetRequisitionNumbersByCreatedByAsync(string requestor)
+        {
+            var requisitionNumbers = new HashSet<string>();
+            bool shouldCloseConnection = false;
+            var MyConnection = GetConnection();
+
+            try
+            {
+                if (MyConnection.State != System.Data.ConnectionState.Open)
+                {
+                    await MyConnection.OpenAsync();
+                    shouldCloseConnection = true;
+                }
+
+                using var command = new NpgsqlCommand(
+                    @"SELECT requisitionnumber
+              FROM prtable
+              WHERE requestor = @requestor",
+                    MyConnection);
+
+                command.Parameters.AddWithValue("@requestor", requestor);
+
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    string reqNumber = reader["requisitionnumber"]?.ToString() ?? string.Empty;
+                    requisitionNumbers.Add(reqNumber);
+                  
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"GetRequisitionNumbersByDepartmentAsync failed: {ex.Message}");
+            }
+            finally
+            {
+                if (shouldCloseConnection)
+                    await MyConnection.CloseAsync();
+            }
+
+            return requisitionNumbers;
+        }
+
+
 
         public async Task<HashSet<string>> GetRequisitionNumbersByDepartmentAsync(EDepartment department)
         {
@@ -503,6 +551,71 @@ namespace PurchaseBlazorApp2.Components.Repository
             }
         }
 
+
+        public async Task<bool> UpdatePOID(string requisitionNumber, string PO)
+        {
+            try
+            {
+                await Connection.OpenAsync();
+
+                string query = @"
+            UPDATE prtable
+            SET po_id = @po_id
+            WHERE requisitionnumber = @reqNo;";
+
+                using (var command = new NpgsqlCommand(query, Connection))
+                {
+                    command.Parameters.AddWithValue("@po_id", PO);
+                    command.Parameters.AddWithValue("@reqNo", requisitionNumber);
+
+                    int rowsAffected = await command.ExecuteNonQueryAsync();
+                    return rowsAffected > 0; // true if updated
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"UpdateDeliveryDateAsync Exception: {ex.Message}");
+                return false;
+            }
+            finally
+            {
+                await Connection.CloseAsync();
+            }
+        }
+
+
+        public async Task<bool> UpdatePaymentStatus(string requisitionNumber, EPaymentStatus status)
+        {
+            try
+            {
+                await Connection.OpenAsync();
+
+                string query = @"
+            UPDATE prtable
+            SET paymentstatus = @paymentstatus
+            WHERE requisitionnumber = @reqNo;";
+
+                using (var command = new NpgsqlCommand(query, Connection))
+                {
+                    command.Parameters.AddWithValue("@paymentstatus", status.ToString());
+                    command.Parameters.AddWithValue("@reqNo", requisitionNumber);
+
+                    int rowsAffected = await command.ExecuteNonQueryAsync();
+                    return rowsAffected > 0; // true if updated
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"UpdateDeliveryDateAsync Exception: {ex.Message}");
+                return false;
+            }
+            finally
+            {
+                await Connection.CloseAsync();
+            }
+        }
+
+
         public async Task<bool> UpdateDeliveryDateAsync(string requisitionNumber, DateTime deliveryDate)
         {
             try
@@ -565,10 +678,11 @@ namespace PurchaseBlazorApp2.Components.Repository
                 foreach (RequestItemInfo item in info.ItemRequested)
                 {
                     var insertCmd = new NpgsqlCommand(
-                        "INSERT INTO pr_requestitem_table (requisitionnumber, itemrequested,unitprice,quantity,totalprice) VALUES (@req, @itemrequested,@unitprice,@quantity,@totalprice)",
+                        "INSERT INTO pr_requestitem_table (requisitionnumber, itemrequested,unitprice,currency,quantity,totalprice) VALUES (@req, @itemrequested,@unitprice,@currency,@quantity,@totalprice)",
                         Connection, transaction);
                     insertCmd.Parameters.AddWithValue("@req", info.RequisitionNumber);
                     insertCmd.Parameters.AddWithValue("@itemrequested", item.RequestItem);
+                    insertCmd.Parameters.AddWithValue("@currency", item.Currency);
                     insertCmd.Parameters.AddWithValue("@unitprice", item.UnitPrice);
                     insertCmd.Parameters.AddWithValue("@quantity", item.Quantity);
                     insertCmd.Parameters.AddWithValue("@totalprice", item.TotalPrice);

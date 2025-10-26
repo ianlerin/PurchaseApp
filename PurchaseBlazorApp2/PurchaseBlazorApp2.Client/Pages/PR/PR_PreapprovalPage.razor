@@ -1,0 +1,371 @@
+﻿@page "/pr-preapproval/{RequisitionNumber}"
+@using Genesis.EmailService
+@using Genesis.UserService
+@using PurchaseBlazorApp2.Client.Components.Helper
+@using PurchaseBlazorApp2.Client.Pages.Quotation
+@using PurchaseBlazorApp2.Components.Data
+@using System.Globalization
+@using Radzen.Blazor
+@inject NavigationManager NavigationManager
+@inject HttpClient Http
+
+<h1 class="mb-4">View Purchase Requisition</h1>
+<hr />
+
+@if (isLoading)
+{
+    <p>Loading requisition details...</p>
+}
+else if (PurchaseRequisitionRecord is null)
+{
+    <p class="text-danger">Unable to load requisition details.</p>
+}
+else
+{
+    <div class="container mt-4">
+
+        <!-- ============================= -->
+        <!-- 1️⃣  PR INFORMATION SECTION -->
+        <!-- ============================= -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white fw-bold">
+                Purchase Requisition Information
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">PR ID</label>
+                        <InputText class="form-control"
+                                   @bind-Value="PurchaseRequisitionRecord.RequisitionNumber"
+                                   readonly />
+                    </div>
+                </div>
+
+                <div>
+                    <label class="form-label fw-bold">Purpose</label>
+                    <InputText class="form-control"
+                               @bind-Value="PurchaseRequisitionRecord.Purpose"
+                               readonly />
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================= -->
+        <!-- 2️⃣  ITEM LIST SECTION -->
+        <!-- ============================= -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-secondary text-white fw-bold">
+                Item List
+            </div>
+            <div class="card-body">
+                @if (PurchaseRequisitionRecord.ItemRequested is not null && PurchaseRequisitionRecord.ItemRequested.Count > 0)
+                {
+                    @foreach (var item in PurchaseRequisitionRecord.ItemRequested)
+                    {
+                        <div class="border rounded p-3 mb-3 bg-light">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Item</label>
+                                    <ResizableInputTextArea @bind-Value="item.RequestItem"
+                                                            CssClass="form-control"
+                                                            Rows="1"
+                                                            readonly />
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Currency</label>
+                                    <RadzenDropDown @bind-Value="item.Currency"
+                                                    Data="@CurrencyList"
+                                                    TextProperty="Text"
+                                                    ValueProperty="Value"
+                                                    AllowFiltering="true"
+                                                    Disabled="@(!bNewRequisition)" />
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Unit Price</label>
+                                    <InputNumber @bind-Value="item.UnitPrice"
+                                                 class="form-control"
+                                                 Disabled="@( !bNewRequisition )" />
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Quantity</label>
+                                    <InputNumber @bind-Value="item.Quantity"
+                                                 class="form-control"
+                                                 readonly />
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Total Price</label>
+                                    <InputNumber @bind-Value="item.TotalPrice"
+                                                 class="form-control"
+                                                 Disabled="@( !bNewRequisition )" />
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p>No items found.</p>
+                }
+            </div>
+        </div>
+
+        <!-- ============================= -->
+        <!-- 3️⃣  QUOTATION SECTION -->
+        <!-- ============================= -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-info text-white fw-bold">
+                Quotation Details
+            </div>
+            <div class="card-body">
+                <QuotationPage @ref="QuotationPageRef"
+                               PrId="@RequisitionNumber"
+                               bnewrequisition=bNewRequisition />
+            </div>
+        </div>
+
+        <!-- ============================= -->
+        <!-- 4️⃣  APPROVAL SECTION -->
+        <!-- ============================= -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-success text-white fw-bold">
+                Approval Area
+            </div>
+            <div class="card-body">
+                <ApprovalArea Approvals="PurchaseRequisitionRecord.Approvals"
+                              bIsEditable=@bNewRequisition
+                              OnApprovalChanged="OnCheckboxChanged">
+                </ApprovalArea>
+                @if (PurchaseRequisitionRecord.approvalstatus == EApprovalStatus.Rejected)
+                {
+                    <div class="form-group mt-3">
+                        <label class="form-label">Reject Reason</label>
+                        <InputText @bind-Value="PurchaseRequisitionRecord.Rejectreason"
+                                   class="form-control"
+                                   readonly />
+                    </div>
+                }
+            </div>
+
+          
+
+        </div>
+
+        <!-- ============================= -->
+        <!-- 5️⃣  ACTION BUTTON SECTION -->
+        <!-- ============================= -->
+        @if (bNewRequisition)
+        {
+            <div class="text-center mt-4">
+                <button type="submit"
+                        class="btn btn-primary btn-lg px-5"
+                        @onclick="AddPurchaseRequisitionRecord">
+                    Edit
+                </button>
+                
+
+            </div>
+        }
+        @if (PurchaseRequisitionRecord.approvalstatus == EApprovalStatus.Approved)
+        {
+            <button @onclick="CreatePO" class="btn btn-primary btn-lg px-5">
+                View PO
+            </button>
+        }
+
+        
+    </div>
+}
+
+@code {
+    [Inject] IJSRuntime JS { get; set; }
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? RequisitionNumber { get; set; }
+    private bool isLoading = true;
+    private bool bNewRequisition = false;
+    public PurchaseRequisitionRecord? PurchaseRequisitionRecord { get; set; }
+    private EmailWorkflowService MyEmailHelper;
+    // Currency List Class
+    public class CurrencyItem
+    {
+        public string Text { get; set; } = string.Empty;
+        public string Value { get; set; } = string.Empty;
+    }
+    private QuotationPage? QuotationPageRef;
+    private List<CurrencyItem> CurrencyList = CultureInfo
+        .GetCultures(CultureTypes.AllCultures)
+        .Select(c =>
+        {
+            try
+            {
+                var region = new RegionInfo(c.Name);
+                return new CurrencyItem
+                    {
+                        Text = $"{region.CurrencyEnglishName} ({region.ISOCurrencySymbol})",
+                        Value = region.ISOCurrencySymbol
+                    };
+            }
+            catch
+            {
+                return null;
+            }
+        })
+        .Where(x => x != null)
+        .GroupBy(x => x!.Value)
+        .Select(g => g.First()!)
+        .OrderBy(x => x.Text)
+        .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrEmpty(RequisitionNumber))
+        {
+            try
+            {
+                var response = await Http.PostAsJsonAsync(
+                    NavigationManager.ToAbsoluteUri("api/pr/get-detail"),
+                    new List<string> { RequisitionNumber });
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var list = await response.Content.ReadFromJsonAsync<List<PurchaseRequisitionRecord>>();
+                    if (list is not null && list.Count > 0)
+                    {
+                        PurchaseRequisitionRecord = list[0];
+                        if (PurchaseRequisitionRecord.approvalstatus == EApprovalStatus.PreApproval)
+                        {
+                            bNewRequisition = true;
+                        }
+                        else
+                        {
+                            bNewRequisition = false;
+                        }
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"API Error: {response.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching requisition: {ex.Message}");
+            }
+        }
+        MyEmailHelper = new EmailWorkflowService(Http, NavigationManager,JS);
+       
+        isLoading = false;
+    }
+
+    private void OnQuotation()
+    {
+        if (string.IsNullOrEmpty(PurchaseRequisitionRecord?.RequisitionNumber))
+        {
+            NavigationManager.NavigateTo("/Quotation_Client");
+        }
+        else
+        {
+            NavigationManager.NavigateTo($"/Quotation_Client/{PurchaseRequisitionRecord.RequisitionNumber}");
+        }
+    }
+
+    private Task OnCheckboxChanged((bool NewValue, ApprovalInfo Approval) args)
+    {
+        PurchaseRequisitionRecord?.OnApprovalChanged();
+        return Task.CompletedTask;
+    }
+
+    private async Task AddPurchaseRequisitionRecord()
+    {
+        PurchaseRequisitionRecord.OnApprovalChanged();
+
+        PurchaseRequisitionRecord.OnUpdatePRStatus();
+
+        if (PurchaseRequisitionRecord == null)
+        {
+
+            await JS.InvokeVoidAsync("alert", "null PurchaseRequisitionRecord!");
+        }
+        PurchaseRequisitionRecord.UpdateDate = DateTime.Now;
+        var response = await Http.PostAsJsonAsync(
+            NavigationManager.ToAbsoluteUri("api/pr/submit"),
+            new List<PurchaseRequisitionRecord> { PurchaseRequisitionRecord });
+
+        if (response.IsSuccessStatusCode)
+        {
+            var PR_Ids = await response.Content.ReadFromJsonAsync<List<string>>();
+            if (PR_Ids.Count > 0)
+            {
+                PurchaseRequisitionRecord.RequisitionNumber = PR_Ids[0];
+            }
+            await MyEmailHelper.SendEmailToRelevantPartyAsync(PurchaseRequisitionRecord);
+            await SubmitQuotation();
+            await JS.InvokeVoidAsync("alert", "Purchase Requisition updated successfully!");
+        }
+        else
+        {
+            string errorDetails = await response.Content.ReadAsStringAsync();
+            string message = $"Submission failed. Status Code: {(int)response.StatusCode} - {response.ReasonPhrase}\nDetails: {errorDetails}";
+
+            await JS.InvokeVoidAsync("alert", message);
+        }
+
+
+        StateHasChanged();
+    }
+
+    private void CreatePO()
+    {
+        NavigationManager.NavigateTo($"/purchaseorder_client/print/{PurchaseRequisitionRecord.RequisitionNumber}");
+
+    }
+
+    private async Task SubmitQuotation()
+    {
+        QuotationInfo.QuotationRecord Quotation = QuotationPageRef.Quotation;
+        if (Quotation != null)
+        {
+            await JS.InvokeVoidAsync("console.group", $"{Quotation.SupportDocuments.Count}, Submitting Quotation");
+            Quotation.pr_id = PurchaseRequisitionRecord.RequisitionNumber;
+        }
+        else
+        {
+            return;
+        }
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync(
+                NavigationManager.ToAbsoluteUri("api/quotation/submit"),
+                new List<QuotationInfo.QuotationRecord> { Quotation });
+
+            if (response.IsSuccessStatusCode)
+            {
+                await JS.InvokeVoidAsync("console.log", "✅ Submission successful!");
+                await JS.InvokeVoidAsync("alert", "Submission successful!");
+            }
+            else
+            {
+                string errorDetails = await response.Content.ReadAsStringAsync();
+                string message = $"Submission failed. Status Code: {(int)response.StatusCode} - {response.ReasonPhrase}\nDetails: {errorDetails}";
+
+                await JS.InvokeVoidAsync("console.error", message);
+                await JS.InvokeVoidAsync("alert", message);
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            await JS.InvokeVoidAsync("console.error", $"🌐 Network error while submitting quotation: {ex.Message}");
+            await JS.InvokeVoidAsync("alert", $"Network error: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("console.error", $"🔥 Unexpected error while submitting quotation: {ex}");
+            await JS.InvokeVoidAsync("alert", "Unexpected error occurred. Check console for details.");
+        }
+        finally
+        {
+            await JS.InvokeVoidAsync("console.groupEnd");
+        }
+    }
+}

@@ -17,12 +17,15 @@
                 <Columns>
                     <RadzenDataGridColumn TItem="PurchaseOrderRecord" Property="PO_ID" Title="Requisition " />
                     <RadzenDataGridColumn TItem="PurchaseOrderRecord" Property="PR_ID" Title="PR" />
-                    <RadzenDataGridColumn TItem="PurchaseOrderRecord" Title="Actions">
+                    <RadzenDataGridColumn TItem="PurchaseOrderRecord" Title="Actions" Width="500px">
                         <Template Context="record">
                             <RadzenButton Text="View" Icon="visibility"
-                            Click="@(() => OnViewClicked(record))" />
-                            <RadzenButton Text="Delete" Icon="delete"
-                            Click="@(() => OnDeleteClicked(record))" />
+                                          Click="@(() => OnViewClicked(record))" class="px-4" />
+                            @if (record.InvoiceInfo?.PaymentStatus != EPaymentStatus.PendingInvoice)
+                            {
+                                <RadzenButton Text="Finance"
+                                              Click="@(() => OnFinanceClicked(record))" class="px-4" />
+                            }
                         </Template>
                     </RadzenDataGridColumn>
                 </Columns>
@@ -68,8 +71,9 @@
 
     }
 
-    private void OnDeleteClicked(PurchaseOrderRecord record)
+    private void OnFinanceClicked(PurchaseOrderRecord record)
     {
-      
+        StateStorage.Set("PO", record);
+        NavigationManager.NavigateTo($"/finance-record/{record.PO_ID}");
     }
 }

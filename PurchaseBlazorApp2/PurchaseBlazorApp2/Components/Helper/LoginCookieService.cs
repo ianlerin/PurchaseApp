@@ -1,4 +1,4 @@
-﻿using PurchaseBlazorApp2.Components.Global;
+﻿using PurchaseBlazorApp2.Components.Data;
 using System.Text.Json;
 
 namespace PurchaseBlazorApp2.Components.Helper
