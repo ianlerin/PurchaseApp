@@ -580,7 +580,7 @@
             {
                 await JS.InvokeVoidAsync("alert", $"❌ API call failed: {response.StatusCode}");
             }
-            
+
         }
         catch (Exception ex)
         {
@@ -604,6 +604,11 @@
 
     private async Task DownloadPdf()
     {
+        if (string.IsNullOrEmpty(Record.PO_ID))
+        {
+
+            await JS.InvokeVoidAsync("Error", "Please submit your PO first");
+        }
         var pdfBytes = await Http.GetByteArrayAsync($"api/pdf/purchase/{Record.PO_ID}");
         var base64 = Convert.ToBase64String(pdfBytes);
         await JS.InvokeVoidAsync("downloadFileFromBase64", $"PurchaseOrder-{Record.PO_ID}.pdf", base64);

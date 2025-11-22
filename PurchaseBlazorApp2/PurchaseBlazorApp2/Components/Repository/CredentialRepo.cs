@@ -148,7 +148,35 @@ namespace PurchaseBlazorApp2.Components.Repository
             return emailList;
         }
 
+        public async Task<bool> CheckIfUsernameExistsAsync(string username)
+        {
+            try
+            {
+                await Connection.OpenAsync();
 
+                string query = @"
+            SELECT COUNT(*) 
+            FROM credential
+            WHERE username = @username;";
+
+                using var cmd = new NpgsqlCommand(query, Connection);
+                cmd.Parameters.AddWithValue("@username", username);
+
+                var result = await cmd.ExecuteScalarAsync();
+                int count = Convert.ToInt32(result);
+
+                return count > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error checking username existence: " + ex.Message);
+                return false;
+            }
+            finally
+            {
+                await Connection.CloseAsync();
+            }
+        }
         public async Task<EDepartment> TryGetRole(string userName)
         {
             try

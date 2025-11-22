@@ -51,66 +51,37 @@ else
         </div>
 
         <!-- ============================= -->
-        <!-- 2️⃣  ITEM LIST SECTION -->
+        <!-- 2️⃣  ITEM REQUESTED SECTION -->
         <!-- ============================= -->
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-secondary text-white fw-bold">
-                Item List
+                Item Requested
             </div>
             <div class="card-body">
-                @if (PurchaseRequisitionRecord.ItemRequested is not null && PurchaseRequisitionRecord.ItemRequested.Count > 0)
-                {
-                    @foreach (var item in PurchaseRequisitionRecord.ItemRequested)
-                    {
-                        <div class="border rounded p-3 mb-3 bg-light">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Item</label>
-                                    <ResizableInputTextArea @bind-Value="item.RequestItem"
-                                                            CssClass="form-control"
-                                                            Rows="1"
-                                                            readonly />
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label">Currency</label>
-                                    <RadzenDropDown @bind-Value="item.Currency"
-                                                    Data="@CurrencyList"
-                                                    TextProperty="Text"
-                                                    ValueProperty="Value"
-                                                    AllowFiltering="true"
-                                                    Disabled="@(!bNewRequisition)" />
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label">Unit Price</label>
-                                    <InputNumber @bind-Value="item.UnitPrice"
-                                                 class="form-control"
-                                                 Disabled="@( !bNewRequisition )" />
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label">Quantity</label>
-                                    <InputNumber @bind-Value="item.Quantity"
-                                                 class="form-control"
-                                                 readonly />
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label">Total Price</label>
-                                    <InputNumber @bind-Value="item.TotalPrice"
-                                                 class="form-control"
-                                                 Disabled="@( !bNewRequisition )" />
-                                </div>
-                            </div>
-                        </div>
-                    }
-                }
-                else
-                {
-                    <p>No items found.</p>
-                }
+                <PRRequestItem bNewRequisition="false"
+                               ItemRequested="PurchaseRequisitionRecord.ItemRequested"
+                               Title="Item Requested:">
+                </PRRequestItem>
             </div>
         </div>
 
         <!-- ============================= -->
-        <!-- 3️⃣  QUOTATION SECTION -->
+        <!-- 3️⃣  APPROVED ITEM REQUESTED SECTION -->
+        <!-- ============================= -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-warning text-dark fw-bold">
+                Approved Item Requested
+            </div>
+            <div class="card-body">
+                <PRRequestItem bNewRequisition="@bNewRequisition"
+                               ItemRequested="PurchaseRequisitionRecord.ApprovedItemRequested"
+                               Title="Approved Item Requested:">
+                </PRRequestItem>
+            </div>
+        </div>
+
+        <!-- ============================= -->
+        <!-- 4️⃣  QUOTATION SECTION -->
         <!-- ============================= -->
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-info text-white fw-bold">
@@ -119,12 +90,12 @@ else
             <div class="card-body">
                 <QuotationPage @ref="QuotationPageRef"
                                PrId="@RequisitionNumber"
-                               bnewrequisition=bNewRequisition />
+                               bnewrequisition="@bNewRequisition" />
             </div>
         </div>
 
         <!-- ============================= -->
-        <!-- 4️⃣  APPROVAL SECTION -->
+        <!-- 5️⃣  APPROVAL SECTION -->
         <!-- ============================= -->
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-success text-white fw-bold">
@@ -132,9 +103,10 @@ else
             </div>
             <div class="card-body">
                 <ApprovalArea Approvals="PurchaseRequisitionRecord.Approvals"
-                              bIsEditable=@bNewRequisition
+                              bIsEditable="@bNewRequisition"
                               OnApprovalChanged="OnCheckboxChanged">
                 </ApprovalArea>
+
                 @if (PurchaseRequisitionRecord.approvalstatus == EApprovalStatus.Rejected)
                 {
                     <div class="form-group mt-3">
@@ -145,34 +117,30 @@ else
                     </div>
                 }
             </div>
-
-          
-
         </div>
 
         <!-- ============================= -->
-        <!-- 5️⃣  ACTION BUTTON SECTION -->
+        <!-- 6️⃣  ACTION BUTTON SECTION -->
         <!-- ============================= -->
-        @if (bNewRequisition)
-        {
-            <div class="text-center mt-4">
+        <div class="text-center mt-4">
+            @if (bNewRequisition)
+            {
                 <button type="submit"
                         class="btn btn-primary btn-lg px-5"
                         @onclick="AddPurchaseRequisitionRecord">
                     Edit
                 </button>
-                
+            }
 
-            </div>
-        }
-        @if (PurchaseRequisitionRecord.approvalstatus == EApprovalStatus.Approved)
-        {
-            <button @onclick="CreatePO" class="btn btn-primary btn-lg px-5">
-                View PO
-            </button>
-        }
+            @if (PurchaseRequisitionRecord.approvalstatus == EApprovalStatus.Approved)
+            {
+                <button @onclick="CreatePO"
+                        class="btn btn-primary btn-lg px-5 ms-2">
+                    View PO
+                </button>
+            }
+        </div>
 
-        
     </div>
 }
 

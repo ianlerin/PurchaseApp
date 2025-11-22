@@ -59,73 +59,15 @@
                     </div>
 
                     <!-- Item List -->
-                    <div class="mb-4">
-                        <label class="form-label fw-bold">Item Requested:</label>
+                    @if (PurchaseRequisitionRecord.approvalstatus != EApprovalStatus.Creation&& bIsDepartmentMatchApproval)
+                    {
+                        <PRRequestItem bNewRequisition=bNewRequisition ItemRequested="PurchaseRequisitionRecord.ApprovedItemRequested" Title="Approved Item Requested:"></PRRequestItem>
 
-                        @foreach (var item in PurchaseRequisitionRecord.ItemRequested)
-                        {
-                            var index = PurchaseRequisitionRecord.ItemRequested.IndexOf(item);
-
-                            <div class="border rounded p-3 mb-3 bg-light">
-                                <div class="row g-3 mb-2">
-                                    <div class="col-md-6">
-                                        <label class="form-label">Item</label>
-                                        <ResizableInputTextArea @bind-Value="item.RequestItem"
-                                                                CssClass="form-control"
-                                                                Rows="1"
-                                                                Placeholder="Enter item descriptions here..."
-                                                                disabled="@(!bNewRequisition)" />
-                                        <ValidationMessage For="@(() => item.RequestItem)"
-                                                           class="text-danger" />
-                                    </div>
-
-                                    <div class="col-md-2">
-                                        <label class="form-label">Currency</label>
-                                        <RadzenDropDown @bind-Value="item.Currency"
-                                                        Data="@CurrencyList"
-                                                        TextProperty="Text"
-                                                        ValueProperty="Value"
-                                                        AllowFiltering="true"
-                                                        Disabled="true" />
-                                    </div>
-                                    <div class="col-md-2">
-                                        <label class="form-label">Unit Price</label>
-                                        <InputNumber @bind-Value="item.UnitPrice"
-                                                     class="form-control"
-                                                     readonly />
-                                    </div>
-                                    <div class="col-md-2">
-                                        <label class="form-label">Quantity</label>
-                                        <InputNumber @bind-Value="item.Quantity"
-                                                     class="form-control"
-                                                    />
-                                    </div>
-                                    <div class="col-md-2">
-                                        <label class="form-label">Total Price</label>
-                                        <InputNumber @bind-Value="item.TotalPrice"
-                                                     class="form-control"
-                                                     readonly />
-                                                     </div>
-
-                                    <div class="col-md-2 d-flex align-items-end">
-                                        <button type="button"
-                                                class="btn btn-danger w-100"
-                                                @onclick="() => RemoveItem(index)"
-                                                disabled="@(!bNewRequisition)">
-                                            Remove
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        }
-
-                        <button type="button"
-                                class="btn btn-primary"
-                                @onclick="AddItem"
-                                disabled="@(!bNewRequisition)">
-                            Add Item
-                        </button>
-                    </div>
+                    }
+                    else
+                    {
+                        <PRRequestItem bNewRequisition=bNewRequisition ItemRequested="PurchaseRequisitionRecord.ItemRequested" Title="Item Requested:"></PRRequestItem>
+                    }
 
                     <!-- Purpose -->
                     <div class="mb-3">
@@ -198,7 +140,7 @@
                         @if (bNewRequisition)
                         {
                             <button type="submit" class="btn btn-primary btn-lg"
-                                    @onclick="AddPurchaseRequisitionRecord">
+                                    @onclick="OnCreateNew">
                                 Create
                             </button>
                             <button type="button" class="btn btn-outline-primary btn-lg"
@@ -245,13 +187,6 @@
                         }
                     </div>
 
-                    <!-- Email Status -->
-                    <div class="mt-3">
-                        <label class="form-label fw-bold">Email Send Status:</label>
-                        <textarea readonly rows="6" cols="60" class="form-control">
-                            @EmailSendStatus
-                        </textarea>
-                    </div>
                 </div>
             </div>
         </EditForm>
@@ -393,7 +328,7 @@
         {
             PurchaseRequisitionRecord.approvalstatus = EApprovalStatus.PreApproval;
         }
-      
+
         PurchaseRequisitionRecord.UpdateDate = DateTime.Now;
         var response = await Http.PostAsJsonAsync(
             NavigationManager.ToAbsoluteUri("api/pr/submit"),
@@ -573,6 +508,12 @@
         bHaventApproveOrReject = false;
         await AddPurchaseRequisitionRecord();
         StateHasChanged();
+    }
+
+    private async void OnCreateNew()
+    {
+        PurchaseRequisitionRecord.ApprovedItemRequested = PurchaseRequisitionRecord.ItemRequested;
+        await AddPurchaseRequisitionRecord();
     }
 
     private Task OnInputChange(ChangeEventArgs args, ApprovalInfo approval)

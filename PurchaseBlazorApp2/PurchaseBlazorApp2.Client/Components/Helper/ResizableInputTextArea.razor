@@ -6,12 +6,12 @@
           rows="@Rows"
           placeholder="@Placeholder"
           value="@CurrentValueAsString"
+          disabled=@Disabled
           @oninput="OnInput"
           @attributes="AdditionalAttributes"></textarea>
 
 @code {
     private ElementReference _textareaRef;
-
     [Parameter] public string CssClass { get; set; } = "form-control";
     [Parameter] public int Rows { get; set; } = 1;
     [Parameter] public string Placeholder { get; set; }

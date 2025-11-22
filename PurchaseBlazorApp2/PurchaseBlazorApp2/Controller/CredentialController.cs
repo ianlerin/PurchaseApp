@@ -36,6 +36,13 @@ namespace PurchaseBlazorApp2.Controller
             return Ok(Department);
         }
 
+        [HttpGet("checkexist/{username}")]
+        public async Task<ActionResult<bool>> IfExist(string username)
+        {
+            bool bExist = await CredentialRepository.CheckIfUsernameExistsAsync(username);
+            return Ok(bExist);
+        }
+
 
         [HttpPost("getrolemail")]
         public async Task<ActionResult<List<string>>> TryGetAllProcurementEmail([FromBody] List<EDepartment> Departments)

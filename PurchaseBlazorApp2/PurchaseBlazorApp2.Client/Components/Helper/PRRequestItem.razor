@@ -1,0 +1,162 @@
+﻿@using PurchaseBlazorApp2.Components.Data
+@using System.Globalization
+@using Radzen.Blazor
+@using Microsoft.AspNetCore.Components.Web
+
+<div class="mb-4">
+    <label class="form-label fw-bold">@Title</label>
+
+    @if (ItemRequested != null)
+    {
+        @foreach (var item in ItemRequested)
+        {
+            var index = ItemRequested.IndexOf(item);
+
+            <div class="border rounded p-3 mb-3 bg-light">
+                <div class="row g-3 mb-2">
+
+                    <!-- Item -->
+                    <div class="col-md-6">
+                        <label class="form-label">Item</label>
+                        <ResizableInputTextArea @bind-Value="item.RequestItem"
+                                                CssClass="form-control"
+                                                Rows="1"
+                                                Placeholder="Enter item descriptions here..."
+                                                Disabled="@(!bNewRequisition)" />
+                        <ValidationMessage For="@(() => item.RequestItem)" class="text-danger" />
+                    </div>
+
+                    <!-- Currency -->
+                    <div class="col-md-2">
+                        <label class="form-label">Currency</label>
+                        <RadzenDropDown @bind-Value="item.Currency"
+                                        Data="@CurrencyList"
+                                        TextProperty="Text"
+                                        ValueProperty="Value"
+                                        AllowFiltering="true"
+                                        disabled="@(!bNewRequisition)" />
+                    </div>
+
+                    <!-- Unit Price -->
+                    <div class="col-md-2">
+                        <label class="form-label">Unit Price</label>
+                        <InputNumber @bind-Value="item.UnitPrice"
+                                     class="form-control"
+                                     disabled="@(!bNewRequisition)" />
+                    </div>
+
+                    <!-- Quantity -->
+                    <div class="col-md-2">
+                        <label class="form-label">Quantity</label>
+                        <InputNumber @bind-Value="item.Quantity"
+                                     class="form-control"
+                                     disabled="@(!bNewRequisition)" />
+                    </div>
+
+                    <!-- Total Price -->
+                    <div class="col-md-2">
+                        <label class="form-label">Total Price</label>
+                        <InputNumber @bind-Value="item.TotalPrice"
+                                     class="form-control"
+                                     disabled="@(!bNewRequisition)" />
+                    </div>
+
+                    <!-- Remove Button -->
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="button"
+                                class="btn btn-danger w-100"
+                                @onclick="() => RemoveItem(index)"
+                                disabled="@(!bNewRequisition)">
+                            Remove
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+
+    <!-- Add Button -->
+    @if(bNewRequisition)
+    {
+        <button type="button"
+                class="btn btn-primary"
+                @onclick="AddItem"
+                disabled="@(!bNewRequisition)">
+            Add Item
+        </button>
+    }
+
+</div>
+
+@code {
+    // ✅ Parameters
+    [Parameter]
+    public List<RequestItemInfo> ItemRequested { get; set; } = new();
+
+    [Parameter]
+    public bool bNewRequisition { get; set; } = false;
+
+    [Parameter]
+    public string Title { get; set; } = "Item Requested:";
+    private List<CurrencyItem> CurrencyList;
+    // ========== Currency List ==========
+    List<CultureInfo>cultures = CultureInfo.GetCultures(CultureTypes.AllCultures).ToList();
+
+
+
+
+
+protected override async Task OnInitializedAsync()
+    {
+        if (!cultures.Any(c => c.Name.Equals("zh-CN", StringComparison.OrdinalIgnoreCase)))
+        {
+            cultures.Add(new CultureInfo("zh-CN"));
+        }
+        CurrencyList = cultures
+       .Select(c =>
+    {
+        try
+        {
+            var region = new RegionInfo(c.Name);
+            return new CurrencyItem
+            {
+                Text = $"{region.CurrencyEnglishName} ({region.ISOCurrencySymbol})",
+                Value = region.ISOCurrencySymbol
+            };
+        }
+        catch
+        {
+            return null;
+        }
+    })
+    .Where(x => x != null)
+    .GroupBy(x => x!.Value)  // remove duplicates
+    .Select(g => g.First()!)
+    .OrderBy(x => x.Text)
+    .ToList();
+     StateHasChanged();
+
+}
+
+    // ========== Button Actions ==========
+    private Task AddItem(MouseEventArgs args)
+    {
+        ItemRequested.Add(new RequestItemInfo());
+        return Task.CompletedTask;
+    }
+
+    private Task RemoveItem(int i)
+    {
+        if (i >= 0 && i < ItemRequested.Count)
+            ItemRequested.RemoveAt(i);
+
+        return Task.CompletedTask;
+    }
+
+    // ========== Supporting Class ==========
+    public class CurrencyItem
+    {
+        public string Text { get; set; } = string.Empty;  // "US Dollar (USD)"
+        public string Value { get; set; } = string.Empty; // "USD"
+    }
+}

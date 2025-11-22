@@ -20,7 +20,7 @@ namespace PurchaseBlazorApp2.Controller
             if (PO == null) return NotFound();
 
             PRRepository PRRepo = new PRRepository();
-            List<RequestItemInfo> RequestedItems = await PRRepo.GetRequestedItemByRequisitionNumber(PO.PR_ID);
+            List<RequestItemInfo> RequestedItems = await PRRepo.GetRequestedItemByRequisitionNumber(PO.PR_ID, "pr_approved_requestitem_table");
 
             var pdfBytes = new POPDFHelper().GeneratePurchaseOrderPdf(PO, RequestedItems);
             return File(pdfBytes, "application/pdf", $"PurchaseOrder-{PO.PO_ID}.pdf");

@@ -98,8 +98,12 @@
             NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
         }
     }
-
-    private void StartLogin() => startLogin = true;
+   
+    private void StartLogin()
+    {
+    startLogin = true;
+    }
+  
 
 
     private async Task HandleLogInSucceeded(RemoteAuthenticationState state)
@@ -171,6 +175,15 @@
 
             // --- 🔹 Retrieve department from your backend ---
             string email = authState.User.FindFirst(c => c.Type == "preferred_username" || c.Type == "email")?.Value ?? "";
+            bool exists = await Http.GetFromJsonAsync<bool>($"api/login/checkexist/{email}");
+            if (!exists)
+            {
+
+                NavigationManager.NavigateTo("mainlogout");
+                await JS.InvokeVoidAsync("alert", "unauthorized!");
+                return;
+            }
+           
             EDepartment MyDepartment = EDepartment.NotSpecified;
 
             try

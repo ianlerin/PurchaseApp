@@ -314,17 +314,20 @@ namespace PurchaseBlazorApp2.Components.Data
         public DateTime UpdateDate { get; set; } = DateTime.MinValue;
         public string Requestor { get; set; }
         public string? Rejectreason { get; set; }
-        public string Purpose { get; set; }
+        public string? Purpose { get; set; }
 
         public bool bSentReminder { get; set; }
         public string? po_id { get; set; } = "";
 
         private bool _burgent = false;
         public bool burgent { get { return _burgent; } set { _burgent = value; } }
-        public string Department { get; set; }
+        public string? Department { get; set; }
 
         private List<RequestItemInfo> _ItemRequested = new List<RequestItemInfo>();
         public List<RequestItemInfo> ItemRequested { get { return _ItemRequested; } set { _ItemRequested = value; } }
+
+        private List<RequestItemInfo> _ApprovedItemRequested = new List<RequestItemInfo>();
+        public List<RequestItemInfo> ApprovedItemRequested { get { return _ApprovedItemRequested; } set { _ApprovedItemRequested = value; } }
 
         public EPRStatus prstatus { get; set; }
         public EApprovalStatus approvalstatus { get; set; }
@@ -405,7 +408,7 @@ namespace PurchaseBlazorApp2.Components.Data
         public decimal CalculateTotal()
         {
             decimal Count = 0;
-            foreach (RequestItemInfo Info in ItemRequested)
+            foreach (RequestItemInfo Info in ApprovedItemRequested)
             {
                 Count += Info.TotalPrice;
             }

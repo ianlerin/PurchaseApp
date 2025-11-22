@@ -31,7 +31,7 @@ namespace PurchaseBlazorApp2.Components.Repository
             {
                 foreach (var property in properties)
                 {
-                    if (property.Name == "SupportDocuments"|| property.Name == "ItemRequested"|| property.Name == "Approvals")
+                    if (property.Name == "ApprovedItemRequested" || property.Name == "SupportDocuments"|| property.Name == "ItemRequested"|| property.Name == "Approvals")
                         continue;
 
                     object obj = property.GetValue(MainInfo);
@@ -156,7 +156,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                         // burgent bool
                         MainInfo.burgent = reader["burgent"] != DBNull.Value && (bool)reader["burgent"];
                         MainInfo.po_id= reader["po_id"]?.ToString() ?? string.Empty;
-                        MainInfo.ItemRequested= await GetRequestedItemByRequisitionNumber(MainInfo.RequisitionNumber);
+                        MainInfo.ItemRequested= await GetRequestedItemByRequisitionNumber(MainInfo.RequisitionNumber, "pr_requestitem_table");
                         ToReturn.Add(MainInfo);
                     }
                 }
@@ -175,10 +175,80 @@ namespace PurchaseBlazorApp2.Components.Repository
             return ToReturn;
         }
 
+
+
+        public async Task<List<PurchaseRequisitionRecord>> GetAllRecordsForListAsync()
+        {
+            var ToReturn = new List<PurchaseRequisitionRecord>();
+
+            try
+            {
+                await Connection.OpenAsync();
+
+                string query = "SELECT requisitionnumber, requestdate, prstatus, approvalstatus, burgent,deliverydate,paymentstatus,po_id FROM prtable";
+
+                var command = new NpgsqlCommand { Connection = Connection };
+
+                command.CommandText = query;
+
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        var MainInfo = new PurchaseRequisitionRecord();
+
+                        MainInfo.RequisitionNumber = reader["requisitionnumber"]?.ToString() ?? string.Empty;
+
+                        // requestdate
+                        if (reader["requestdate"] != DBNull.Value)
+                            MainInfo.RequestDate = (DateTime)reader["requestdate"];
+
+                        if (reader["deliverydate"] != DBNull.Value)
+                            MainInfo.DeliveryDate = (DateTime)reader["deliverydate"];
+
+                        // prstatus enum
+                        if (Enum.TryParse(reader["prstatus"]?.ToString() ?? string.Empty, out EPRStatus prStatus))
+                            MainInfo.prstatus = prStatus;
+
+                        // approvalstatus enum
+                        if (Enum.TryParse(reader["approvalstatus"]?.ToString() ?? string.Empty, out EApprovalStatus approvalStatus))
+                            MainInfo.approvalstatus = approvalStatus;
+
+                        if (Enum.TryParse(reader["paymentstatus"]?.ToString() ?? string.Empty, out EPaymentStatus paymentStatus))
+                            MainInfo.paymentstatus = paymentStatus;
+
+
+                        // burgent bool
+                        MainInfo.burgent = reader["burgent"] != DBNull.Value && (bool)reader["burgent"];
+                        MainInfo.po_id = reader["po_id"]?.ToString() ?? string.Empty;
+                        MainInfo.ItemRequested = await GetRequestedItemByRequisitionNumber(MainInfo.RequisitionNumber, "pr_requestitem_table");
+                        ToReturn.Add(MainInfo);
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"GetRecordsForListAsync Exception: {ex.Message}");
+                return ToReturn;
+            }
+            finally
+            {
+                await Connection.CloseAsync();
+            }
+
+            return ToReturn;
+        }
+
+
+
         public async Task<List<PurchaseRequisitionRecord>> GetRecordsAsync(List<string> requisitionNumbers = null)
         {
             List<PurchaseRequisitionRecord> ToReturn = new List<PurchaseRequisitionRecord>();
-
+            if(requisitionNumbers.Count==0)
+            {
+                return ToReturn;
+            }
             try
             {
                 await Connection.OpenAsync();
@@ -217,13 +287,14 @@ namespace PurchaseBlazorApp2.Components.Repository
                 {
                     var docsTask = GetImagesByRequisitionNumber(record.RequisitionNumber);
                     var approvalsTask = InsertApprovalByRequisitionNumber(record);
-                    var itemsTask = GetRequestedItemByRequisitionNumber(record.RequisitionNumber);
-
+                    var itemsTask = GetRequestedItemByRequisitionNumber(record.RequisitionNumber, "pr_requestitem_table");
+                    var approvedItemsTask = GetRequestedItemByRequisitionNumber(record.RequisitionNumber, "pr_approved_requestitem_table");
                     await Task.WhenAll(docsTask, approvalsTask, itemsTask);
 
                     record.SupportDocuments = docsTask.Result;
                     record.Approvals = approvalsTask.Result;
                     record.ItemRequested = itemsTask.Result;
+                    record.ApprovedItemRequested = approvedItemsTask.Result;
                 });
 
                 await Task.WhenAll(tasks);
@@ -282,7 +353,7 @@ namespace PurchaseBlazorApp2.Components.Repository
             }
         }
 
-        public async Task<List<RequestItemInfo>> GetRequestedItemByRequisitionNumber(string requisitionNumber, NpgsqlTransaction? externalTransaction = null)
+        public async Task<List<RequestItemInfo>> GetRequestedItemByRequisitionNumber(string requisitionNumber,string requesttablename, NpgsqlTransaction? externalTransaction = null)
         {
             var Items = new List<RequestItemInfo>();
             var MyConnection = GetConnection();
@@ -291,7 +362,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                 await MyConnection.OpenAsync();
 
                 var command = new NpgsqlCommand(
-                    "SELECT itemrequested, unitprice,quantity,totalprice,currency FROM pr_requestitem_table WHERE requisitionnumber = @req",
+                    $"SELECT itemrequested, unitprice,quantity,totalprice,currency FROM {requesttablename} WHERE requisitionnumber = @req",
                     MyConnection, externalTransaction);
                 command.Parameters.AddWithValue("@req", requisitionNumber);
 
@@ -582,7 +653,40 @@ namespace PurchaseBlazorApp2.Components.Repository
                 await Connection.CloseAsync();
             }
         }
+        public async Task<List<string>> GetRequisitionsFinance()
+        {
+            List<string> requisitionNumbers = new List<string>();
 
+            try
+            {
+                await Connection.OpenAsync();
+
+                string query = @"
+            SELECT requisitionnumber
+            FROM prtable
+            WHERE paymentstatus = 'PendingPayment'
+               OR paymentstatus = 'Paid';";
+
+                using (var command = new NpgsqlCommand(query, Connection))
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        requisitionNumbers.Add(reader.GetString(0));
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"GetRequisitionsWithPendingOrPaidAsync Exception: {ex.Message}");
+            }
+            finally
+            {
+                await Connection.CloseAsync();
+            }
+
+            return requisitionNumbers;
+        }
 
         public async Task<bool> UpdatePaymentStatus(string requisitionNumber, EPaymentStatus status)
         {
@@ -649,6 +753,18 @@ namespace PurchaseBlazorApp2.Components.Repository
 
         private async Task<bool> InsertPRItems(PurchaseRequisitionRecord info, NpgsqlTransaction? externalTransaction = null)
         {
+          
+            bool bSuccess = await InsertPRItems(info.RequisitionNumber, info.ItemRequested, "pr_requestitem_table", externalTransaction);
+            if(bSuccess)
+            {
+                 bSuccess = await InsertPRItems(info.RequisitionNumber, info.ApprovedItemRequested, "pr_approved_requestitem_table", externalTransaction);
+            }
+            
+            return bSuccess;
+        }
+
+        private async Task<bool> InsertPRItems(string prID, List<RequestItemInfo> items,string requestTableName, NpgsqlTransaction? externalTransaction = null)
+        {
             bool shouldCloseConnection = false;
             bool shouldDisposeTransaction = false;
 
@@ -669,18 +785,18 @@ namespace PurchaseBlazorApp2.Components.Repository
 
                 // 1. Delete existing record
                 var deleteCmd = new NpgsqlCommand(
-                    "DELETE FROM pr_requestitem_table WHERE requisitionnumber = @req",
+                    $"DELETE FROM {requestTableName} WHERE requisitionnumber = @req",
                     Connection, transaction);
-                deleteCmd.Parameters.AddWithValue("@req", info.RequisitionNumber);
+                deleteCmd.Parameters.AddWithValue("@req", prID);
                 await deleteCmd.ExecuteNonQueryAsync();
 
                 // 2. Insert new records
-                foreach (RequestItemInfo item in info.ItemRequested)
+                foreach (RequestItemInfo item in items)
                 {
                     var insertCmd = new NpgsqlCommand(
-                        "INSERT INTO pr_requestitem_table (requisitionnumber, itemrequested,unitprice,currency,quantity,totalprice) VALUES (@req, @itemrequested,@unitprice,@currency,@quantity,@totalprice)",
+                        $"INSERT INTO {requestTableName} (requisitionnumber, itemrequested,unitprice,currency,quantity,totalprice) VALUES (@req, @itemrequested,@unitprice,@currency,@quantity,@totalprice)",
                         Connection, transaction);
-                    insertCmd.Parameters.AddWithValue("@req", info.RequisitionNumber);
+                    insertCmd.Parameters.AddWithValue("@req", prID);
                     insertCmd.Parameters.AddWithValue("@itemrequested", item.RequestItem);
                     insertCmd.Parameters.AddWithValue("@currency", item.Currency);
                     insertCmd.Parameters.AddWithValue("@unitprice", item.UnitPrice);
@@ -920,7 +1036,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                                 foreach (var prop in props)
                                 {
                                     string propName = prop.Name;
-                                    if (propName == "RequisitionNumber" || propName == "SupportDocuments" || propName == "Approvals" || propName == "ItemRequested")
+                                    if (propName == "RequisitionNumber" || propName == "SupportDocuments" || propName == "Approvals" || propName == "ItemRequested" || propName == "ApprovedItemRequested")
                                         continue;
 
                                     sqlCommand += propName + ",";

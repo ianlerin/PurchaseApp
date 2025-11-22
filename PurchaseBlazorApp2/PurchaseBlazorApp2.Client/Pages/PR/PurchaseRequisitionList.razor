@@ -149,22 +149,38 @@
             HttpResponseMessage? response = new HttpResponseMessage();
 
             EDepartment MyDepartment = await GeneralLibrary.GetCurrentDepartmentRole(JS);
-            if(MyDepartment == EDepartment.ProcurementManager||MyDepartment == EDepartment.Finance)
+            if (MyDepartment == EDepartment.ProcurementManager || MyDepartment == EDepartment.Finance)
             {
                 await JS.InvokeVoidAsync("console.log", $"ReloadList procurement or finance");
                 bProcurementOrFinance = true;
             }
+
             else
             {
-                
+
                 await JS.InvokeVoidAsync("console.log", $"ReloadList not procurement or finance");
             }
 
-            if (bProcurementOrFinance)
+            if (MyDepartment == EDepartment.ProcurementManager)
             {
                 response = await Http.PostAsJsonAsync(
-                    NavigationManager.ToAbsoluteUri("api/pr/get-list-partial"),
+                    NavigationManager.ToAbsoluteUri("api/pr/get-list-partial-all"),
                     new List<PurchaseRequisitionRecord>());
+
+            }
+            else if (MyDepartment == EDepartment.Finance)
+            {
+                response = await Http.PostAsJsonAsync(
+                   NavigationManager.ToAbsoluteUri("api/pr/get-finance"),
+                   new List<PurchaseRequisitionRecord>());
+                HashSet<string> FilterHashrecords = await response.Content.ReadFromJsonAsync<HashSet<string>>();
+                List<string> StringRecords=FilterHashrecords.ToList();
+                if (StringRecords.Count() > 0)
+                {
+                    response = await Http.PostAsJsonAsync(
+    NavigationManager.ToAbsoluteUri("api/pr/get-list-partial"),
+    StringRecords);
+                }
             }
             else
             {

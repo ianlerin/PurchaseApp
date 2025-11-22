@@ -66,5 +66,20 @@ namespace PurchaseBlazorApp2.Controller
             return Ok(Result);
         }
 
+        [HttpPost("get-finance")]
+        public async Task<ActionResult<HashSet<string>>> GetRecordsFinance()
+        {
+            var Result = await PRRepository.GetRequisitionsFinance();
+            return Ok(Result);
+        }
+
+        [HttpPost("get-list-partial-all")]
+        public async Task<ActionResult<List<PurchaseRequisitionRecord>>> GetRecordsForListAsync()
+        {
+            var Result = await PRRepository.GetAllRecordsForListAsync();
+            return Ok(Result);
+        }
+        
+
     }
 }
