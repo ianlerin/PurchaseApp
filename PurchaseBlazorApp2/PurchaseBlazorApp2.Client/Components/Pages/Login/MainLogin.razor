@@ -5,6 +5,8 @@
 @using Microsoft.Graph
 @using PurchaseBlazorApp2.Components.Data
 @using PurchaseBlazorApp2.Components.Global
+@using Radzen
+@using Radzen.Blazor
 @inject HttpClient Http
 @inject IJSRuntime JS
 @inject IServiceProvider ServiceProvider
@@ -12,36 +14,73 @@
 @inject ClientGlobalVar GlobalVar
 @inject AuthenticationStateProvider AuthStateProvider
 
+
 <CascadingAuthenticationState>
     <CascadingValue Value="this">
-        @if (authState is null)
-        {
-            <p>⏳ Loading authentication state...</p>
-        }
-        else if (!authState.User.Identity?.IsAuthenticated ?? true)
-        {
-            @if (!startLogin)
+        <!-- Main Container: Flexbox used to center the card vertically and horizontally -->
+        <div class="d-flex justify-content-center align-items-center" style="min-height: 100vh; background-color: #f4f4f4;">
+            
+            @if (authState is null)
             {
-                <button class="btn btn-primary" @onclick="StartLogin">
-                    🔑 Login
-                </button>
+                <!-- 1. LOADING STATE -->
+                <div class="rz-text-align-center">
+                    <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" Style="width: 200px;" />
+                    <p class="rz-mt-2 text-muted">⏳ Loading authentication...</p>
+                </div>
             }
-            else if (remoteAuthServiceAvailable)
+            else if (!authState.User.Identity?.IsAuthenticated ?? true)
             {
-                <!-- Only render RemoteAuthenticatorView if service is available -->
-                <RemoteAuthenticatorView Action="login" OnLogInSucceeded="HandleLogInSucceeded" />
+                <!-- 2. LOGIN View -->
+                <RadzenCard Class="rz-shadow-10 rz-p-8 rz-text-align-center" Style="width: 100%; max-width: 400px; background: white;">
+                    
+                    <!-- Your Logo -->
+                    <RadzenImage Path="PineappleLogo.jpeg" Style="width: 100px; height: 100px; border-radius: 50%; margin-bottom: 1rem; object-fit: cover;" AlternateText="Logo" />
+                    
+                    <RadzenText TextStyle="TextStyle.H5" TagName="TagName.H1" Class="rz-mb-4">
+                        Genesis Purchase App
+                    </RadzenText>
+
+                    @if (!startLogin)
+                    {
+                        <!-- Login Button -->
+                        <RadzenButton Text="Login" 
+                                      Icon="login" 
+                                      ButtonStyle="ButtonStyle.Primary" 
+                                      Size="ButtonSize.Large" 
+                                      Click="@StartLogin" 
+                                      Style="width: 100%;" />
+                    }
+                    else if (remoteAuthServiceAvailable)
+                    {
+                        <!-- Redirect Logic -->
+                        <div class="rz-mt-4">
+                            <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+                            <p class="rz-mt-2 rz-message">Connecting to Microsoft...</p>
+                            
+                            <!-- This component is invisible but handles the redirect -->
+                            <RemoteAuthenticatorView Action="login" OnLogInSucceeded="HandleLogInSucceeded" />
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- Show Error State -->
+                        <RadzenAlert AlertStyle="AlertStyle.Danger" Variant="Variant.Flat" Shade="Shade.Lighter" Class="rz-mt-4">
+                            Login service unavailable.
+                        </RadzenAlert>
+                    }
+                </RadzenCard>
             }
             else
             {
-                <p class="text-danger">
-                    ⚠️ Login service is not available. Please check your MSAL configuration.
-                </p>
+                <!-- 3. ALREADY LOGGED IN STATE -->
+                <RadzenCard Class="rz-shadow-10 rz-p-12 rz-text-align-center">
+                    <RadzenIcon Icon="check_circle" IconColor="@Colors.Success" Style="font-size: 3rem; margin-bottom: 1rem;" />
+                    <RadzenText TextStyle="TextStyle.H6">Welcome, @authState.User.Identity?.Name</RadzenText>
+                    <RadzenButton Text="Continue" Click="@(() => NavigationManager.NavigateTo("/"))" ButtonStyle="ButtonStyle.Secondary" Class="rz-mt-4"/>
+                </RadzenCard>
             }
-        }
-        else
-        {
-            <p>✅ You are already logged in as @authState.User.Identity?.Name</p>
-        }
+
+        </div>
     </CascadingValue>
 </CascadingAuthenticationState>
 
