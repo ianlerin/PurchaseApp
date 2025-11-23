@@ -7,6 +7,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="NewFolder1\**" />
+    <Compile Remove="NewFolder\**" />
+    <Content Remove="NewFolder1\**" />
+    <Content Remove="NewFolder\**" />
+    <EmbeddedResource Remove="NewFolder1\**" />
+    <EmbeddedResource Remove="NewFolder\**" />
+    <None Remove="NewFolder1\**" />
+    <None Remove="NewFolder\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="PineappleLogo.jpeg" />
     <None Remove="Resource\PineappleLogo.jpeg" />
   </ItemGroup>
@@ -35,8 +46,6 @@
   <ItemGroup>
     <Folder Include="Components\Data\" />
     <Folder Include="Components\Pages\Login\" />
-    <Folder Include="NewFolder1\" />
-    <Folder Include="NewFolder\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -51,6 +60,9 @@
 
   <ItemGroup>
     <Content Update="wwwroot\app.css">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="wwwroot\PineappleLogo.jpeg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
