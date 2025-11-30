@@ -99,7 +99,7 @@
                                                           Click="@(() => OnActionClicked(record))"
                                                           Style="min-width:70px;" />
                                         }
-                                        @if(bProcurementOrFinance&&record.paymentstatus!=EPaymentStatus.PendingInvoice)
+                                        @if(bProcurementOrFinance&&record.paymentstatus!=EPaymentStatus.PendingInvoice&&record.prstatus!=EPRStatus.Cancel)
                                         {
                                                 <RadzenButton Text="Finance"
                                                           Icon="visibility"

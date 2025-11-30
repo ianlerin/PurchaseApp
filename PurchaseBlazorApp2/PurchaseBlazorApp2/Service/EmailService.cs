@@ -1,5 +1,6 @@
-﻿using Microsoft.Graph.Models;
-using Microsoft.Graph;
+﻿using Microsoft.Graph;
+using Microsoft.Graph.Models;
+using PurchaseBlazorApp2.Components.Data;
 
 namespace PurchaseBlazorApp2.Service
 {
@@ -16,59 +17,52 @@ namespace PurchaseBlazorApp2.Service
             List<string>? ccRecipients,
             string subject,
             string body,
+            List<EmailAttachment>? attachments = null,
             bool isHtml = false,
             bool saveToSentItems = true)
         {
             if (toRecipients == null || toRecipients.Count == 0)
                 throw new ArgumentException("At least one recipient must be specified.", nameof(toRecipients));
 
-            try
+            var message = new Message
             {
-                Console.WriteLine("📧 Preparing to send email...");
-                Console.WriteLine($"   To: {string.Join(", ", toRecipients)}");
-                if (ccRecipients != null)
-                    Console.WriteLine($"   Cc: {string.Join(", ", ccRecipients)}");
-
-                var message = new Message
+                Subject = subject,
+                Body = new ItemBody
                 {
-                    Subject = subject,
-                    Body = new ItemBody
+                    ContentType = isHtml ? BodyType.Html : BodyType.Text,
+                    Content = body
+                },
+                ToRecipients = ConvertToRecipients(toRecipients),
+            };
+
+            if (ccRecipients != null && ccRecipients.Any())
+                message.CcRecipients = ConvertToRecipients(ccRecipients);
+
+            if (attachments != null && attachments.Any())
+            {
+                message.HasAttachments = true;
+
+                var fileAttachments = new List<Attachment>();
+                foreach (var att in attachments)
+                {
+                    fileAttachments.Add(new FileAttachment
                     {
-                        ContentType = isHtml ? BodyType.Html : BodyType.Text,
-                        Content = body
-                    },
-                    ToRecipients = ConvertToRecipients(toRecipients)
-                };
-
-                // Only add CC if there are recipients
-                if (ccRecipients != null && ccRecipients.Any())
-                {
-                    message.CcRecipients = ConvertToRecipients(ccRecipients);
+                        OdataType = "#microsoft.graph.fileAttachment",
+                        Name = att.FileName,
+                        ContentBytes = Convert.FromBase64String(att.Base64Content)
+                    });
                 }
 
-                var requestBody = new Microsoft.Graph.Users.Item.SendMail.SendMailPostRequestBody
-                {
-                    Message = message,
-                    SaveToSentItems = saveToSentItems
-                };
+                message.Attachments = fileAttachments;
+            }
 
-                await _graph.Users[_senderEmail].SendMail.PostAsync(requestBody);
+            var requestBody = new Microsoft.Graph.Users.Item.SendMail.SendMailPostRequestBody
+            {
+                Message = message,
+                SaveToSentItems = saveToSentItems
+            };
 
-                Console.WriteLine($"✅ Email sent successfully to: {string.Join(", ", toRecipients)}");
-            }
-            catch (ServiceException ex)
-            {
-                Console.WriteLine($"❌ Graph API error: {ex.Message}");
-                Console.WriteLine($"Status Code: {ex.ResponseStatusCode}");
-                if (ex.InnerException != null)
-                    Console.WriteLine($"Inner: {ex.InnerException.Message}");
-                throw; // rethrow for higher-level handling
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ General error: {ex.Message}");
-                throw; // rethrow for higher-level handling
-            }
+            await _graph.Users[_senderEmail].SendMail.PostAsync(requestBody);
         }
 
         private static List<Recipient> ConvertToRecipients(List<string> emails)

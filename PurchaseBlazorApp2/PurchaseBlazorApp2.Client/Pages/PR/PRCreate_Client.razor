@@ -130,65 +130,69 @@
             <!-- ================================= -->
             <!-- ⚙️ 4️⃣ OTHERS / ACTIONS -->
             <!-- ================================= -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-success text-white fw-bold">
-                    Actions & Status
-                </div>
-                <div class="card-body">
+            @if (!bCancelled)
+            {
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-success text-white fw-bold">
+                        Actions & Status
+                    </div>
+                    <div class="card-body">
 
-                    <div class="d-flex flex-wrap gap-3 align-items-center my-3">
-                        @if (bNewRequisition)
-                        {
-                            <button type="submit" class="btn btn-primary btn-lg"
-                                    @onclick="OnCreateNew">
-                                Create
-                            </button>
-                            <button type="button" class="btn btn-outline-primary btn-lg"
-                                    @onclick="SaveAsDraft">
-                                Save Draft
-                            </button>
-                        }
-
-                        @if (bIsProcurementManager && !bCanEditApproval && IsSubmitted() && 
-                             !string.IsNullOrEmpty(PurchaseRequisitionRecord.Rejectreason))
-                        {
-                            if (PurchaseRequisitionRecord.approvalstatus == EApprovalStatus.Rejected)
+                        <div class="d-flex flex-wrap gap-3 align-items-center my-3">
+                            @if (bNewRequisition)
                             {
+                                <button type="submit" class="btn btn-primary btn-lg"
+                                        @onclick="OnCreateNew">
+                                    Create
+                                </button>
+                                <button type="button" class="btn btn-outline-primary btn-lg"
+                                        @onclick="SaveAsDraft">
+                                    Save Draft
+                                </button>
+                            }
+
+                            @if (bIsProcurementManager && !bCanEditApproval && IsSubmitted() &&
+                                                    !string.IsNullOrEmpty(PurchaseRequisitionRecord.Rejectreason))
+                            {
+                                if (PurchaseRequisitionRecord.approvalstatus == EApprovalStatus.Rejected)
+                                {
+                                    <div class="form-group mt-3">
+                                        <label class="form-label">Reject Reason</label>
+                                        <InputText @bind-Value="PurchaseRequisitionRecord.Rejectreason"
+                                                   class="form-control"
+                                                   readonly />
+                                    </div>
+                                }
+                            }
+
+                            @if (bCanOpenPO && bIsProcurementManager)
+                            {
+                                <button @onclick="OnPrintPDF" class="btn btn-primary btn-lg">
+                                    View PO
+                                </button>
+                            }
+
+                            @if (bIsDepartmentMatchApproval && bHaventApproveOrReject)
+                            {
+                                <button @onclick="OnApprove" class="btn btn-success btn-lg">
+                                    Approve
+                                </button>
+                                <button @onclick="OnReject" class="btn btn-danger btn-lg">
+                                    Reject
+                                </button>
+
                                 <div class="form-group mt-3">
                                     <label class="form-label">Reject Reason</label>
                                     <InputText @bind-Value="PurchaseRequisitionRecord.Rejectreason"
-                                               class="form-control"
-                                               readonly />
+                                               class="form-control" />
                                 </div>
                             }
-                        }
+                        </div>
 
-                        @if (bCanOpenPO && bIsProcurementManager)
-                        {
-                            <button @onclick="OnPrintPDF" class="btn btn-primary btn-lg">
-                                View PO
-                            </button>
-                        }
-
-                        @if (bIsDepartmentMatchApproval && bHaventApproveOrReject)
-                        {
-                            <button @onclick="OnApprove" class="btn btn-success btn-lg">
-                                Approve
-                            </button>
-                            <button @onclick="OnReject" class="btn btn-danger btn-lg">
-                                Reject
-                            </button>
-
-                            <div class="form-group mt-3">
-                                <label class="form-label">Reject Reason</label>
-                                <InputText @bind-Value="PurchaseRequisitionRecord.Rejectreason"
-                                           class="form-control" />
-                            </div>
-                        }
                     </div>
-
                 </div>
-            </div>
+            }
+
         </EditForm>
     </div>
 </div>
@@ -203,6 +207,7 @@
     [Inject] IJSRuntime JS { get; set; }
     private bool bNewRequisition = false;
     private bool bCanOpenPO;
+    private bool bCancelled = false;
     private bool bHaventApproveOrReject;
     private string EmailSendStatus;
     private EmailWorkflowService MyEmailHelper;
@@ -415,6 +420,8 @@
                         bIsDepartmentMatchApproval = true;
                     }
                 }
+
+                bCancelled = PurchaseRequisitionRecord.prstatus==EPRStatus.Cancel;
             }
 
         }

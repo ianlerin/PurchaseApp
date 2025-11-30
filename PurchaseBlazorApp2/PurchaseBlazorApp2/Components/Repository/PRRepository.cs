@@ -106,66 +106,62 @@ namespace PurchaseBlazorApp2.Components.Repository
             {
                 await Connection.OpenAsync();
 
-                string query = "SELECT requisitionnumber, requestdate, prstatus, approvalstatus, burgent,deliverydate,paymentstatus,po_id FROM prtable";
+                string query = @"
+            SELECT requisitionnumber, requestdate, prstatus, approvalstatus, burgent, deliverydate, paymentstatus, po_id 
+            FROM prtable
+            WHERE prstatus <> 'Cancel'
+              AND paymentstatus <> 'Paid'";
 
-                var command = new NpgsqlCommand { Connection = Connection };
-
-                if (requisitionNumbers != null && requisitionNumbers.Count > 0)
+                using (var command = new NpgsqlCommand { Connection = Connection })
                 {
-                    var paramNames = new List<string>();
-                    for (int i = 0; i < requisitionNumbers.Count; i++)
+                    if (requisitionNumbers != null && requisitionNumbers.Count > 0)
                     {
-                        string paramName = $"@id{i}";
-                        paramNames.Add(paramName);
-                        command.Parameters.AddWithValue(paramName, requisitionNumbers[i]);
+                        var paramNames = new List<string>();
+                        for (int i = 0; i < requisitionNumbers.Count; i++)
+                        {
+                            string paramName = $"@id{i}";
+                            paramNames.Add(paramName);
+                            command.Parameters.AddWithValue(paramName, requisitionNumbers[i]);
+                        }
+
+                        string inClause = string.Join(", ", paramNames);
+                        query += $" AND requisitionnumber IN ({inClause})"; // Use AND instead of WHERE
                     }
 
-                    string inClause = string.Join(", ", paramNames);
-                    query += $" WHERE requisitionnumber IN ({inClause})";
-                }
+                    command.CommandText = query;
 
-                command.CommandText = query;
-
-                using (var reader = await command.ExecuteReaderAsync())
-                {
-                    while (await reader.ReadAsync())
+                    using (var reader = await command.ExecuteReaderAsync())
                     {
-                        var MainInfo = new PurchaseRequisitionRecord();
+                        while (await reader.ReadAsync())
+                        {
+                            var MainInfo = new PurchaseRequisitionRecord
+                            {
+                                RequisitionNumber = reader["requisitionnumber"]?.ToString() ?? string.Empty,
+                                RequestDate = reader["requestdate"] != DBNull.Value ? (DateTime)reader["requestdate"] : default,
+                                DeliveryDate = reader["deliverydate"] != DBNull.Value ? (DateTime)reader["deliverydate"] : default,
+                                burgent = reader["burgent"] != DBNull.Value && (bool)reader["burgent"],
+                                po_id = reader["po_id"]?.ToString() ?? string.Empty
+                            };
 
-                        MainInfo.RequisitionNumber = reader["requisitionnumber"]?.ToString() ?? string.Empty;
+                            if (Enum.TryParse(reader["prstatus"]?.ToString() ?? string.Empty, out EPRStatus prStatus))
+                                MainInfo.prstatus = prStatus;
 
-                        // requestdate
-                        if (reader["requestdate"] != DBNull.Value)
-                            MainInfo.RequestDate = (DateTime)reader["requestdate"];
+                            if (Enum.TryParse(reader["approvalstatus"]?.ToString() ?? string.Empty, out EApprovalStatus approvalStatus))
+                                MainInfo.approvalstatus = approvalStatus;
 
-                        if (reader["deliverydate"] != DBNull.Value)
-                            MainInfo.DeliveryDate = (DateTime)reader["deliverydate"];
+                            if (Enum.TryParse(reader["paymentstatus"]?.ToString() ?? string.Empty, out EPaymentStatus paymentStatus))
+                                MainInfo.paymentstatus = paymentStatus;
 
-                        // prstatus enum
-                        if (Enum.TryParse(reader["prstatus"]?.ToString() ?? string.Empty, out EPRStatus prStatus))
-                            MainInfo.prstatus = prStatus;
+                            MainInfo.ItemRequested = await GetRequestedItemByRequisitionNumber(MainInfo.RequisitionNumber, "pr_requestitem_table");
 
-                        // approvalstatus enum
-                        if (Enum.TryParse(reader["approvalstatus"]?.ToString() ?? string.Empty, out EApprovalStatus approvalStatus))
-                            MainInfo.approvalstatus = approvalStatus;
-
-                        if (Enum.TryParse(reader["paymentstatus"]?.ToString() ?? string.Empty, out EPaymentStatus paymentStatus))
-                            MainInfo.paymentstatus = paymentStatus;
-                        
-
-                        // burgent bool
-                        MainInfo.burgent = reader["burgent"] != DBNull.Value && (bool)reader["burgent"];
-                        MainInfo.po_id= reader["po_id"]?.ToString() ?? string.Empty;
-                        MainInfo.ItemRequested= await GetRequestedItemByRequisitionNumber(MainInfo.RequisitionNumber, "pr_requestitem_table");
-                        ToReturn.Add(MainInfo);
+                            ToReturn.Add(MainInfo);
+                        }
                     }
                 }
-          
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"GetRecordsForListAsync Exception: {ex.Message}");
-                return ToReturn;
             }
             finally
             {
@@ -175,8 +171,6 @@ namespace PurchaseBlazorApp2.Components.Repository
             return ToReturn;
         }
 
-
-
         public async Task<List<PurchaseRequisitionRecord>> GetAllRecordsForListAsync()
         {
             var ToReturn = new List<PurchaseRequisitionRecord>();
@@ -185,7 +179,11 @@ namespace PurchaseBlazorApp2.Components.Repository
             {
                 await Connection.OpenAsync();
 
-                string query = "SELECT requisitionnumber, requestdate, prstatus, approvalstatus, burgent,deliverydate,paymentstatus,po_id FROM prtable";
+                string query = @"
+            SELECT requisitionnumber, requestdate, prstatus, approvalstatus, burgent, deliverydate, paymentstatus, po_id 
+            FROM prtable
+            WHERE prstatus <> 'Cancel'
+              AND paymentstatus <> 'Paid'";
 
                 var command = new NpgsqlCommand { Connection = Connection };
 

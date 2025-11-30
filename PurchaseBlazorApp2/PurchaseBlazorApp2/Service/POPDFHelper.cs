@@ -79,6 +79,12 @@ namespace PurchaseBlazorApp2
                             });
                         });
 
+                        string Currency = "MYR";
+                        if(RequestItemInfos.Count > 0)
+                        {
+                            Currency= RequestItemInfos[0].Currency;
+                        }
+
                         // ITEMS TABLE
                         column.Item().Table(table =>
                         {
@@ -98,7 +104,7 @@ namespace PurchaseBlazorApp2
                                 header.Cell().Element(CellStyle).Text("Description of Goods/ Services").Bold();
                                 header.Cell().Element(CellStyle).AlignCenter().Text("Quantity").Bold();
                                 header.Cell().Element(CellStyle).AlignCenter().Text("Unit Price").Bold();
-                                header.Cell().Element(CellStyle).AlignCenter().Text("Total Price (RM)").Bold();
+                                header.Cell().Element(CellStyle).AlignCenter().Text($"Total Price ({Currency})").Bold();
 
                                 static IContainer CellStyle(IContainer container) => container.Border(1).Padding(5);
                             });
@@ -152,12 +158,6 @@ namespace PurchaseBlazorApp2
 
                             row.RelativeItem().Column(col =>
                             {
-                                col.Item().Text("Signature").Bold();
-                                col.Item().PaddingTop(20).Text("__________________"); 
-                            });
-
-                            row.RelativeItem().Column(col =>
-                            {
                                 col.Item().Text("Date").Bold();
                                 col.Item().PaddingTop(20).Text("__________________"); 
                             });
@@ -165,7 +165,7 @@ namespace PurchaseBlazorApp2
                     });
 
                     // Footer
-                    page.Footer().AlignCenter().Text("Generated with QuestPDF");
+                    page.Footer().AlignCenter().Text("This PDF is computer generated. No signature is required");
                 });
             });
 

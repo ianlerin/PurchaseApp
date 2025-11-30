@@ -18,7 +18,7 @@
 
 
 <h3 class="mb-4">Create Purchase Order</h3>
-
+<div class="container-fluid" style="max-width: 1500px; margin-left: 0;">
 <EditForm Model="Record" OnValidSubmit="HandleValidSubmit">
     <DataAnnotationsValidator />
     <ValidationSummary class="text-danger" />
@@ -31,19 +31,19 @@
             Purchase Order Information
         </div>
         <div class="card-body">
-            <div class="mb-3">
-                <label for="poid" class="form-label">PO ID</label>
-                <InputText id="poid" class="form-control" @bind-Value="Record.PO_ID" readonly />
-            </div>
-
-            <div class="mb-3">
-                <label for="prid" class="form-label">PR ID</label>
-                <InputText id="prid" class="form-control" @bind-Value="Record.PR_ID" />
-            </div>
-
-            <div class="mb-3">
-                <label for="createdby" class="form-label">Created By</label>
-                <InputText id="createdby" class="form-control" @bind-Value="Record.CreatedBy" />
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="poid" class="form-label">PO ID</label>
+                    <InputText id="poid" class="form-control" @bind-Value="Record.PO_ID" readonly />
+                </div>
+                <div class="col-md-4">
+                    <label for="prid" class="form-label">PR ID</label>
+                    <InputText id="prid" class="form-control" @bind-Value="Record.PR_ID" />
+                </div>
+                <div class="col-md-4">
+                    <label for="createdby" class="form-label">Created By</label>
+                    <InputText id="createdby" class="form-control" @bind-Value="Record.CreatedBy" />
+                </div>
             </div>
         </div>
     </div>
@@ -56,24 +56,23 @@
             Company Information
         </div>
         <div class="card-body">
-            <div class="mb-3">
-                <label for="companyname" class="form-label">Company Name</label>
-                <InputText id="companyname" class="form-control" @bind-Value="Record.mycompanyname" />
-            </div>
-
-            <div class="mb-3">
-                <label for="address" class="form-label">Address</label>
-                <InputText id="address" class="form-control" @bind-Value="Record.myaddress" />
-            </div>
-
-            <div class="mb-3">
-                <label for="email" class="form-label">Email</label>
-                <InputText id="email" class="form-control" @bind-Value="Record.myemail" />
-            </div>
-
-            <div class="mb-3">
-                <label for="tel" class="form-label">Telephone</label>
-                <InputText id="tel" class="form-control" @bind-Value="Record.tel" />
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="companyname" class="form-label">Company Name</label>
+                    <InputText id="companyname" class="form-control" @bind-Value="Record.mycompanyname" />
+                </div>
+                <div class="col-md-6">
+                    <label for="address" class="form-label">Address</label>
+                    <InputText id="address" class="form-control" @bind-Value="Record.myaddress" />
+                </div>
+                <div class="col-md-4">
+                    <label for="email" class="form-label">Email</label>
+                    <InputText id="email" class="form-control" @bind-Value="Record.myemail" />
+                </div>
+                <div class="col-md-4">
+                    <label for="tel" class="form-label">Telephone</label>
+                    <InputText id="tel" class="form-control" @bind-Value="Record.tel" />
+                </div>
             </div>
         </div>
     </div>
@@ -86,17 +85,21 @@
             Supplier Lookup
         </div>
         <div class="card-body">
-            <div class="input-group mb-3">
-                <RadzenDropDown @bind-Value="SearchSID"
-                                Data="@FoundSupplierLookupInfos"
-                                TextProperty="DisplayName"
-                                ValueProperty="ID"
-                                AllowFiltering="true"
-                                FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
-                                Placeholder="Select supplier"
-                                Style="width:100%"
-                                TValue="string" />
-                <button type="button" class="btn btn-outline-primary" @onclick="SearchSupplier">Find Supplier</button>
+            <div class="row g-2 align-items-end">
+                <div class="col-md-8">
+                    <RadzenDropDown @bind-Value="SearchSID"
+                                    Data="@FoundSupplierLookupInfos"
+                                    TextProperty="DisplayName"
+                                    ValueProperty="ID"
+                                    AllowFiltering="true"
+                                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                    Placeholder="Select supplier"
+                                    Style="width:100%"
+                                    TValue="string" />
+                </div>
+                <div class="col-md-4">
+                    <button type="button" class="btn btn-outline-primary w-100" @onclick="SearchSupplier">Find Supplier</button>
+                </div>
             </div>
         </div>
     </div>
@@ -109,21 +112,23 @@
             Supplier Information
         </div>
         <div class="card-body">
-            <div class="mb-3">
-                <label for="suppliercompany" class="form-label">Company</label>
-                <InputText id="suppliercompany" class="form-control" @bind-Value="Record.suppliercompanyname" />
-            </div>
-            <div class="mb-3">
-                <label for="supplierperson" class="form-label">Contact Person</label>
-                <InputText id="supplierperson" class="form-control" @bind-Value="Record.suppliercontactperson" />
-            </div>
-            <div class="mb-3">
-                <label for="suppliercontact" class="form-label">Contact</label>
-                <InputText id="suppliercontact" class="form-control" @bind-Value="Record.suppliercontact" />
-            </div>
-            <div class="mb-3">
-                <label for="supplieremail" class="form-label">Email</label>
-                <InputText id="supplieremail" type="email" class="form-control" @bind-Value="Record.supplieremail" />
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="suppliercompany" class="form-label">Company</label>
+                    <InputText id="suppliercompany" class="form-control" @bind-Value="Record.suppliercompanyname" />
+                </div>
+                <div class="col-md-6">
+                    <label for="supplierperson" class="form-label">Contact Person</label>
+                    <InputText id="supplierperson" class="form-control" @bind-Value="Record.suppliercontactperson" />
+                </div>
+                <div class="col-md-6">
+                    <label for="suppliercontact" class="form-label">Contact</label>
+                    <InputText id="suppliercontact" class="form-control" @bind-Value="Record.suppliercontact" />
+                </div>
+                <div class="col-md-6">
+                    <label for="supplieremail" class="form-label">Email</label>
+                    <InputText id="supplieremail" type="email" class="form-control" @bind-Value="Record.supplieremail" />
+                </div>
             </div>
         </div>
     </div>
@@ -136,21 +141,23 @@
             Ship To
         </div>
         <div class="card-body">
-            <div class="mb-3">
-                <label for="shipcompany" class="form-label">Ship To Company</label>
-                <InputText id="shipcompany" class="form-control" @bind-Value="Record.shiptocompanyname" />
-            </div>
-            <div class="mb-3">
-                <label for="warehouseaddress" class="form-label">Warehouse Address</label>
-                <InputText id="warehouseaddress" class="form-control" @bind-Value="Record.warehouseaddress" />
-            </div>
-            <div class="mb-3">
-                <label for="receivingperson" class="form-label">Receiving Person</label>
-                <InputText id="receivingperson" class="form-control" @bind-Value="Record.receivingperson" />
-            </div>
-            <div class="mb-3">
-                <label for="shippingcontact" class="form-label">Shipping Contact</label>
-                <InputText id="shippingcontact" class="form-control" @bind-Value="Record.shippingcontact" />
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="shipcompany" class="form-label">Ship To Company</label>
+                    <InputText id="shipcompany" class="form-control" @bind-Value="Record.shiptocompanyname" />
+                </div>
+                <div class="col-md-6">
+                    <label for="warehouseaddress" class="form-label">Warehouse Address</label>
+                    <InputText id="warehouseaddress" class="form-control" @bind-Value="Record.warehouseaddress" />
+                </div>
+                <div class="col-md-6">
+                    <label for="receivingperson" class="form-label">Receiving Person</label>
+                    <InputText id="receivingperson" class="form-control" @bind-Value="Record.receivingperson" />
+                </div>
+                <div class="col-md-6">
+                    <label for="shippingcontact" class="form-label">Shipping Contact</label>
+                    <InputText id="shippingcontact" class="form-control" @bind-Value="Record.shippingcontact" />
+                </div>
             </div>
         </div>
     </div>
@@ -176,17 +183,19 @@
             Financial
         </div>
         <div class="card-body">
-            <div class="mb-3">
-                <label for="subtotal" class="form-label">SubTotal</label>
-                <InputNumber id="subtotal" class="form-control" @bind-Value="Record.SubTotal" readonly />
-            </div>
-            <div class="mb-3">
-                <label for="tax" class="form-label">Tax (%)</label>
-                <InputNumber id="tax" class="form-control" @bind-Value="Record.Tax" />
-            </div>
-            <div class="mb-3">
-                <label>Total</label>
-                <span class="ms-2 fw-bold">@Record.GetTotal()</span>
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="subtotal" class="form-label">SubTotal</label>
+                    <InputNumber id="subtotal" class="form-control" @bind-Value="Record.SubTotal" readonly />
+                </div>
+                <div class="col-md-4">
+                    <label for="tax" class="form-label">Tax (%)</label>
+                    <InputNumber id="tax" class="form-control" @bind-Value="Record.Tax" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Total</label>
+                    <div class="fw-bold">@Record.GetTotal()</div>
+                </div>
             </div>
         </div>
     </div>
@@ -199,17 +208,19 @@
             Delivery Information
         </div>
         <div class="card-body">
-            <div class="mb-3">
-                <label for="deliverydate" class="form-label">Delivery Date</label>
-                <InputDate id="deliverydate" class="form-control" @bind-Value="Record.DeliveryDate" />
-            </div>
-            <div class="mb-3">
-                <label for="deliverymethod" class="form-label">Delivery Method</label>
-                <InputText id="deliverymethod" class="form-control" @bind-Value="Record.DeliveryMethod" />
-            </div>
-            <div class="mb-3">
-                <label for="paymentmethod" class="form-label">Payment Method</label>
-                <InputText id="paymentmethod" class="form-control" @bind-Value="Record.PaymentMethod" />
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="deliverydate" class="form-label">Delivery Date</label>
+                    <InputDate id="deliverydate" class="form-control" @bind-Value="Record.DeliveryDate" />
+                </div>
+                <div class="col-md-4">
+                    <label for="deliverymethod" class="form-label">Delivery Method</label>
+                    <InputText id="deliverymethod" class="form-control" @bind-Value="Record.DeliveryMethod" />
+                </div>
+                <div class="col-md-4">
+                    <label for="paymentmethod" class="form-label">Payment Method</label>
+                    <InputText id="paymentmethod" class="form-control" @bind-Value="Record.PaymentMethod" />
+                </div>
             </div>
         </div>
     </div>
@@ -227,17 +238,23 @@
 
             @if (Record.POStatus == EPOStatus.GoodsReceived)
             {
-                <label for="ReceiveDate" class="form-label mt-3">Receive Date</label>
-                <InputDate id="ReceiveDate" class="form-control" @bind-Value="Record.ReceiveInfo.ReceiveDate" />
-
-                <UploadImageHelper UploadedImages="@Record.ReceiveInfo.SupportDocuments"
-                                   SelectionType=UploadImageHelper.ESelectionType.None
-                                   Orientation="UploadImageHelper.EOrientation.Vertical"
-                                   bNewRequisition=true
-                                   ImageHeight="500"
-                                   ImageWidth="500" />
-
-                <textarea readonly rows="6" cols="60" class="form-control mt-2">@EmailSendStatus</textarea>
+                <div class="row g-3 mt-3">
+                    <div class="col-md-6">
+                        <label for="ReceiveDate" class="form-label">Receive Date</label>
+                        <InputDate id="ReceiveDate" class="form-control" @bind-Value="Record.ReceiveInfo.ReceiveDate" />
+                    </div>
+                    <div class="col-md-6">
+                        <UploadImageHelper UploadedImages="@Record.ReceiveInfo.SupportDocuments"
+                                           SelectionType=UploadImageHelper.ESelectionType.None
+                                           Orientation="UploadImageHelper.EOrientation.Vertical"
+                                           bNewRequisition=true
+                                           ImageHeight="500"
+                                           ImageWidth="500" />
+                    </div>
+                    <div class="col-12 mt-2">
+                        <textarea readonly rows="6" class="form-control">@EmailSendStatus</textarea>
+                    </div>
+                </div>
             }
         </div>
     </div>
@@ -258,7 +275,6 @@
                                    bNewRequisition=true
                                    ImageHeight="500"
                                    ImageWidth="500" />
-
                 @if (Record.InvoiceInfo.PaymentStatus == EPaymentStatus.PendingInvoice)
                 {
                     <button type="button" class="btn btn-primary mt-3" @onclick="ToFinance">Route To Finance</button>
@@ -274,11 +290,10 @@
         <button type="submit" class="btn btn-primary">Save</button>
         <button type="button" class="btn btn-secondary ms-2" @onclick="ResetForm">Reset</button>
         <button type="button" class="btn btn-outline-dark ms-2" @onclick="DownloadPdf">Download PDF</button>
+        <button type="button" class="btn btn-outline-dark ms-2" @onclick="SendEmailToSupplier">Send Email</button>
     </div>
-
 </EditForm>
-
-
+</div>
 @code {
 
 
@@ -607,11 +622,75 @@
         if (string.IsNullOrEmpty(Record.PO_ID))
         {
 
-            await JS.InvokeVoidAsync("Error", "Please submit your PO first");
+            await JS.InvokeVoidAsync("alert", "Please submit your PO first");
         }
         var pdfBytes = await Http.GetByteArrayAsync($"api/pdf/purchase/{Record.PO_ID}");
         var base64 = Convert.ToBase64String(pdfBytes);
         await JS.InvokeVoidAsync("downloadFileFromBase64", $"PurchaseOrder-{Record.PO_ID}.pdf", base64);
     }
-    
+    private async Task SendEmailToSupplier()
+    {
+        if (string.IsNullOrEmpty(Record.PO_ID))
+        {
+            await JS.InvokeVoidAsync("alert", "Please submit your PO first");
+            return;
+        }
+
+        // Step 1: Download PDF as byte array
+        var pdfBytes = await Http.GetByteArrayAsync($"api/pdf/purchase/{Record.PO_ID}");
+        var base64Pdf = Convert.ToBase64String(pdfBytes);
+
+        // Step 1: Prepare email list
+        var mainEmailList = new List<string> { Record.supplieremail };
+        var ccList = new List<string>();
+
+        if (!mainEmailList.Any(e => !string.IsNullOrWhiteSpace(e)))
+        {
+            EmailSendStatus = "⚠️ No recipient email, email not sent.";
+            Console.WriteLine(EmailSendStatus);
+            return;
+        }
+
+        // Step 3: Create EmailRequest with attachment
+        var emailRequest = new EmailRequest
+        {
+            To = mainEmailList,
+            Cc = ccList,
+            Subject = $"Purchase Order #{Record.PO_ID}",
+            Body = "This PO is computer generated. No signature required.",
+            IsHtml = false,
+            Attachments = new List<EmailAttachment>
+        {
+            new EmailAttachment
+            {
+                FileName = $"PurchaseOrder-{Record.PO_ID}.pdf",
+                Base64Content = base64Pdf
+            }
+        }
+        };
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/email/send", emailRequest);
+
+            if (response.IsSuccessStatusCode)
+            {
+                EmailSendStatus = $"✅ PO email sent successfully to {string.Join(", ", mainEmailList)}";
+                Console.WriteLine(EmailSendStatus);
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"❌ Failed to send email: {response.StatusCode} - {error}");
+                EmailSendStatus = $"❌ Failed to send email: {response.StatusCode}";
+            }
+            await JS.InvokeVoidAsync("alert", $"Email sent to {Record.supplieremail}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Exception sending email: {ex.Message}");
+            EmailSendStatus = $"❌ Exception: {ex.Message}";
+        }
+        
+    }
 }

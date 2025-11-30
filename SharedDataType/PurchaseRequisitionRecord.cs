@@ -44,6 +44,7 @@ namespace PurchaseBlazorApp2.Components.Data
 
     public enum EPRStatus
     {
+        Cancel,
         PendingRequest,
         ApprovedRequests,
         PendingDelivery,
@@ -105,7 +106,12 @@ namespace PurchaseBlazorApp2.Components.Data
         public string DisplayName => $"{ID}:{Name}";
     }
 
-
+    public class EmailAttachment
+    {
+        public string FileName { get; set; } = string.Empty;
+       
+        public string Base64Content{ get; set; } 
+    }
     public class EmailRequest
     {
         public List<string> To { get; set; } = new();
@@ -113,6 +119,7 @@ namespace PurchaseBlazorApp2.Components.Data
         public string Subject { get; set; } = string.Empty;
         public string Body { get; set; } = string.Empty;
         public bool IsHtml { get; set; } = false;
+        public List<EmailAttachment> Attachments { get; set; } = new();
     }
     public class DeliveryDateUpdateRequest
     {
@@ -377,6 +384,11 @@ namespace PurchaseBlazorApp2.Components.Data
 
         public void OnUpdatePRStatus()
         {
+            // if already cancel dont ever change it
+            if(prstatus==EPRStatus.Cancel)
+            {
+                return;
+            }
             prstatus = EPRStatus.ApprovedRequests;
             if (Approvals.Count > 0)
             {

@@ -28,7 +28,8 @@ namespace PurchaseBlazorApp2.Controller
                 ccRecipients: request.Cc,
                 subject: request.Subject,
                 body: request.Body,
-                isHtml: request.IsHtml
+                isHtml: request.IsHtml,
+                attachments:request.Attachments
             );
             
 
