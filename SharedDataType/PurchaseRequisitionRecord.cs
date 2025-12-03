@@ -13,6 +13,11 @@ namespace PurchaseBlazorApp2.Components.Data
 
     }
 
+    public enum EHRRole
+    {
+        Manager,
+        None
+    }
     public enum EDepartment
     {
         NotSpecified,
@@ -44,11 +49,11 @@ namespace PurchaseBlazorApp2.Components.Data
 
     public enum EPRStatus
     {
-        Cancel,
         PendingRequest,
         ApprovedRequests,
         PendingDelivery,
         ItemsReceived,
+        Cancel,
         Close
     }
 
@@ -98,6 +103,8 @@ namespace PurchaseBlazorApp2.Components.Data
 
         }
         public EDepartment Role { get; set; }
+
+        public EHRRole HRRole {  get; set; }
     }
     public class SupplierLookUpInfo
     {

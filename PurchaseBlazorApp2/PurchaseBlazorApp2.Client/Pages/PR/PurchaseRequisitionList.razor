@@ -126,7 +126,7 @@
     private bool IsLoading = true;
     private bool bProcurementOrFinance = false;
 
-    private EFilterPRType _FilterType = EFilterPRType.CreatedBy;
+    private EFilterPRType _FilterType = EFilterPRType.Approval;
     public EFilterPRType FilterType { get { return _FilterType; } set { _FilterType = value; OnSetFilterType(); } }
 
     protected override async Task OnInitializedAsync()

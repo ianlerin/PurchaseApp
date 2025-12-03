@@ -58,6 +58,17 @@
                     <span class="bi bi-box-arrow-right" aria-hidden="true"></span> Logout
                 </button>
             </div>
+
+            @if(bIsHRDepartment)
+            {
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="worker-info">
+                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> AddWorker
+                    </NavLink>
+                </div>
+
+            }
+
         }
 
     </nav>
@@ -65,6 +76,7 @@
 
 @code {
     bool bIsProcurementManager { get; set; } =false;
+    bool bIsHRDepartment { get; set; } = false;
     bool bIsUserLoaded { get; set; } = false;
     private CancellationTokenSource _cts = new();
 
@@ -78,21 +90,21 @@
            {
                var json = await JS.InvokeAsync<string>("getCookie", "userKey");
                if (!string.IsNullOrWhiteSpace(json))
-        {
-               var MyUser = System.Text.Json.JsonSerializer.Deserialize<UserName>(json);
+               {
+                   var MyUser = System.Text.Json.JsonSerializer.Deserialize<UserName>(json);
                    if (MyUser != null)
                    {
                        bIsUserLoaded = true;
                    }
-        }
-              
+               }
+
                await Task.Delay(2000);
-       }
+           }
 
 
-       await InvokeAsync(() =>
+           await InvokeAsync(() =>
        {
-        
+
            StateHasChanged();
        });
        });
@@ -107,6 +119,8 @@
                 EDepartment MyDepartment = await GeneralLibrary.GetCurrentDepartmentRole(JS);
                 bIsProcurementManager = (MyDepartment == EDepartment.ProcurementManager);
 
+                EHRRole HRRole = await GeneralLibrary.GetCurrentHRRole(JS);
+                bIsHRDepartment = HRRole == EHRRole.Manager;
                 // request UI update
                 await InvokeAsync(StateHasChanged);
             }

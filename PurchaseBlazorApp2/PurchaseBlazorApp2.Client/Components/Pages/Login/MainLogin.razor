@@ -130,20 +130,21 @@
                 await JS.InvokeVoidAsync("console.error", $"Error fetching auth state: {ex.Message}");
             }
         }
-
+        /*
         // Avoid rendering loop, force reload only if not in browser or no auth state
         if (!OperatingSystem.IsBrowser() || authState == null)
         {
             await Task.Delay(1000);
             NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
         }
+        */
     }
-   
+
     private void StartLogin()
     {
-    startLogin = true;
+        startLogin = true;
     }
-  
+
 
 
     private async Task HandleLogInSucceeded(RemoteAuthenticationState state)
@@ -191,8 +192,11 @@
                 NavigationManager.ToAbsoluteUri("api/login/getrole"),
                 email
             );
-
-            await Task.WhenAll(graphTask, existsTask, roleTask);
+            var hrroleTask = Http.PostAsJsonAsync(
+               NavigationManager.ToAbsoluteUri("api/login/gethrrole"),
+               email
+           );
+            await Task.WhenAll(graphTask, existsTask, roleTask, hrroleTask);
             // ---------- END PARALLEL ----------
 
             // --- HANDLE BACKEND EXISTENCE CHECK ---
@@ -215,6 +219,17 @@
                 await JS.InvokeVoidAsync("console.error", $"Error retrieving role: {ex.Message}");
             }
 
+            EHRRole HRRole = EHRRole.None;
+            try
+            {
+                var hrroleResponse = hrroleTask.Result;
+                HRRole = await hrroleResponse.Content.ReadFromJsonAsync<EHRRole>();
+            }
+            catch (Exception ex)
+            {
+                await JS.InvokeVoidAsync("console.error", $"Error retrieving role: {ex.Message}");
+            }
+
             // --- MICROSOFT GRAPH USER INFO ---
             var graph = graphTask.Result;
             string jobTitle = graph?.JobTitle ?? "(No Job Title)";
@@ -226,7 +241,9 @@
                 Role = departmentRole,
                 JobTitle = jobTitle,
                 Department = department,
+                HRRole=HRRole,
                 Email = email
+
             };
 
             // --- STORE COOKIE ---

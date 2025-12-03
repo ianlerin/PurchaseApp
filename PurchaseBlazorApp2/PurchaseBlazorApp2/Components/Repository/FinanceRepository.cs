@@ -52,7 +52,8 @@ namespace PurchaseBlazorApp2.Components.Repository
                     await transaction.CommitAsync();
 
 
-                 
+                    PORepository PORepository = new PORepository();
+                    await PORepository.UpdatePaymentStatus(info.PO_ID, info.PaymentStatus);
                     return true;
                 }
                 catch (Exception exInner)
@@ -107,22 +108,44 @@ namespace PurchaseBlazorApp2.Components.Repository
                     }
 
                     // 2️⃣ Insert new records
-                    foreach (ImageUploadInfo single in singleUpdate.SupportDocuments)
+                    if (singleUpdate.SupportDocuments.Count == 0)
                     {
+                        // Insert an empty row
                         using (var insertCmd = new NpgsqlCommand(@"
-                    INSERT INTO finance_item 
-                        (requisitionnumber, imagebyte, adddate, updatepercent, photoformat)
-                    VALUES 
-                        (@req, @doc, @adddate, @updatepercent, @format);",
+        INSERT INTO finance_item 
+            (requisitionnumber, imagebyte, adddate, updatepercent, photoformat)
+        VALUES 
+            (@req, @doc, @adddate, @updatepercent, @format);",
                             Connection, transaction))
                         {
                             insertCmd.Parameters.AddWithValue("@req", info.PO_ID ?? string.Empty);
-                            insertCmd.Parameters.AddWithValue("@doc", single.Data ?? Array.Empty<byte>());
+                            insertCmd.Parameters.AddWithValue("@doc", Array.Empty<byte>());
                             insertCmd.Parameters.AddWithValue("@adddate", singleUpdate.AddDate);
                             insertCmd.Parameters.AddWithValue("@updatepercent", updatePercent);
-                            insertCmd.Parameters.AddWithValue("@format", single.DataFormat ?? string.Empty);
+                            insertCmd.Parameters.AddWithValue("@format", string.Empty);
 
                             await insertCmd.ExecuteNonQueryAsync();
+                        }
+                    }
+                    else
+                    {
+                        foreach (ImageUploadInfo single in singleUpdate.SupportDocuments)
+                        {
+                            using (var insertCmd = new NpgsqlCommand(@"
+            INSERT INTO finance_item 
+                (requisitionnumber, imagebyte, adddate, updatepercent, photoformat)
+            VALUES 
+                (@req, @doc, @adddate, @updatepercent, @format);",
+                                Connection, transaction))
+                            {
+                                insertCmd.Parameters.AddWithValue("@req", info.PO_ID ?? string.Empty);
+                                insertCmd.Parameters.AddWithValue("@doc", single.Data ?? Array.Empty<byte>());
+                                insertCmd.Parameters.AddWithValue("@adddate", singleUpdate.AddDate);
+                                insertCmd.Parameters.AddWithValue("@updatepercent", updatePercent);
+                                insertCmd.Parameters.AddWithValue("@format", single.DataFormat ?? string.Empty);
+
+                                await insertCmd.ExecuteNonQueryAsync();
+                            }
                         }
                     }
                 }
@@ -219,8 +242,8 @@ namespace PurchaseBlazorApp2.Components.Repository
         }
 
         private async Task<Dictionary<decimal, FinanceRecordUpdate>> GetImagesByRequisitionNumber(
-            string requisitionNumber,
-            NpgsqlTransaction? externalTransaction = null)
+     string requisitionNumber,
+     NpgsqlTransaction? externalTransaction = null)
         {
             var result = new Dictionary<decimal, FinanceRecordUpdate>();
             bool shouldCloseConnection = false;
@@ -248,13 +271,10 @@ namespace PurchaseBlazorApp2.Components.Repository
                     decimal updatePercent = reader["updatepercent"] is decimal dec ? dec : 0m;
                     DateTime addDate = reader["adddate"] is DateTime dt ? dt : DateTime.Now;
 
-                    var image = new ImageUploadInfo
-                    {
-                        Data = reader["imagebyte"] as byte[] ?? Array.Empty<byte>(),
-                        DataFormat = reader["photoformat"]?.ToString() ?? string.Empty
-                    };
+                    byte[] bytes = reader["imagebyte"] as byte[] ?? Array.Empty<byte>();
+                    string format = reader["photoformat"]?.ToString() ?? "";
 
-                    // If key not found, create new entry
+                    // Always ensure this updatePercent exists
                     if (!result.TryGetValue(updatePercent, out var update))
                     {
                         update = new FinanceRecordUpdate
@@ -265,7 +285,16 @@ namespace PurchaseBlazorApp2.Components.Repository
                         result[updatePercent] = update;
                     }
 
-                    update.SupportDocuments.Add(image);
+                    // Only add image if real document exists
+                    bool isPlaceholder = bytes.Length == 0 && format == "";
+                    if (!isPlaceholder)
+                    {
+                        update.SupportDocuments.Add(new ImageUploadInfo
+                        {
+                            Data = bytes,
+                            DataFormat = format
+                        });
+                    }
                 }
 
                 return result;

@@ -35,7 +35,12 @@ namespace PurchaseBlazorApp2.Controller
             EDepartment Department = await CredentialRepository.TryGetRole(username);
             return Ok(Department);
         }
-
+        [HttpPost("gethrrole")]
+        public async Task<ActionResult<EHRRole>> GetHRRole([FromBody] string username)
+        {
+            EHRRole Department = await CredentialRepository.TryGetHRRole(username);
+            return Ok(Department);
+        }
         [HttpGet("checkexist/{username}")]
         public async Task<ActionResult<bool>> IfExist(string username)
         {
