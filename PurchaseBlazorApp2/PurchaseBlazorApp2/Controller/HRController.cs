@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using PurchaseBlazorApp2.Components.Repository;
+using WorkerRecord;
 
 namespace PurchaseBlazorApp2.Controller
 {
@@ -25,6 +26,17 @@ namespace PurchaseBlazorApp2.Controller
                 return Ok(new { message = "Worker saved successfully." });
 
             return StatusCode(500, new { message = "Failed to save worker." });
+        }
+
+        [HttpGet("GetWorkersByStatus/{status}")]
+        public async Task<IActionResult> GetWorkersByStatus(string status)
+        {
+            if (!Enum.TryParse<EWorkerStatus>(status, true, out var parsedStatus))
+                return BadRequest(new { message = "Invalid worker status." });
+
+            var workers = await _repo.GetWorkersByStatus(parsedStatus);
+
+            return Ok(workers);
         }
     }
 }

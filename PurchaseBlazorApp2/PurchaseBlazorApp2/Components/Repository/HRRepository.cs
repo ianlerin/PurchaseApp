@@ -2,7 +2,9 @@
 using PurchaseBlazorApp2.Client.Pages.HR;
 using PurchaseBlazorApp2.Components.Data;
 using PurchaseBlazorApp2.Resource;
+using ServiceStack.Messaging;
 using System.Data.Common;
+using WorkerRecord;
 
 namespace PurchaseBlazorApp2.Components.Repository
 {
@@ -72,6 +74,58 @@ namespace PurchaseBlazorApp2.Components.Repository
             {
                 Console.WriteLine("Worker Submit Error: " + ex);
                 return false;
+            }
+        }
+
+        public async Task<List<WorkerRecord.WorkerRecord>> GetWorkersByStatus(EWorkerStatus status)
+        {
+            List<WorkerRecord.WorkerRecord> results = new();
+
+            try
+            {
+                await using var conn = new NpgsqlConnection(GetConnectionString());
+                await conn.OpenAsync();
+
+                string sql = @"
+            SELECT id, name, passport, daily_rate, ot_rate, sunday_rate, monthly_rate, worker_status
+            FROM workerinfo
+            WHERE worker_status = @status;
+        ";
+
+                await using var cmd = new NpgsqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("@status", status.ToString());
+
+                await using var reader = await cmd.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    var rawStatus = reader["worker_status"].ToString() ?? "";
+
+                    var worker = new WorkerRecord.WorkerRecord
+                    {
+                        ID = reader["id"].ToString(),
+                        Name = reader["name"].ToString(),
+                        Passport = reader["passport"].ToString(),
+                        DailyRate = reader.GetDecimal(reader.GetOrdinal("daily_rate")),
+                        OTRate = reader.GetDecimal(reader.GetOrdinal("ot_rate")),
+                        SundayRate = reader.GetDecimal(reader.GetOrdinal("sunday_rate")),
+                        MonthlyRate = reader.GetDecimal(reader.GetOrdinal("monthly_rate")),
+
+                        // Convert string → enum safely
+                        WorkerStatus = Enum.TryParse<EWorkerStatus>(rawStatus, out var parsedStatus)
+                            ? parsedStatus
+                            : EWorkerStatus.Inactive
+                    };
+
+                    results.Add(worker);
+                }
+
+                return results;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("GetWorkersByStatus Error: " + ex);
+                return new List<WorkerRecord.WorkerRecord>();
             }
         }
 

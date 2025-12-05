@@ -1,0 +1,91 @@
+﻿@page "/page-info"
+@using WorkerRecord
+<h3>Wage Entry</h3>
+
+<div class="mb-3 row">
+    <label class="col-sm-2 col-form-label">Year:</label>
+    <div class="col-sm-2">
+        <input type="number" class="form-control" @bind="MyWageInfo.Year" />
+    </div>
+
+    <label class="col-sm-2 col-form-label">Month:</label>
+    <div class="col-sm-2">
+        <input type="number" class="form-control" @bind="MyWageInfo.Month" />
+    </div>
+</div>
+
+@if (MyWageInfo?.WageRecords == null || !MyWageInfo.WageRecords.Any())
+{
+    <p>No workers found.</p>
+}
+else
+{
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr>
+                <th>Worker ID</th>
+                <th>Daily Hours</th>
+                <th>OT Hours</th>
+                <th>Sunday Hours</th>
+                <th>Monthly Hours</th>
+                <th>Hourly Hours</th>
+                <th>Daily Rate</th>
+                <th>OT Rate</th>
+                <th>Sunday Rate</th>
+                <th>Monthly Rate</th>
+                <th>Hourly Rate</th>
+                <th>Total Wages</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var record in MyWageInfo.WageRecords)
+            {
+                <tr>
+                    <td>@record.ID</td>
+                    <td><input type="number" class="form-control" @bind="record.DailyHours" /></td>
+                    <td><input type="number" class="form-control" @bind="record.OTHours" /></td>
+                    <td><input type="number" class="form-control" @bind="record.SundayHours" /></td>
+                    <td><input type="number" class="form-control" @bind="record.MonthlyHours" /></td>
+                    <td><input type="number" class="form-control" @bind="record.HourlyHours" /></td>
+                    <td><input type="number" class="form-control" @bind="record.DailyRate" /></td>
+                    <td><input type="number" class="form-control" @bind="record.OTRate" /></td>
+                    <td><input type="number" class="form-control" @bind="record.SundayRate" /></td>
+                    <td><input type="number" class="form-control" @bind="record.MonthlyRate" /></td>
+                    <td><input type="number" class="form-control" @bind="record.HourlyRate" /></td>
+                    <td>@record.Total_wages</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    List<WorkerRecord> CurrentActiveWorkers { get; set; }
+    WageRecord MyWageInfo { get; set; } = new WageRecord();
+    [Inject]
+    private HttpClient Http { get; set; }
+    protected async override void OnInitialized()
+    {
+        await GetNewActiveWorkers();
+
+
+
+    }
+    private async Task GetNewActiveWorkers()
+    {
+        try
+        {
+            CurrentActiveWorkers = await Http.GetFromJsonAsync<List<WorkerRecord>>("api/Worker/GetActiveWorkers")
+                                        ?? new List<WorkerRecord>();
+
+            MyWageInfo.FormWageRecordFromWorkerRecords(CurrentActiveWorkers);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error retrieving active workers: " + ex);
+            CurrentActiveWorkers = new List<WorkerRecord>();
+        }
+    }
+
+    
+}
