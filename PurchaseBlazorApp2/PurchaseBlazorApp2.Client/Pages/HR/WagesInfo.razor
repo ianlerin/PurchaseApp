@@ -1,5 +1,7 @@
 ﻿@page "/page-info"
 @using WorkerRecord
+@inject NavigationManager NavigationManager
+
 <h3>Wage Entry</h3>
 
 <div class="mb-3 row">
@@ -20,43 +22,77 @@
 }
 else
 {
-    <table class="table table-striped table-bordered">
-        <thead>
-            <tr>
-                <th>Worker ID</th>
-                <th>Daily Hours</th>
-                <th>OT Hours</th>
-                <th>Sunday Hours</th>
-                <th>Monthly Hours</th>
-                <th>Hourly Hours</th>
-                <th>Daily Rate</th>
-                <th>OT Rate</th>
-                <th>Sunday Rate</th>
-                <th>Monthly Rate</th>
-                <th>Hourly Rate</th>
-                <th>Total Wages</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var record in MyWageInfo.WageRecords)
-            {
+    <div class="table-container">
+        <table class="table table-striped table-bordered wage-table">
+            <thead>
                 <tr>
-                    <td>@record.ID</td>
-                    <td><input type="number" class="form-control" @bind="record.DailyHours" /></td>
-                    <td><input type="number" class="form-control" @bind="record.OTHours" /></td>
-                    <td><input type="number" class="form-control" @bind="record.SundayHours" /></td>
-                    <td><input type="number" class="form-control" @bind="record.MonthlyHours" /></td>
-                    <td><input type="number" class="form-control" @bind="record.HourlyHours" /></td>
-                    <td><input type="number" class="form-control" @bind="record.DailyRate" /></td>
-                    <td><input type="number" class="form-control" @bind="record.OTRate" /></td>
-                    <td><input type="number" class="form-control" @bind="record.SundayRate" /></td>
-                    <td><input type="number" class="form-control" @bind="record.MonthlyRate" /></td>
-                    <td><input type="number" class="form-control" @bind="record.HourlyRate" /></td>
-                    <td>@record.Total_wages</td>
+                    <th>Worker Name</th>
+
+                    <!-- Daily -->
+                    <th class="col-daily">Daily Hours</th>
+                    <th class="col-daily">Daily Rate</th>
+                    <th class="col-daily">Daily Wages</th>
+                    <!-- OT -->
+                    <th class="col-ot">OT Hours</th>
+                    <th class="col-ot">OT Rate</th>
+                    <th class="col-ot">OT Wages</th>
+                    <!-- Sunday -->
+                    <th class="col-sunday">Sunday Hours</th>
+                    <th class="col-sunday">Sunday Rate</th>
+                    <th class="col-sunday">Sunday Wages</th>
+                    <!-- Monthly -->
+                    <th class="col-monthly">Monthly Hours</th>
+                    <th class="col-monthly">Monthly Rate</th>
+                    <th class="col-monthly">Monthly Wages</th>
+                    <!-- Hourly -->
+                    <th class="col-hourly">Hourly Hours</th>
+                    <th class="col-hourly">Hourly Rate</th>
+                    <th class="col-hourly">Hourly Wages</th>
+                    <th>Total Wages</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+
+            <tbody>
+                @foreach (var record in MyWageInfo.WageRecords)
+                {
+                    <tr>
+                        <td>@record.Name</td>
+
+                        <!-- Daily -->
+                        <td class="col-daily"><input type="number" class="form-control" @bind="record.DailyHours" /></td>
+                        <td class="col-daily"><input type="number" class="form-control" @bind="record.DailyRate" /></td>
+                        <td class="col-daily"><input type="number" class="form-control" @bind="record.Daily_wages" /></td>
+
+                        <!-- OT -->
+                        <td class="col-ot"><input type="number" class="form-control" @bind="record.OTHours" /></td>
+                        <td class="col-ot"><input type="number" class="form-control" @bind="record.OTRate" /></td>
+                        <td class="col-ot"><input type="number" class="form-control" @bind="record.OT_wages" /></td>
+
+                        <!-- Sunday -->
+                        <td class="col-sunday"><input type="number" class="form-control" @bind="record.SundayHours" /></td>
+                        <td class="col-sunday"><input type="number" class="form-control" @bind="record.SundayRate" /></td>
+                        <td class="col-sunday"><input type="number" class="form-control" @bind="record.Sunday_wages" /></td>
+
+                        <!-- Monthly -->
+                        <td class="col-monthly"><input type="number" class="form-control" @bind="record.MonthlyHours" /></td>
+                        <td class="col-monthly"><input type="number" class="form-control" @bind="record.MonthlyRate" /></td>
+                        <td class="col-monthly"><input type="number" class="form-control" @bind="record.Monthly_wages" /></td>
+
+                        <!-- Hourly -->
+                        <td class="col-hourly"><input type="number" class="form-control" @bind="record.HourlyHours" /></td>
+                        <td class="col-hourly"><input type="number" class="form-control" @bind="record.HourlyRate" /></td>
+                        <td class="col-hourly"><input type="number" class="form-control" @bind="record.Hourly_wages" /></td>
+
+                        <td>@record.Total_wages</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <button type="button" @onclick="InsertWageInfo" class="btn btn-success btn-lg">
+            Submit
+        </button>
+
+    </div>
 }
 
 @code {
@@ -64,6 +100,8 @@ else
     WageRecord MyWageInfo { get; set; } = new WageRecord();
     [Inject]
     private HttpClient Http { get; set; }
+    [Inject] 
+    private IJSRuntime JS { get; set; }
     protected async override void OnInitialized()
     {
         await GetNewActiveWorkers();
@@ -71,14 +109,43 @@ else
 
 
     }
+
+    private async Task InsertWageInfo()
+    {
+        try
+        {
+            var response = await Http.PostAsJsonAsync(
+                NavigationManager.ToAbsoluteUri("api/HR/InsertWagesInfo"),
+                MyWageInfo);
+
+            if (response.IsSuccessStatusCode)
+            {
+                await JS.InvokeVoidAsync("alert", "SubmitSuccess!");
+            }
+            else
+            {
+                // Read the error message from the response
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                await JS.InvokeVoidAsync("alert", $"SubmitFail! Reason: {errorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Handle unexpected exceptions
+            await JS.InvokeVoidAsync("alert", $"SubmitFail! Exception: {ex.Message}");
+        }
+    }
     private async Task GetNewActiveWorkers()
     {
         try
         {
-            CurrentActiveWorkers = await Http.GetFromJsonAsync<List<WorkerRecord>>("api/Worker/GetActiveWorkers")
-                                        ?? new List<WorkerRecord>();
+            // Call the updated API endpoint with the "Active" status
+            CurrentActiveWorkers = await Http.GetFromJsonAsync<List<WorkerRecord>>(
+                "api/HR/GetWorkersByStatus/Active"
+            ) ?? new List<WorkerRecord>();
 
             MyWageInfo.FormWageRecordFromWorkerRecords(CurrentActiveWorkers);
+            StateHasChanged();
         }
         catch (Exception ex)
         {

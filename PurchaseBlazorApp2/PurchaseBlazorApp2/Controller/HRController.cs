@@ -38,5 +38,24 @@ namespace PurchaseBlazorApp2.Controller
 
             return Ok(workers);
         }
+
+        [HttpPost("InsertWagesInfo")]
+        public IActionResult InsertWageRecord([FromBody] WageRecord WageInfo)
+        {
+            if (WageInfo.WageRecords == null || WageInfo.WageRecords == null || WageInfo.WageRecords.Count == 0)
+            {
+                return BadRequest("WageRecord data is empty or null.");
+            }
+
+            try
+            {
+                _repo.InsertWageRecord(WageInfo.Year, WageInfo.Month, WageInfo);
+                return Ok(new { Message = "Wage records inserted successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "Error inserting wage records.", Details = ex.Message });
+            }
+        }
     }
 }

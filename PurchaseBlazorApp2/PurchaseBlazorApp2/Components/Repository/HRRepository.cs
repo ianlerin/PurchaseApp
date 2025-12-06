@@ -65,7 +65,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                 cmd.Parameters.AddWithValue("@ot_rate", info.OTRate);
                 cmd.Parameters.AddWithValue("@sunday_rate", info.SundayRate);
                 cmd.Parameters.AddWithValue("@monthly_rate", info.MonthlyRate);
-                cmd.Parameters.AddWithValue("@worker_status", (int)info.WorkerStatus);
+                cmd.Parameters.AddWithValue("@worker_status", info.WorkerStatus.ToString());
 
                 int affected = await cmd.ExecuteNonQueryAsync();
                 return affected > 0;
@@ -129,5 +129,77 @@ namespace PurchaseBlazorApp2.Components.Repository
             }
         }
 
+        public void InsertWageRecord(int year, int month, WageRecord wageRecord)
+        {
+            if (wageRecord?.WageRecords == null || wageRecord.WageRecords.Count == 0)
+                return;
+
+            using var conn = new NpgsqlConnection(GetConnectionString());
+            conn.Open();
+
+            using var transaction = conn.BeginTransaction();
+
+            try
+            {
+                // 1. Delete existing records for the year and month
+                using (var deleteCmd = new NpgsqlCommand(
+                    "DELETE FROM wagesinfo WHERE year = @year AND month = @month", conn))
+                {
+                    deleteCmd.Parameters.AddWithValue("year", year);
+                    deleteCmd.Parameters.AddWithValue("month", month);
+                    deleteCmd.ExecuteNonQuery();
+                }
+
+                // 2. Insert new wage records
+                foreach (var record in wageRecord.WageRecords)
+                {
+                    using var insertCmd = new NpgsqlCommand(@"
+                    INSERT INTO wagesinfo (
+                        year, month, workerid, workername,
+                        daily_hours, ot_hours, sunday_hours, monthly_hours, hourly_hours,
+                        daily_rate, ot_rate, sunday_rate, monthly_rate, hourly_rate,
+                        daily_wages, ot_wages, sunday_wages, monthly_wages, hourly_wages, total_wages
+                    ) VALUES (
+                        @year, @month, @workerid, @workername,
+                        @daily_hours, @ot_hours, @sunday_hours, @monthly_hours, @hourly_hours,
+                        @daily_rate, @ot_rate, @sunday_rate, @monthly_rate, @hourly_rate,
+                        @daily_wages, @ot_wages, @sunday_wages, @monthly_wages, @hourly_wages, @total_wages
+                    )", conn);
+
+                    insertCmd.Parameters.AddWithValue("year", year);
+                    insertCmd.Parameters.AddWithValue("month", month);
+                    insertCmd.Parameters.AddWithValue("workerid", record.ID ?? string.Empty);
+                    insertCmd.Parameters.AddWithValue("workername", record.Name ?? string.Empty);
+
+                    insertCmd.Parameters.AddWithValue("daily_hours", record.DailyHours);
+                    insertCmd.Parameters.AddWithValue("ot_hours", record.OTHours);
+                    insertCmd.Parameters.AddWithValue("sunday_hours", record.SundayHours);
+                    insertCmd.Parameters.AddWithValue("monthly_hours", record.MonthlyHours);
+                    insertCmd.Parameters.AddWithValue("hourly_hours", record.HourlyHours);
+
+                    insertCmd.Parameters.AddWithValue("daily_rate", record.DailyRate);
+                    insertCmd.Parameters.AddWithValue("ot_rate", record.OTRate);
+                    insertCmd.Parameters.AddWithValue("sunday_rate", record.SundayRate);
+                    insertCmd.Parameters.AddWithValue("monthly_rate", record.MonthlyRate);
+                    insertCmd.Parameters.AddWithValue("hourly_rate", record.HourlyRate);
+
+                    insertCmd.Parameters.AddWithValue("daily_wages", record.Daily_wages);
+                    insertCmd.Parameters.AddWithValue("ot_wages", record.OT_wages);
+                    insertCmd.Parameters.AddWithValue("sunday_wages", record.Sunday_wages);
+                    insertCmd.Parameters.AddWithValue("monthly_wages", record.Monthly_wages);
+                    insertCmd.Parameters.AddWithValue("hourly_wages", record.Hourly_wages);
+                    insertCmd.Parameters.AddWithValue("total_wages", record.Total_wages);
+
+                    insertCmd.ExecuteNonQuery();
+                }
+
+                transaction.Commit();
+            }
+            catch(Exception ex)
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
     }
 }
