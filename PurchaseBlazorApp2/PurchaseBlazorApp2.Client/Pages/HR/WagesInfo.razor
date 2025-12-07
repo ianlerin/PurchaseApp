@@ -91,7 +91,9 @@ else
         <button type="button" @onclick="InsertWageInfo" class="btn btn-success btn-lg">
             Submit
         </button>
-
+        <button type="button" @onclick="DownloadPdf" class="btn btn-success btn-lg">
+            Download PDF
+        </button>
     </div>
 }
 
@@ -153,6 +155,16 @@ else
             CurrentActiveWorkers = new List<WorkerRecord>();
         }
     }
+    private async Task DownloadPdf()
+    {
+        if (MyWageInfo.WageRecords.Count == 0)
+        {
 
+            await JS.InvokeVoidAsync("alert", "Table is empty");
+        }
+        var pdfBytes = await Http.GetByteArrayAsync($"api/pdf/purchase?year={MyWageInfo.Year}&month={MyWageInfo.Month}");
+        var base64 = Convert.ToBase64String(pdfBytes);
+        await JS.InvokeVoidAsync("downloadFileFromBase64", $"Wages-{MyWageInfo.Year}-{MyWageInfo.Month}.pdf", base64);
+    }
     
 }

@@ -30,8 +30,8 @@ namespace PurchaseBlazorApp2.Components.Repository
         {
             try
             {
-                string ID=info.ID;
-               
+                string ID = info.ID;
+
                 await using var conn = new NpgsqlConnection(GetConnectionString());
                 await conn.OpenAsync();
                 if (string.IsNullOrEmpty(ID))
@@ -195,11 +195,98 @@ namespace PurchaseBlazorApp2.Components.Repository
 
                 transaction.Commit();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 transaction.Rollback();
                 throw;
             }
         }
+
+        public async Task<WageRecord> GetWageRecordAsync(int year, int month)
+        {
+            var result = new WageRecord
+            {
+                Year = year,
+                Month = month,
+                WageRecords = new List<SingleWageRecord>()
+            };
+
+            try
+            {
+                await using var conn = new NpgsqlConnection(GetConnectionString());
+                await conn.OpenAsync();
+
+                await using var cmd = new NpgsqlCommand(@"
+            SELECT 
+                workerid, workername,
+                daily_hours, ot_hours, sunday_hours, monthly_hours, hourly_hours,
+                daily_rate, ot_rate, sunday_rate, monthly_rate, hourly_rate,
+                daily_wages, ot_wages, sunday_wages, monthly_wages, hourly_wages, total_wages
+            FROM wagesinfo
+            WHERE year = @year AND month = @month
+            ORDER BY workername ASC;
+        ", conn);
+
+                cmd.Parameters.AddWithValue("year", year);
+                cmd.Parameters.AddWithValue("month", month);
+
+                await using var reader = await cmd.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    try
+                    {
+                        var record = new SingleWageRecord
+                        {
+                            ID = reader["workerid"]?.ToString() ?? "",
+                            Name = reader["workername"]?.ToString() ?? "",
+
+                            DailyHours = reader.GetDecimal(reader.GetOrdinal("daily_hours")),
+                            OTHours = reader.GetDecimal(reader.GetOrdinal("ot_hours")),
+                            SundayHours = reader.GetDecimal(reader.GetOrdinal("sunday_hours")),
+                            MonthlyHours = reader.GetDecimal(reader.GetOrdinal("monthly_hours")),
+                            HourlyHours = reader.GetDecimal(reader.GetOrdinal("hourly_hours")),
+                            
+                            DailyRate = reader.GetDecimal(reader.GetOrdinal("daily_rate")),
+                            OTRate = reader.GetDecimal(reader.GetOrdinal("ot_rate")),
+                            SundayRate = reader.GetDecimal(reader.GetOrdinal("sunday_rate")),
+                            MonthlyRate = reader.GetDecimal(reader.GetOrdinal("monthly_rate")),
+                            HourlyRate = reader.GetDecimal(reader.GetOrdinal("hourly_rate")),
+                            
+                            Daily_wages = reader.GetDecimal(reader.GetOrdinal("daily_wages")),
+                            OT_wages = reader.GetDecimal(reader.GetOrdinal("ot_wages")),
+                            Sunday_wages = reader.GetDecimal(reader.GetOrdinal("sunday_wages")),
+                            Monthly_wages = reader.GetDecimal(reader.GetOrdinal("monthly_wages")),
+                            Hourly_wages = reader.GetDecimal(reader.GetOrdinal("hourly_wages")),
+                            Total_wages = reader.GetDecimal(reader.GetOrdinal("total_wages"))
+                          
+                            };
+
+                        result.WageRecords.Add(record);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log the specific record read error
+                        Console.WriteLine($"Failed to read a wage record: {ex.Message}");
+                        // Optionally continue to next record
+                    }
+                }
+            }
+            catch (NpgsqlException ex)
+            {
+                // Log database-specific errors
+                Console.WriteLine($"Database error: {ex.Message}");
+                throw; // Re-throw if you want the caller to handle it
+            }
+            catch (Exception ex)
+            {
+                // Log any other errors
+                Console.WriteLine($"Unexpected error: {ex.Message}");
+                throw;
+            }
+
+            return result;
+        }
     }
-}
+
+    }
