@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using PurchaseBlazorApp2.Components.Data;
 using PurchaseBlazorApp2.Components.Repository;
+using PurchaseBlazorApp2.Service;
+using WorkerRecord;
 
 namespace PurchaseBlazorApp2.Controller
 {
@@ -24,6 +26,18 @@ namespace PurchaseBlazorApp2.Controller
 
             var pdfBytes = new POPDFHelper().GeneratePurchaseOrderPdf(PO, RequestedItems);
             return File(pdfBytes, "application/pdf", $"PurchaseOrder-{PO.PO_ID}.pdf");
+        }
+        [HttpGet("purchase")]
+        public async Task<IActionResult> GenerateWagesPDF(int year,int month)
+        {
+            // Fetch your PO from DB based on poId
+            HRRepository Repo = new HRRepository();
+            WageRecord Record = await Repo.GetWageRecordAsync(year,month);
+
+            if (Record.WageRecords.Count == 0) return NotFound();
+          
+            var pdfBytes = new HRPDFHelper().GenerateWagePdf(Record);
+            return File(pdfBytes, "application/pdf", $"Wages-{Record.Year}.{Record.Month}.pdf");
         }
     }
 }

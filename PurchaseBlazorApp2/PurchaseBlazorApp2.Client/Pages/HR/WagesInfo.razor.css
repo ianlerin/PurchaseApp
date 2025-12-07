@@ -1,0 +1,47 @@
+﻿body {
+
+}
+/* DAILY */
+.col-daily {
+    background-color: #e1f0ff !important; /* light blue */
+    border: 2px solid #7db3ff !important; /* blue border */
+}
+
+/* OT */
+.col-ot {
+    background-color: #ffe1e1 !important; /* light pink */
+    border: 2px solid #ff9b9b !important; /* red/pink border */
+}
+
+/* SUNDAY */
+.col-sunday {
+    background-color: #fff4d1 !important; /* light yellow/orange */
+    border: 2px solid #ffcd6b !important; /* darker orange */
+}
+
+/* MONTHLY */
+.col-monthly {
+    background-color: #e9ffe1 !important; /* light green */
+    border: 2px solid #8de68a !important; /* stronger green */
+}
+
+/* HOURLY */
+.col-hourly {
+    background-color: #f0e6ff !important; /* light purple */
+    border: 2px solid #b08cff !important; /* purple border */
+}
+
+.table-container {
+    overflow-x: auto; /* horizontal scroll if table is wider than container */
+}
+
+.wage-table {
+    min-width: max-content; /* ensures table doesn't shrink below content width */
+    table-layout: fixed; /* fixed width columns */
+}
+
+    .wage-table th,
+    .wage-table td {
+        width: 120px; /* fixed width for all cells */
+        text-align: center; /* optional, makes it look nicer */
+    }

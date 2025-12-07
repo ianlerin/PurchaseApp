@@ -208,6 +208,35 @@ namespace PurchaseBlazorApp2.Components.Repository
             }
         }
 
+        public async Task<EHRRole> TryGetHRRole(string userName)
+        {
+            try
+            {
+                await Connection.OpenAsync();
 
+                using var cmd = new NpgsqlCommand(
+                    @"SELECT HRRole FROM credential WHERE username = @username LIMIT 1", Connection);
+
+                cmd.Parameters.AddWithValue("username", userName);
+
+                var result = await cmd.ExecuteScalarAsync();
+
+                if (result != null && Enum.TryParse<EHRRole>(result.ToString(), out var department))
+                {
+                    return department;
+                }
+
+                return EHRRole.None;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error fetching role: " + ex.Message);
+                return EHRRole.None;
+            }
+            finally
+            {
+                await Connection.CloseAsync();
+            }
+        }
     }
 }

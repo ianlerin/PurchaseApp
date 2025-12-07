@@ -1,0 +1,107 @@
+﻿@page "/worker-info"
+@using PurchaseBlazorApp2.Client.Pages.HR
+@using WorkerRecord
+@using System.Net.Http.Json
+@using System.Net.Http.Headers
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<h3 class="mb-4">Worker Information</h3>
+
+<div class="container">
+
+    <!-- Worker Info Card -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            Worker Details
+        </div>
+
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">Worker ID</label>
+                    <input class="form-control" @bind="Record.ID" readonly/>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Name</label>
+                    <input class="form-control" @bind="Record.Name" />
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">Passport No.</label>
+                    <input class="form-control" @bind="Record.Passport" />
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="Record.WorkerStatus" TEnum="EWorkerStatus" />
+                </div>                                                           
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Wages Info Card -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-success text-white">
+            Wages Information
+        </div>
+
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">Daily Rate (RM)</label>
+                    <input type="number" class="form-control" step="0.01" @bind="Record.DailyRate" />
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">OT Rate (RM)</label>
+                    <input type="number" class="form-control" step="0.01" @bind="Record.OTRate" />
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Sunday Rate (RM)</label>
+                    <input type="number" class="form-control" step="0.01" @bind="Record.SundayRate" />
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">Monthly Rate (RM)</label>
+                    <input type="number" class="form-control" step="0.01" @bind="Record.MonthlyRate" />
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Submit Button -->
+    <div class="mt-3">
+        <button class="btn btn-primary" @onclick="SubmitWorker">Submit Worker</button>
+    </div>
+</div>
+
+@code {
+    WorkerRecord Record = new WorkerRecord();
+    private async Task SubmitWorker()
+    {
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/HR/SubmitWorker", Record);
+
+            if (response.IsSuccessStatusCode)
+            {
+                await JS.InvokeVoidAsync("alert", "Worker saved successfully!");
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("alert", "Failed to save worker!");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Error: {ex.Message}");
+        }
+    }
+}

@@ -1,0 +1,170 @@
+﻿@page "/page-info"
+@using WorkerRecord
+@inject NavigationManager NavigationManager
+
+<h3>Wage Entry</h3>
+
+<div class="mb-3 row">
+    <label class="col-sm-2 col-form-label">Year:</label>
+    <div class="col-sm-2">
+        <input type="number" class="form-control" @bind="MyWageInfo.Year" />
+    </div>
+
+    <label class="col-sm-2 col-form-label">Month:</label>
+    <div class="col-sm-2">
+        <input type="number" class="form-control" @bind="MyWageInfo.Month" />
+    </div>
+</div>
+
+@if (MyWageInfo?.WageRecords == null || !MyWageInfo.WageRecords.Any())
+{
+    <p>No workers found.</p>
+}
+else
+{
+    <div class="table-container">
+        <table class="table table-striped table-bordered wage-table">
+            <thead>
+                <tr>
+                    <th>Worker Name</th>
+
+                    <!-- Daily -->
+                    <th class="col-daily">Daily Hours</th>
+                    <th class="col-daily">Daily Rate</th>
+                    <th class="col-daily">Daily Wages</th>
+                    <!-- OT -->
+                    <th class="col-ot">OT Hours</th>
+                    <th class="col-ot">OT Rate</th>
+                    <th class="col-ot">OT Wages</th>
+                    <!-- Sunday -->
+                    <th class="col-sunday">Sunday Hours</th>
+                    <th class="col-sunday">Sunday Rate</th>
+                    <th class="col-sunday">Sunday Wages</th>
+                    <!-- Monthly -->
+                    <th class="col-monthly">Monthly Hours</th>
+                    <th class="col-monthly">Monthly Rate</th>
+                    <th class="col-monthly">Monthly Wages</th>
+                    <!-- Hourly -->
+                    <th class="col-hourly">Hourly Hours</th>
+                    <th class="col-hourly">Hourly Rate</th>
+                    <th class="col-hourly">Hourly Wages</th>
+                    <th>Total Wages</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var record in MyWageInfo.WageRecords)
+                {
+                    <tr>
+                        <td>@record.Name</td>
+
+                        <!-- Daily -->
+                        <td class="col-daily"><input type="number" class="form-control" @bind="record.DailyHours" /></td>
+                        <td class="col-daily"><input type="number" class="form-control" @bind="record.DailyRate" /></td>
+                        <td class="col-daily"><input type="number" class="form-control" @bind="record.Daily_wages" /></td>
+
+                        <!-- OT -->
+                        <td class="col-ot"><input type="number" class="form-control" @bind="record.OTHours" /></td>
+                        <td class="col-ot"><input type="number" class="form-control" @bind="record.OTRate" /></td>
+                        <td class="col-ot"><input type="number" class="form-control" @bind="record.OT_wages" /></td>
+
+                        <!-- Sunday -->
+                        <td class="col-sunday"><input type="number" class="form-control" @bind="record.SundayHours" /></td>
+                        <td class="col-sunday"><input type="number" class="form-control" @bind="record.SundayRate" /></td>
+                        <td class="col-sunday"><input type="number" class="form-control" @bind="record.Sunday_wages" /></td>
+
+                        <!-- Monthly -->
+                        <td class="col-monthly"><input type="number" class="form-control" @bind="record.MonthlyHours" /></td>
+                        <td class="col-monthly"><input type="number" class="form-control" @bind="record.MonthlyRate" /></td>
+                        <td class="col-monthly"><input type="number" class="form-control" @bind="record.Monthly_wages" /></td>
+
+                        <!-- Hourly -->
+                        <td class="col-hourly"><input type="number" class="form-control" @bind="record.HourlyHours" /></td>
+                        <td class="col-hourly"><input type="number" class="form-control" @bind="record.HourlyRate" /></td>
+                        <td class="col-hourly"><input type="number" class="form-control" @bind="record.Hourly_wages" /></td>
+
+                        <td>@record.Total_wages</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <button type="button" @onclick="InsertWageInfo" class="btn btn-success btn-lg">
+            Submit
+        </button>
+        <button type="button" @onclick="DownloadPdf" class="btn btn-success btn-lg">
+            Download PDF
+        </button>
+    </div>
+}
+
+@code {
+    List<WorkerRecord> CurrentActiveWorkers { get; set; }
+    WageRecord MyWageInfo { get; set; } = new WageRecord();
+    [Inject]
+    private HttpClient Http { get; set; }
+    [Inject] 
+    private IJSRuntime JS { get; set; }
+    protected async override void OnInitialized()
+    {
+        await GetNewActiveWorkers();
+
+
+
+    }
+
+    private async Task InsertWageInfo()
+    {
+        try
+        {
+            var response = await Http.PostAsJsonAsync(
+                NavigationManager.ToAbsoluteUri("api/HR/InsertWagesInfo"),
+                MyWageInfo);
+
+            if (response.IsSuccessStatusCode)
+            {
+                await JS.InvokeVoidAsync("alert", "SubmitSuccess!");
+            }
+            else
+            {
+                // Read the error message from the response
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                await JS.InvokeVoidAsync("alert", $"SubmitFail! Reason: {errorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Handle unexpected exceptions
+            await JS.InvokeVoidAsync("alert", $"SubmitFail! Exception: {ex.Message}");
+        }
+    }
+    private async Task GetNewActiveWorkers()
+    {
+        try
+        {
+            // Call the updated API endpoint with the "Active" status
+            CurrentActiveWorkers = await Http.GetFromJsonAsync<List<WorkerRecord>>(
+                "api/HR/GetWorkersByStatus/Active"
+            ) ?? new List<WorkerRecord>();
+
+            MyWageInfo.FormWageRecordFromWorkerRecords(CurrentActiveWorkers);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error retrieving active workers: " + ex);
+            CurrentActiveWorkers = new List<WorkerRecord>();
+        }
+    }
+    private async Task DownloadPdf()
+    {
+        if (MyWageInfo.WageRecords.Count == 0)
+        {
+
+            await JS.InvokeVoidAsync("alert", "Table is empty");
+        }
+        var pdfBytes = await Http.GetByteArrayAsync($"api/pdf/purchase?year={MyWageInfo.Year}&month={MyWageInfo.Month}");
+        var base64 = Convert.ToBase64String(pdfBytes);
+        await JS.InvokeVoidAsync("downloadFileFromBase64", $"Wages-{MyWageInfo.Year}-{MyWageInfo.Month}.pdf", base64);
+    }
+    
+}
