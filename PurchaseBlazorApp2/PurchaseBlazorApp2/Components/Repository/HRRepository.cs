@@ -77,6 +77,8 @@ namespace PurchaseBlazorApp2.Components.Repository
             }
         }
 
+
+
         public async Task<List<WorkerRecord.WorkerRecord>> GetWorkersByStatus(EWorkerStatus status)
         {
             List<WorkerRecord.WorkerRecord> results = new();

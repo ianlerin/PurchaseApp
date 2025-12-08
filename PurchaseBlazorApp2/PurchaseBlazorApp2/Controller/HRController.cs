@@ -39,6 +39,28 @@ namespace PurchaseBlazorApp2.Controller
             return Ok(workers);
         }
 
+
+        [HttpGet("GetWagesInfo")]
+        public async Task<IActionResult> GetWagesInfo([FromQuery] int year, [FromQuery] int month)
+        {
+            try
+            {
+
+                var data = await _repo.GetWageRecordAsync(year, month);
+
+                if (data == null || data.WageRecords.Count == 0)
+                    return NotFound(new { Message = "No wage records found." });
+
+                return Ok(data);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "Error retrieving wage info.", Details = ex.Message });
+
+            }
+        }
+
+
         [HttpPost("InsertWagesInfo")]
         public IActionResult InsertWageRecord([FromBody] WageRecord WageInfo)
         {
