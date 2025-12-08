@@ -94,6 +94,12 @@ else
         <button type="button" @onclick="DownloadPdf" class="btn btn-success btn-lg">
             Download PDF
         </button>
+        <div class="col-sm-2">
+            <button type="button" @onclick="SearchWageInfo" class="btn btn-primary" btn-lg">
+                Search
+            </button>
+
+        </div>
     </div>
 }
 
@@ -111,6 +117,30 @@ else
 
 
     }
+
+    private async Task SearchWageInfo()
+    {
+        try
+        {
+            var result = await Http.GetFromJsonAsync<WageRecord>(
+                $"api/HR/GetWagesInfo?year={MyWageInfo.Year}&month={MyWageInfo.Month}");
+
+            if (result != null)
+            {
+                MyWageInfo = result;
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("alert", "No data found.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Search failed: {ex.Message}");
+        }
+    }
+
+
 
     private async Task InsertWageInfo()
     {
