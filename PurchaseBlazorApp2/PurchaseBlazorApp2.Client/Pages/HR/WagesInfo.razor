@@ -136,7 +136,7 @@ else
         }
         catch (Exception ex)
         {
-            await JS.InvokeVoidAsync("alert", $"Search failed: {ex.Message}");
+            await JS.InvokeVoidAsync("alert", "No data found for the selected year and month");
         }
     }
 
