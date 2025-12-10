@@ -13,7 +13,7 @@ namespace PurchaseBlazorApp2.Components.Repository
         private NpgsqlConnection Connection;
         public HRRepository()
         {
-            Connection = new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432; User Id=postgres; Password=password; Database=Genesis_HR");
+            Connection = new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432; User Id=postgres; Password=password; Database=purchase");
 
         }
         private string GetConnectionString()
@@ -23,8 +23,8 @@ namespace PurchaseBlazorApp2.Components.Repository
             Port=5432;
             User Id=postgres;
             Password=password;
-            Database=Genesis_HR
-        ";
+            Database=purchase
+            ";
         }
         public async Task<bool> Submit(WorkerRecord.WorkerRecord info)
         {
@@ -36,25 +36,29 @@ namespace PurchaseBlazorApp2.Components.Repository
                 await conn.OpenAsync();
                 if (string.IsNullOrEmpty(ID))
                 {
-                    await using var seqCmd = new NpgsqlCommand("SELECT nextval('worker_info_id')", conn);
+                    // FIX: Added 'hr.' prefix to find the sequence
+                    string seqSql = "SELECT nextval('hr.worker_info_id')";
+
+                    await using var seqCmd = new NpgsqlCommand(seqSql, conn);
                     var nextVal = await seqCmd.ExecuteScalarAsync();
+
                     ID = $"Worker{nextVal}";
                 }
 
                 string sql = @"
-            INSERT INTO workerinfo
-            (id, name, passport, daily_rate, ot_rate, sunday_rate, monthly_rate, worker_status)
-            VALUES
-            (@id, @name, @passport, @daily_rate, @ot_rate, @sunday_rate, @monthly_rate, @worker_status)
-            ON CONFLICT(id) DO UPDATE SET
-                name = EXCLUDED.name,
-                passport = EXCLUDED.passport,
-                daily_rate = EXCLUDED.daily_rate,
-                ot_rate = EXCLUDED.ot_rate,
-                sunday_rate = EXCLUDED.sunday_rate,
-                monthly_rate = EXCLUDED.monthly_rate,
-                worker_status = EXCLUDED.worker_status;
-        ";
+                                INSERT INTO hr.workerinfo
+                                (id, name, passport, daily_rate, ot_rate, sunday_rate, monthly_rate, worker_status)
+                                VALUES
+                                (@id, @name, @passport, @daily_rate, @ot_rate, @sunday_rate, @monthly_rate, @worker_status)
+                                ON CONFLICT(id) DO UPDATE SET
+                                    name = EXCLUDED.name,
+                                    passport = EXCLUDED.passport,
+                                    daily_rate = EXCLUDED.daily_rate,
+                                    ot_rate = EXCLUDED.ot_rate,
+                                    sunday_rate = EXCLUDED.sunday_rate,
+                                    monthly_rate = EXCLUDED.monthly_rate,
+                                    worker_status = EXCLUDED.worker_status;
+                            ";
 
                 await using var cmd = new NpgsqlCommand(sql, conn);
 
@@ -89,10 +93,10 @@ namespace PurchaseBlazorApp2.Components.Repository
                 await conn.OpenAsync();
 
                 string sql = @"
-            SELECT id, name, passport, daily_rate, ot_rate, sunday_rate, monthly_rate, worker_status
-            FROM workerinfo
-            WHERE worker_status = @status;
-        ";
+                                SELECT id, name, passport, daily_rate, ot_rate, sunday_rate, monthly_rate, worker_status
+                                FROM hr.workerinfo
+                                WHERE worker_status = @status;
+                            ";
 
                 await using var cmd = new NpgsqlCommand(sql, conn);
                 cmd.Parameters.AddWithValue("@status", status.ToString());
@@ -145,7 +149,7 @@ namespace PurchaseBlazorApp2.Components.Repository
             {
                 // 1. Delete existing records for the year and month
                 using (var deleteCmd = new NpgsqlCommand(
-                    "DELETE FROM wagesinfo WHERE year = @year AND month = @month", conn))
+                    "DELETE FROM hr.wagesinfo WHERE year = @year AND month = @month", conn))
                 {
                     deleteCmd.Parameters.AddWithValue("year", year);
                     deleteCmd.Parameters.AddWithValue("month", month);
@@ -156,7 +160,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                 foreach (var record in wageRecord.WageRecords)
                 {
                     using var insertCmd = new NpgsqlCommand(@"
-                    INSERT INTO wagesinfo (
+                    INSERT INTO hr.wagesinfo (
                         year, month, workerid, workername,
                         daily_hours, ot_hours, sunday_hours, monthly_hours, hourly_hours,
                         daily_rate, ot_rate, sunday_rate, monthly_rate, hourly_rate,
@@ -219,15 +223,15 @@ namespace PurchaseBlazorApp2.Components.Repository
                 await conn.OpenAsync();
 
                 await using var cmd = new NpgsqlCommand(@"
-            SELECT 
-                workerid, workername,
-                daily_hours, ot_hours, sunday_hours, monthly_hours, hourly_hours,
-                daily_rate, ot_rate, sunday_rate, monthly_rate, hourly_rate,
-                daily_wages, ot_wages, sunday_wages, monthly_wages, hourly_wages, total_wages
-            FROM wagesinfo
-            WHERE year = @year AND month = @month
-            ORDER BY workername ASC;
-        ", conn);
+                                                            SELECT 
+                                                                workerid, workername,
+                                                                daily_hours, ot_hours, sunday_hours, monthly_hours, hourly_hours,
+                                                                daily_rate, ot_rate, sunday_rate, monthly_rate, hourly_rate,
+                                                                daily_wages, ot_wages, sunday_wages, monthly_wages, hourly_wages, total_wages
+                                                            FROM hr.wagesinfo
+                                                            WHERE year = @year AND month = @month
+                                                            ORDER BY workername ASC;
+                                                        ", conn);
 
                 cmd.Parameters.AddWithValue("year", year);
                 cmd.Parameters.AddWithValue("month", month);
