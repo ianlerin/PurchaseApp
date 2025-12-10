@@ -1,0 +1,8 @@
+# Database Change Log
+
+#11 Dec 2025 - Alex
+### Schema update
+- added hr schema
+- added new tables under hr (wagesinfo, workerinfo)
+
+
