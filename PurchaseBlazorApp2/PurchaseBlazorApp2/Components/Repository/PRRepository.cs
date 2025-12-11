@@ -346,8 +346,8 @@ namespace PurchaseBlazorApp2.Components.Repository
             }
             finally
             {
-                if (shouldCloseConnection)
-                    await MyConnection.CloseAsync();
+               
+                 await MyConnection.CloseAsync();
             }
         }
 

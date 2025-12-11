@@ -53,11 +53,6 @@
 
 
 
-            <div class="nav-item" style="padding: 0 1rem;">
-                <button class="btn btn-danger w-100" @onclick="Logout">
-                    <span class="bi bi-box-arrow-right" aria-hidden="true"></span> Logout
-                </button>
-            </div>
 
             @if(bIsHRDepartment)
             {
@@ -75,6 +70,11 @@
 
         }
 
+        <div class="nav-item" style="padding: 0 1rem;">
+            <button class="btn btn-danger w-100" @onclick="Logout">
+                <span class="bi bi-box-arrow-right" aria-hidden="true"></span> Logout
+            </button>
+        </div>
     </nav>
 </div>
 
