@@ -1,6 +1,14 @@
 # Database Change Log
 
 #11 Dec 2025 - Alex
+### Table update
+- dropped jobtitle and department
+- rename role to user_role
+- rename hrrole to hr_role
+- added new credentials for whole team
+- added new worker data and wages data
+
+#11 Dec 2025 - Alex
 ### Schema update
 - added hr schema
 - added new tables under hr (wagesinfo, workerinfo)
