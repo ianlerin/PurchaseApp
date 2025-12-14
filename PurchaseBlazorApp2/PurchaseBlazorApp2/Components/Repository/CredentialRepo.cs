@@ -29,12 +29,11 @@ namespace PurchaseBlazorApp2.Components.Repository
                 await Connection.OpenAsync();
 
                 using var cmd = new NpgsqlCommand(
-                    @"INSERT INTO credential (username, password, role) 
-              VALUES (@username, @password, @role)", Connection);
+                    @"INSERT INTO credential (username, user_role) 
+                    VALUES (@username, @user_role)", Connection);
 
                 cmd.Parameters.AddWithValue("username", info.Name);
-                cmd.Parameters.AddWithValue("password", info.Password);
-                cmd.Parameters.AddWithValue("role", info.Role.ToString());
+                cmd.Parameters.AddWithValue("user_role", info.Role.ToString());
 
                 int affectedRows = await cmd.ExecuteNonQueryAsync();
 
@@ -117,17 +116,17 @@ namespace PurchaseBlazorApp2.Components.Repository
 
                 for (int i = 0; i < departments.Count; i++)
                 {
-                    string paramName = $"role{i}";
+                    string paramName = $"user_role{i}";
                     parameters.Add($"@{paramName}");
                     cmd.Parameters.AddWithValue(paramName, departments[i].ToString());
                 }
 
                 cmd.CommandText = $@"
-            SELECT username 
-            FROM credential
-            WHERE role IN ({string.Join(",", parameters)}) 
-            AND username IS NOT NULL 
-            AND username <> ''";
+                                SELECT username 
+                                FROM credential
+                                WHERE user_role IN ({string.Join(",", parameters)}) 
+                                AND username IS NOT NULL 
+                                AND username <> ''";
 
                 using var reader = await cmd.ExecuteReaderAsync();
 
@@ -155,9 +154,9 @@ namespace PurchaseBlazorApp2.Components.Repository
                 await Connection.OpenAsync();
 
                 string query = @"
-            SELECT COUNT(*) 
-            FROM credential
-            WHERE username = @username;";
+                            SELECT COUNT(*) 
+                            FROM credential
+                            WHERE username = @username;";
 
                 using var cmd = new NpgsqlCommand(query, Connection);
                 cmd.Parameters.AddWithValue("@username", username);
@@ -184,7 +183,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                 await Connection.OpenAsync();
 
                 using var cmd = new NpgsqlCommand(
-                    @"SELECT role FROM credential WHERE username = @username LIMIT 1", Connection);
+                    @"SELECT user_role FROM credential WHERE username = @username LIMIT 1", Connection);
 
                 cmd.Parameters.AddWithValue("username", userName);
 
@@ -215,7 +214,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                 await Connection.OpenAsync();
 
                 using var cmd = new NpgsqlCommand(
-                    @"SELECT HRRole FROM credential WHERE username = @username LIMIT 1", Connection);
+                    @"SELECT hr_role FROM credential WHERE username = @username LIMIT 1", Connection);
 
                 cmd.Parameters.AddWithValue("username", userName);
 
