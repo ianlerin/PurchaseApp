@@ -1,0 +1,113 @@
+﻿@page "/worker"
+@using WorkerRecord
+@inject NavigationManager NavigationManager
+
+<h3>Worker Info</h3>
+
+<div class="mb-3 row">
+    <div class="col-sm-2">
+        <input type="text" class="form-control" placeholder="Filter by worker name"
+               @bind="FilterName" />
+    </div>
+</div>
+
+@if (Workers == null || !Workers.Any())
+{
+    <p>No workers found.</p>
+}
+else
+{
+    <div class="table-container">
+        <table class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Passport</th>
+                    <th>Status</th>
+                    <th>Daily Rate</th>
+                    <th>OT Rate</th>
+                    <th>Sunday Rate</th>
+                    <th>Monthly Rate</th>
+                    
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var worker in Workers.Where(w => string.IsNullOrWhiteSpace(FilterName)
+                            || w.Name.Contains(FilterName, StringComparison.OrdinalIgnoreCase)))
+                {
+                    <tr>
+                        <td>@worker.ID</td>
+                        <td><input type="text" class="form-control" @bind="worker.Name" /></td>
+                        <td><input type="text" class="form-control" @bind="worker.Passport" /></td>
+                        <td><input type="text"  class="form-control"@bind="worker.WorkerStatus" /></td>
+                        <td><input type="number" class="form-control" step="0.01" @bind="worker.DailyRate" /></td>
+                        <td><input type="number" class="form-control" step="0.01" @bind="worker.OTRate" /></td>
+                        <td><input type="number" class="form-control" step="0.01" @bind="worker.SundayRate" /></td>
+                        <td><input type="number" class="form-control" step="0.01" @bind="worker.MonthlyRate" /></td>
+                        
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <button class="btn btn-primary" @onclick="SubmitWorker">Submit Worker
+           
+        </button>
+    </div>
+}
+
+@code {
+    List<WorkerRecord> Workers = new List<WorkerRecord>();
+    string FilterName = "";
+    [Inject]
+    private HttpClient Http { get; set; }
+    [Inject]
+    private IJSRuntime JS { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadWorkers();
+    }
+
+    private async Task LoadWorkers()
+    {
+        try
+        {
+            Workers = await Http.GetFromJsonAsync<List<WorkerRecord>>("api/HR/GetWorkersByStatus/Active");
+
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Failed to load workers: {ex.Message}");
+            Workers = new List<WorkerRecord>();
+        }
+    }
+
+    private async Task SubmitWorker()
+    {
+        try
+        {
+            foreach (var worker in Workers)
+            {
+                var response = await Http.PostAsJsonAsync("api/HR/SubmitWorker", worker);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorMessage = await response.Content.ReadAsStringAsync();
+                    await JS.InvokeVoidAsync("alert", $"SubmitFail! Reason: {errorMessage}");
+                
+                }
+            }
+
+            await JS.InvokeVoidAsync("alert", "SubmitSuccess!");
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"SubmitFail! Exception: {ex.Message}");
+        }
+    }
+
+}
+
+
+
