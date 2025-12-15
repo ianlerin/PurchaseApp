@@ -40,7 +40,10 @@ else
                         <td>@worker.ID</td>
                         <td><input type="text" class="form-control" @bind="worker.Name" /></td>
                         <td><input type="text" class="form-control" @bind="worker.Passport" /></td>
-                        <td><input type="text"  class="form-control"@bind="worker.WorkerStatus" /></td>
+                        <td><select class="form-select" @bind="worker.WorkerStatus">
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option></select>
+                        </td>
                         <td><input type="number" class="form-control" step="0.01" @bind="worker.DailyRate" /></td>
                         <td><input type="number" class="form-control" step="0.01" @bind="worker.OTRate" /></td>
                         <td><input type="number" class="form-control" step="0.01" @bind="worker.SundayRate" /></td>
@@ -60,7 +63,7 @@ else
     List<WorkerRecord> Workers = new List<WorkerRecord>();
     string FilterName = "";
     [Inject]
-    private HttpClient Http { get; set; }
+    private HttpClient Http { get; set; } 
     [Inject]
     private IJSRuntime JS { get; set; }
 
