@@ -11,9 +11,12 @@
     </div>
 
     <div class="col-sm-2">
-        <input type="text" class="form-control" placeholder="Filter by Status"
-               @bind="FilterStatus" />
+        <select class="form-select" @bind="FilterStatus">
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+        </select>
     </div>
+
 </div>
 
 @if (Workers == null || !Workers.Any())
@@ -40,8 +43,8 @@ else
             <tbody>
                 @foreach (var worker in Workers.Where(w =>
                             (string.IsNullOrWhiteSpace(FilterName) || w.Name.Contains(FilterName, StringComparison.OrdinalIgnoreCase)) &&
-                            (string.IsNullOrWhiteSpace(FilterStatus) || w.WorkerStatus.ToString().Equals(FilterStatus, StringComparison.OrdinalIgnoreCase))
-                         ))
+                            (string.IsNullOrWhiteSpace(FilterStatus) || w.WorkerStatus.ToString() == FilterStatus)))
+                         
                 {
                     <tr>
                         <td>@worker.ID</td>
