@@ -79,5 +79,16 @@ namespace PurchaseBlazorApp2.Controller
                 return StatusCode(500, new { Message = "Error inserting wage records.", Details = ex.Message });
             }
         }
+
+        [HttpGet("GetAllWorkers")]
+        public async Task<IActionResult> GetAllWorkers()
+        {
+            var activeWorkers = await _repo.GetWorkersByStatus(EWorkerStatus.Active);
+            var inactiveWorkers = await _repo.GetWorkersByStatus(EWorkerStatus.Inactive);
+
+            var allWorkers = activeWorkers.Concat(inactiveWorkers).ToList();
+            return Ok(allWorkers);
+        }
+
     }
 }

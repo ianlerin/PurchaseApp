@@ -9,6 +9,11 @@
         <input type="text" class="form-control" placeholder="Filter by worker name"
                @bind="FilterName" />
     </div>
+
+    <div class="col-sm-2">
+        <input type="text" class="form-control" placeholder="Filter by Status"
+               @bind="FilterStatus" />
+    </div>
 </div>
 
 @if (Workers == null || !Workers.Any())
@@ -33,8 +38,10 @@ else
                 </tr>
             </thead>
             <tbody>
-                @foreach (var worker in Workers.Where(w => string.IsNullOrWhiteSpace(FilterName)
-                            || w.Name.Contains(FilterName, StringComparison.OrdinalIgnoreCase)))
+                @foreach (var worker in Workers.Where(w =>
+                            (string.IsNullOrWhiteSpace(FilterName) || w.Name.Contains(FilterName, StringComparison.OrdinalIgnoreCase)) &&
+                            (string.IsNullOrWhiteSpace(FilterStatus) || w.WorkerStatus.ToString().Equals(FilterStatus, StringComparison.OrdinalIgnoreCase))
+                         ))
                 {
                     <tr>
                         <td>@worker.ID</td>
@@ -62,6 +69,8 @@ else
 @code {
     List<WorkerRecord> Workers = new List<WorkerRecord>();
     string FilterName = "";
+    string FilterStatus = "";
+
     [Inject]
     private HttpClient Http { get; set; } 
     [Inject]
@@ -76,7 +85,7 @@ else
     {
         try
         {
-            Workers = await Http.GetFromJsonAsync<List<WorkerRecord>>("api/HR/GetWorkersByStatus/Active");
+            Workers = await Http.GetFromJsonAsync<List<WorkerRecord>>("api/HR/GetAllWorkers");
 
         }
         catch (Exception ex)

@@ -173,7 +173,7 @@ else
         {
             // Call the updated API endpoint with the "Active" status
             CurrentActiveWorkers = await Http.GetFromJsonAsync<List<WorkerRecord>>(
-                "api/HR/GetWorkersByStatus/Active"
+                "api/HR/GetAllWorkers"
             ) ?? new List<WorkerRecord>();
 
             MyWageInfo.FormWageRecordFromWorkerRecords(CurrentActiveWorkers);
