@@ -25,12 +25,21 @@
             else
             {
                 <div style="overflow-x:auto;">
+                    @if(bProcurementOrFinance)
+                    {
+                        <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="SearchFilterType"
+                                                                                     TEnum="PurchaseBlazorApp2.Components.Data.EPRSearchStatus">
+                        </PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox>
 
-                    <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="FilterType"
-                                                                                 TEnum="PurchaseBlazorApp2.Components.Data.EFilterPRType">
-                    </PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox>
-
-
+                    }
+                    else
+                    {
+                        <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="FilterType"
+                                                                                     TEnum="PurchaseBlazorApp2.Components.Data.EFilterPRType">
+                        </PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox>
+                    }
+                  
+                  
                     <RadzenDataGrid Data="@Records"
                     TItem="PurchaseRequisitionRecord"
                     AllowSorting="true"
@@ -129,6 +138,9 @@
     private EFilterPRType _FilterType = EFilterPRType.Approval;
     public EFilterPRType FilterType { get { return _FilterType; } set { _FilterType = value; OnSetFilterType(); } }
 
+    private EPRSearchStatus _SearchFilterType = EPRSearchStatus.Partial;
+    public EPRSearchStatus SearchFilterType { get { return _SearchFilterType; } set { _SearchFilterType = value; OnSetFilterType(); } }
+
     protected override async Task OnInitializedAsync()
     {
         await ReloadList();
@@ -165,7 +177,7 @@
             {
                 response = await Http.PostAsJsonAsync(
                     NavigationManager.ToAbsoluteUri("api/pr/get-list-partial-all"),
-                    new List<PurchaseRequisitionRecord>());
+                   SearchFilterType);
 
             }
             else if (MyDepartment == EDepartment.Finance)

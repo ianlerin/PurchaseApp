@@ -1,4 +1,5 @@
 ﻿@page "/page-info"
+@using PurchaseBlazorApp2.Components.Data
 @using WorkerRecord
 @inject NavigationManager NavigationManager
 
@@ -94,16 +95,18 @@ else
                 }
             </tbody>
         </table>
-        <button type="button" @onclick="InsertWageInfo" class="btn btn-success btn-lg">
-            Submit
-        </button>
-        <button type="button" @onclick="DownloadPdf" class="btn btn-success btn-lg">
-            Download PDF
-        </button>
+       
         <div class="col-sm-2">
-            <button type="button" @onclick="SearchWageInfo" class="btn btn-primary" btn-lg">
+            <button type="button" @onclick="InsertWageInfo" class="btn btn-success btn-lg">
+                Submit
+            </button>
+            <button type="button" @onclick="SearchWageInfo" class="btn btn-success btn-lg" >
                 Search
             </button>
+            <button type="button" @onclick="DownloadPdf" class="btn btn-success btn-lg">
+                Download PDF
+            </button>
+           
 
         </div>
     </div>
@@ -119,8 +122,7 @@ else
     private IJSRuntime JS { get; set; }
     protected async override void OnInitialized()
     {
-        await GetNewActiveWorkers();
-
+        await SearchWageInfo();
 
 
     }
@@ -138,13 +140,16 @@ else
             }
             else
             {
+
                 await JS.InvokeVoidAsync("alert", "No data found.");
             }
         }
         catch (Exception ex)
-        {
+        { 
+            await GetNewActiveWorkers(EWorkerStatus.Active);
             await JS.InvokeVoidAsync("alert", "No data found for the selected year and month");
         }
+        StateHasChanged();
     }
 
 
@@ -174,21 +179,21 @@ else
             await JS.InvokeVoidAsync("alert", $"SubmitFail! Exception: {ex.Message}");
         }
     }
-    private async Task GetNewActiveWorkers()
+    private async Task GetNewActiveWorkers(EWorkerStatus status)
     {
         try
         {
-            // Call the updated API endpoint with the "Active" status
-            CurrentActiveWorkers = await Http.GetFromJsonAsync<List<WorkerRecord>>(
-                "api/HR/GetAllWorkers"
-            ) ?? new List<WorkerRecord>();
+            var url = $"api/HR/GetAllWorkers?status={status}";
+
+            CurrentActiveWorkers = await Http.GetFromJsonAsync<List<WorkerRecord>>(url)
+                ?? new List<WorkerRecord>();
 
             MyWageInfo.FormWageRecordFromWorkerRecords(CurrentActiveWorkers);
             StateHasChanged();
         }
         catch (Exception ex)
         {
-            Console.WriteLine("Error retrieving active workers: " + ex);
+            Console.WriteLine($"Error retrieving {status} workers: {ex}");
             CurrentActiveWorkers = new List<WorkerRecord>();
         }
     }
@@ -199,7 +204,27 @@ else
 
             await JS.InvokeVoidAsync("alert", "Table is empty");
         }
-        var pdfBytes = await Http.GetByteArrayAsync($"api/pdf/purchase?year={MyWageInfo.Year}&month={MyWageInfo.Month}");
+        GenerateWagesPdfRequest wagesPdfRequest = new GenerateWagesPdfRequest();
+        wagesPdfRequest.Year = MyWageInfo.Year;
+        wagesPdfRequest.Month = MyWageInfo.Month;
+        var json = await JS.InvokeAsync<string>("getCookie", "userKey");
+        if (!string.IsNullOrWhiteSpace(json))
+        {
+            try
+            {
+                UserName restoredUser = System.Text.Json.JsonSerializer.Deserialize<UserName>(json);
+                wagesPdfRequest.MyUser = restoredUser;
+            }
+            catch(Exception ex)
+            {
+
+            }
+        }
+      
+        
+        var response = await Http.PostAsJsonAsync("api/pdf/purchase", wagesPdfRequest);
+        byte[] pdfBytes = await response.Content.ReadAsByteArrayAsync();
+        //var pdfBytes = await Http.GetByteArrayAsync($"api/pdf/purchase?year={MyWageInfo.Year}&month={MyWageInfo.Month}");
         var base64 = Convert.ToBase64String(pdfBytes);
         await JS.InvokeVoidAsync("downloadFileFromBase64", $"Wages-{MyWageInfo.Year}-{MyWageInfo.Month}.pdf", base64);
     }

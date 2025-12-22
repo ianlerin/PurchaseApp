@@ -27,16 +27,16 @@ namespace PurchaseBlazorApp2.Controller
             var pdfBytes = new POPDFHelper().GeneratePurchaseOrderPdf(PO, RequestedItems);
             return File(pdfBytes, "application/pdf", $"PurchaseOrder-{PO.PO_ID}.pdf");
         }
-        [HttpGet("purchase")]
-        public async Task<IActionResult> GenerateWagesPDF(int year,int month)
+        [HttpPost("purchase")]
+        public async Task<IActionResult> GenerateWagesPDF(GenerateWagesPdfRequest WagesRequest)
         {
             // Fetch your PO from DB based on poId
             HRRepository Repo = new HRRepository();
-            WageRecord Record = await Repo.GetWageRecordAsync(year,month);
+            WageRecord Record = await Repo.GetWageRecordAsync(WagesRequest.Year, WagesRequest.Month);
 
             if (Record.WageRecords.Count == 0) return NotFound();
           
-            var pdfBytes = new HRPDFHelper().GenerateWagePdf(Record);
+            var pdfBytes = new HRPDFHelper().GenerateWagePdf(Record, WagesRequest.MyUser);
             return File(pdfBytes, "application/pdf", $"Wages-{Record.Year}.{Record.Month}.pdf");
         }
     }

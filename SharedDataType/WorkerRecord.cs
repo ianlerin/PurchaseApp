@@ -1,4 +1,5 @@
-﻿using System;
+﻿using PurchaseBlazorApp2.Components.Data;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,7 +10,15 @@ namespace WorkerRecord
 {
     public enum EWorkerStatus
     {
-        Active,Inactive
+        Active,Inactive,All
+    }
+
+
+    public class GenerateWagesPdfRequest
+    {
+        public int Year { get; set; }
+        public int Month { get; set; }
+        public UserName MyUser { get; set; }
     }
     public class WorkerRecord
     {

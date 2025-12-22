@@ -1,4 +1,5 @@
-﻿using QuestPDF.Fluent;
+﻿using PurchaseBlazorApp2.Components.Data;
+using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using WorkerRecord;
@@ -7,7 +8,7 @@ namespace PurchaseBlazorApp2.Service
 {
     public class HRPDFHelper
     {
-        public byte[] GenerateWagePdf(WageRecord info)
+        public byte[] GenerateWagePdf(WageRecord info,UserName MyUser)
         {
             var document = Document.Create(container =>
             {
@@ -17,16 +18,19 @@ namespace PurchaseBlazorApp2.Service
                     page.Margin(30);
                     page.DefaultTextStyle(x => x.FontSize(10));
 
-                    // ====== PAGE CONTENT =======
                     page.Content().Column(col =>
                     {
                         col.Spacing(10);
 
-                        // ===== NEW HEADER =====
-                        col.Item().Text($"Wages {info.Year}/{info.Month:D2} (LCDA MSB Pineapple SDN BHD)")
-                             .FontSize(16).Bold().AlignCenter();
+                        // ===== HEADER =====
                         col.Item()
-                           .PaddingBottom(10) // Apply padding at container level
+                           .Text($"Wages {info.Year}/{info.Month:D2} (LCDA MSB Pineapple SDN BHD)")
+                           .FontSize(16)
+                           .Bold()
+                           .AlignCenter();
+
+                        col.Item()
+                           .PaddingBottom(10)
                            .Text("GENERAL WORKER (PLANTING + DIPPING)")
                            .FontSize(12)
                            .Bold()
@@ -35,27 +39,29 @@ namespace PurchaseBlazorApp2.Service
                         // ===== TABLE =====
                         BuildWageTable(col, info.WageRecords);
 
-                        // ===== SIGNATURE SECTION =====
-                        col.Item().PaddingTop(20).Row(row =>
-                        {
-                            row.RelativeItem().Column(c =>
-                            {
-                                c.Item().Text("Prepared By").Bold();
-                                c.Item().PaddingTop(30).Text("____________________________");
-                                c.Item().PaddingTop(5).Text("Name:");
-                                c.Item().Text("Date:");
-                            });
+                        // ===== SIGNATURE SECTION (NO PAGE SPLIT) =====
+                        col.Item()
+                           .PaddingTop(20)
+                           .ShowEntire() // ⬅ keeps the whole block on one page
+                           .Row(row =>
+                           {
+                               row.RelativeItem().Column(c =>
+                               {
+                                   c.Item().Text("Prepared By").Bold();
+                                   c.Item().PaddingTop(30).Text("____________________________");
+                                   c.Item().PaddingTop(5).Text($"Name:{MyUser.Name}");
+                                   c.Item().Text($"Date: {DateTime.Now:dd/MM/yyyy}");
+                               });
 
-                            row.RelativeItem().Column(c =>
-                            {
-                                c.Item().Text("Approved By").Bold();
-                                c.Item().PaddingTop(30).Text("____________________________");
-                                c.Item().PaddingTop(5).Text("Name:");
-                                c.Item().Text("Date:");
-                            });
-                        });
+                               row.RelativeItem().Column(c =>
+                               {
+                                   c.Item().Text("Approved By").Bold();
+                                   c.Item().PaddingTop(30).Text("____________________________");
+                                   c.Item().PaddingTop(5).Text("Name:");
+                                   c.Item().Text("Date:");
+                               });
+                           });
                     });
-
                 });
             });
 

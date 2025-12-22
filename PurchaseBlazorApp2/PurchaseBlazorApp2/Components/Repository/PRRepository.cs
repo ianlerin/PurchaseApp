@@ -97,148 +97,174 @@ namespace PurchaseBlazorApp2.Components.Repository
                 Console.WriteLine("InsertInfoOfBasicInfo: " + ex.Message);
             }
         }
-
-        public async Task<List<PurchaseRequisitionRecord>> GetRecordsForListAsync(List<string> requisitionNumbers = null)
+        public Task<List<PurchaseRequisitionRecord>> GetPartialRecordsForListAsync(
+   List<string>? requisitionNumbers = null)
         {
-            var ToReturn = new List<PurchaseRequisitionRecord>();
+            string query = @"
+        SELECT requisitionnumber, requestdate, prstatus, approvalstatus,
+               burgent, deliverydate, paymentstatus, po_id
+        FROM prtable
+        WHERE prstatus <> 'Cancel'
+          AND paymentstatus <> 'Paid'";
+
+            var command = new NpgsqlCommand();
+
+            if (requisitionNumbers != null && requisitionNumbers.Count > 0)
+            {
+                var paramNames = new List<string>();
+
+                for (int i = 0; i < requisitionNumbers.Count; i++)
+                {
+                    string paramName = $"@id{i}";
+                    paramNames.Add(paramName);
+                    command.Parameters.AddWithValue(paramName, requisitionNumbers[i]);
+                }
+
+                query += $" AND requisitionnumber IN ({string.Join(", ", paramNames)})";
+            }
+
+            command.CommandText = query;
+
+            return ExecutePRListCommandAsync(command);
+        }
+        public Task<List<PurchaseRequisitionRecord>> GetAllRecordsForListAsync(
+      List<string>? requisitionNumbers = null)
+        {
+            string query = @"
+        SELECT requisitionnumber, requestdate, prstatus, approvalstatus,
+               burgent, deliverydate, paymentstatus, po_id
+        FROM prtable";
+
+            var command = new NpgsqlCommand();
+
+            if (requisitionNumbers != null && requisitionNumbers.Count > 0)
+            {
+                var paramNames = new List<string>();
+
+                for (int i = 0; i < requisitionNumbers.Count; i++)
+                {
+                    string paramName = $"@id{i}";
+                    paramNames.Add(paramName);
+                    command.Parameters.AddWithValue(paramName, requisitionNumbers[i]);
+                }
+
+                query += $" WHERE requisitionnumber IN ({string.Join(", ", paramNames)})";
+            }
+
+            command.CommandText = query;
+
+            return ExecutePRListCommandAsync(command);
+        }
+
+        private async Task<List<PurchaseRequisitionRecord>> ExecutePRListCommandAsync(
+    NpgsqlCommand command)
+        {
+            var result = new List<PurchaseRequisitionRecord>();
 
             try
             {
+                command.Connection = Connection;
                 await Connection.OpenAsync();
 
-                string query = @"
-            SELECT requisitionnumber, requestdate, prstatus, approvalstatus, burgent, deliverydate, paymentstatus, po_id 
-            FROM prtable
-            WHERE prstatus <> 'Cancel'
-              AND paymentstatus <> 'Paid'";
+                using var reader = await command.ExecuteReaderAsync();
 
-                using (var command = new NpgsqlCommand { Connection = Connection })
+                while (await reader.ReadAsync())
                 {
-                    if (requisitionNumbers != null && requisitionNumbers.Count > 0)
-                    {
-                        var paramNames = new List<string>();
-                        for (int i = 0; i < requisitionNumbers.Count; i++)
-                        {
-                            string paramName = $"@id{i}";
-                            paramNames.Add(paramName);
-                            command.Parameters.AddWithValue(paramName, requisitionNumbers[i]);
-                        }
-
-                        string inClause = string.Join(", ", paramNames);
-                        query += $" AND requisitionnumber IN ({inClause})"; // Use AND instead of WHERE
-                    }
-
-                    command.CommandText = query;
-
-                    using (var reader = await command.ExecuteReaderAsync())
-                    {
-                        while (await reader.ReadAsync())
-                        {
-                            var MainInfo = new PurchaseRequisitionRecord
-                            {
-                                RequisitionNumber = reader["requisitionnumber"]?.ToString() ?? string.Empty,
-                                RequestDate = reader["requestdate"] != DBNull.Value ? (DateTime)reader["requestdate"] : default,
-                                DeliveryDate = reader["deliverydate"] != DBNull.Value ? (DateTime)reader["deliverydate"] : default,
-                                burgent = reader["burgent"] != DBNull.Value && (bool)reader["burgent"],
-                                po_id = reader["po_id"]?.ToString() ?? string.Empty
-                            };
-
-                            if (Enum.TryParse(reader["prstatus"]?.ToString() ?? string.Empty, out EPRStatus prStatus))
-                                MainInfo.prstatus = prStatus;
-
-                            if (Enum.TryParse(reader["approvalstatus"]?.ToString() ?? string.Empty, out EApprovalStatus approvalStatus))
-                                MainInfo.approvalstatus = approvalStatus;
-
-                            if (Enum.TryParse(reader["paymentstatus"]?.ToString() ?? string.Empty, out EPaymentStatus paymentStatus))
-                                MainInfo.paymentstatus = paymentStatus;
-
-                            MainInfo.ItemRequested = await GetRequestedItemByRequisitionNumber(MainInfo.RequisitionNumber, "pr_requestitem_table");
-
-                            ToReturn.Add(MainInfo);
-                        }
-                    }
+                    var record = await MapPRRecordAsync(reader);
+                    result.Add(record);
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"GetRecordsForListAsync Exception: {ex.Message}");
+                Console.WriteLine($"ExecutePRListCommandAsync Exception: {ex.Message}");
             }
             finally
             {
                 await Connection.CloseAsync();
             }
 
-            return ToReturn;
+            return result;
         }
-
-        public async Task<List<PurchaseRequisitionRecord>> GetAllRecordsForListAsync()
+        public Task<List<PurchaseRequisitionRecord>> GetAllRecordsForListAsync()
         {
-            var ToReturn = new List<PurchaseRequisitionRecord>();
+            var command = new NpgsqlCommand(@"
+        SELECT requisitionnumber, requestdate, prstatus, approvalstatus,
+               burgent, deliverydate, paymentstatus, po_id
+        FROM prtable");
+
+            return ExecutePRListCommandAsync(command);
+        }
+        public Task<List<PurchaseRequisitionRecord>> GetPartialRecordsForListAsync()
+        {
+            var command = new NpgsqlCommand(@"
+        SELECT requisitionnumber, requestdate, prstatus, approvalstatus,
+               burgent, deliverydate, paymentstatus, po_id
+        FROM prtable
+        WHERE prstatus <> 'Cancel'
+          AND paymentstatus <> 'Paid'");
+
+            return ExecutePRListCommandAsync(command);
+        }
+        private async Task<List<PurchaseRequisitionRecord>> ExecutePRListQueryAsync(string query)
+        {
+            var result = new List<PurchaseRequisitionRecord>();
 
             try
             {
                 await Connection.OpenAsync();
 
-                string query = @"
-            SELECT requisitionnumber, requestdate, prstatus, approvalstatus, burgent, deliverydate, paymentstatus, po_id 
-            FROM prtable
-            WHERE prstatus <> 'Cancel'
-              AND paymentstatus <> 'Paid'";
+                using var command = new NpgsqlCommand(query, Connection);
+                using var reader = await command.ExecuteReaderAsync();
 
-                var command = new NpgsqlCommand { Connection = Connection };
-
-                command.CommandText = query;
-
-                using (var reader = await command.ExecuteReaderAsync())
+                while (await reader.ReadAsync())
                 {
-                    while (await reader.ReadAsync())
-                    {
-                        var MainInfo = new PurchaseRequisitionRecord();
-
-                        MainInfo.RequisitionNumber = reader["requisitionnumber"]?.ToString() ?? string.Empty;
-
-                        // requestdate
-                        if (reader["requestdate"] != DBNull.Value)
-                            MainInfo.RequestDate = (DateTime)reader["requestdate"];
-
-                        if (reader["deliverydate"] != DBNull.Value)
-                            MainInfo.DeliveryDate = (DateTime)reader["deliverydate"];
-
-                        // prstatus enum
-                        if (Enum.TryParse(reader["prstatus"]?.ToString() ?? string.Empty, out EPRStatus prStatus))
-                            MainInfo.prstatus = prStatus;
-
-                        // approvalstatus enum
-                        if (Enum.TryParse(reader["approvalstatus"]?.ToString() ?? string.Empty, out EApprovalStatus approvalStatus))
-                            MainInfo.approvalstatus = approvalStatus;
-
-                        if (Enum.TryParse(reader["paymentstatus"]?.ToString() ?? string.Empty, out EPaymentStatus paymentStatus))
-                            MainInfo.paymentstatus = paymentStatus;
-
-
-                        // burgent bool
-                        MainInfo.burgent = reader["burgent"] != DBNull.Value && (bool)reader["burgent"];
-                        MainInfo.po_id = reader["po_id"]?.ToString() ?? string.Empty;
-                        MainInfo.ItemRequested = await GetRequestedItemByRequisitionNumber(MainInfo.RequisitionNumber, "pr_requestitem_table");
-                        ToReturn.Add(MainInfo);
-                    }
+                    var record = await MapPRRecordAsync(reader);
+                    result.Add(record);
                 }
-
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"GetRecordsForListAsync Exception: {ex.Message}");
-                return ToReturn;
+                Console.WriteLine($"ExecutePRListQueryAsync Exception: {ex.Message}");
             }
             finally
             {
                 await Connection.CloseAsync();
             }
 
-            return ToReturn;
+            return result;
         }
 
+        private async Task<PurchaseRequisitionRecord> MapPRRecordAsync(NpgsqlDataReader reader)
+        {
+            var record = new PurchaseRequisitionRecord();
 
+            record.RequisitionNumber = reader["requisitionnumber"]?.ToString() ?? string.Empty;
+
+            if (reader["requestdate"] != DBNull.Value)
+                record.RequestDate = (DateTime)reader["requestdate"];
+
+            if (reader["deliverydate"] != DBNull.Value)
+                record.DeliveryDate = (DateTime)reader["deliverydate"];
+
+            if (Enum.TryParse(reader["prstatus"]?.ToString(), out EPRStatus prStatus))
+                record.prstatus = prStatus;
+
+            if (Enum.TryParse(reader["approvalstatus"]?.ToString(), out EApprovalStatus approvalStatus))
+                record.approvalstatus = approvalStatus;
+
+            if (Enum.TryParse(reader["paymentstatus"]?.ToString(), out EPaymentStatus paymentStatus))
+                record.paymentstatus = paymentStatus;
+
+            record.burgent = reader["burgent"] != DBNull.Value && (bool)reader["burgent"];
+            record.po_id = reader["po_id"]?.ToString() ?? string.Empty;
+
+            record.ItemRequested =
+                await GetRequestedItemByRequisitionNumber(
+                    record.RequisitionNumber,
+                    "pr_requestitem_table");
+
+            return record;
+        }
 
         public async Task<List<PurchaseRequisitionRecord>> GetRecordsAsync(List<string> requisitionNumbers = null)
         {

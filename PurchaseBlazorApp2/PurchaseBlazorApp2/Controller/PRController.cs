@@ -41,7 +41,7 @@ namespace PurchaseBlazorApp2.Controller
         [HttpPost("get-list-partial")]
         public async Task<ActionResult<List<PurchaseRequisitionRecord>>> GetRecordsForListAsync([FromBody] List<string> requisitionNumbers)
         {
-            var Result = await PRRepository.GetRecordsForListAsync(requisitionNumbers);
+            var Result = await PRRepository.GetAllRecordsForListAsync(requisitionNumbers);
             return Ok(Result);
         }
 
@@ -74,10 +74,18 @@ namespace PurchaseBlazorApp2.Controller
         }
 
         [HttpPost("get-list-partial-all")]
-        public async Task<ActionResult<List<PurchaseRequisitionRecord>>> GetRecordsForListAsync()
+        public async Task<ActionResult<List<PurchaseRequisitionRecord>>> GetRecordsForListAsync([FromBody] EPRSearchStatus Status)
         {
-            var Result = await PRRepository.GetAllRecordsForListAsync();
-            return Ok(Result);
+            List<PurchaseRequisitionRecord> Result;
+            if(Status==EPRSearchStatus.Full)
+            {
+                Result = await PRRepository.GetAllRecordsForListAsync();
+            }
+            else
+            {
+                Result = await PRRepository.GetPartialRecordsForListAsync();
+            }
+            return Result;
         }
         
 

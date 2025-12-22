@@ -81,14 +81,18 @@ namespace PurchaseBlazorApp2.Controller
         }
 
         [HttpGet("GetAllWorkers")]
-        public async Task<IActionResult> GetAllWorkers()
+        public async Task<IActionResult> GetAllWorkers([FromQuery] EWorkerStatus status = EWorkerStatus.All)
         {
-            var activeWorkers = await _repo.GetWorkersByStatus(EWorkerStatus.Active);
-            var inactiveWorkers = await _repo.GetWorkersByStatus(EWorkerStatus.Inactive);
+            if (status == EWorkerStatus.All)
+            {
+                var activeWorkers = await _repo.GetWorkersByStatus(EWorkerStatus.Active);
+                var inactiveWorkers = await _repo.GetWorkersByStatus(EWorkerStatus.Inactive);
 
-            var allWorkers = activeWorkers.Concat(inactiveWorkers).ToList();
-            return Ok(allWorkers);
+                return Ok(activeWorkers.Concat(inactiveWorkers).ToList());
+            }
+
+            var workers = await _repo.GetWorkersByStatus(status);
+            return Ok(workers);
         }
-
     }
 }

@@ -27,53 +27,64 @@
         {
             <div class="nav-item px-3">
                 <NavLink class="nav-link" href="MainList_Client">
-                    <span class="bi bi-speedometer2" aria-hidden="true"></span> Dashboard
+                    <span class="bi bi-speedometer2"></span> Dashboard
                 </NavLink>
             </div>
+
+            @* ================= PROCUREMENT ================= *@
             @if (bIsProcurementManager)
             {
+                <div class="nav-section px-3 mt-3 mb-1 text-uppercase text-muted fw-bold"
+                     style="font-size: 0.75rem;">
+                    Procurement
+                </div>
 
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="supplier-record">
-                        <span class="bi bi-person-plus-fill" aria-hidden="true"></span> Add Supplier
+                        <span class="bi bi-person-plus-fill"></span> Add Supplier
                     </NavLink>
                 </div>
 
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="supplier/list">
-                        <span class="bi bi-person-lines-fill" aria-hidden="true"></span> Supplier List
+                        <span class="bi bi-person-lines-fill"></span> Supplier List
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="purchaserequisitionrecords_client/create">
+                        <span class="bi bi-cart-plus-fill"></span> Create PR
                     </NavLink>
                 </div>
             }
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="purchaserequisitionrecords_client/create">
-                    <span class="bi bi-cart-plus-fill" aria-hidden="true"></span> Create PR
-                </NavLink>
-            </div>
 
-            <!-- 5. HR Section -->
+
+            @* ================= HR ================= *@
             @if (bIsHRDepartment)
             {
+                <div class="nav-section px-3 mt-3 mb-1 text-uppercase text-muted fw-bold"
+                     style="font-size: 0.75rem;">
+                    Human Resources
+                </div>
+
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="worker-info">
-                        <span class="bi bi-person-badge-fill" aria-hidden="true"></span> Add Worker
+                        <span class="bi bi-person-badge-fill"></span> Add Worker
                     </NavLink>
                 </div>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="page-info">
-                        <span class="bi bi-cash-stack" aria-hidden="true"></span> Add Wages
-                    </NavLink>
-                </div>
+
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="worker">
-                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> WorkerInfo
+                        <span class="bi bi-list-nested"></span> Worker Info
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="page-info">
+                        <span class="bi bi-cash-stack"></span> Wages
                     </NavLink>
                 </div>
             }
-
-
-            
-
         }
 
         <div class="nav-item" style="padding: 0 1rem;">

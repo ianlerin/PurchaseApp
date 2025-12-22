@@ -46,7 +46,10 @@ namespace PurchaseBlazorApp2.Components.Data
         GoodsNotReceived,
         GoodsReceived
     }
-
+    public enum EPRSearchStatus
+    {
+        Full,Partial
+    }
     public enum EPRStatus
     {
         PendingRequest,
