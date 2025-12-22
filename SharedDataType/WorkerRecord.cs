@@ -12,7 +12,14 @@ namespace WorkerRecord
     {
         Active,Inactive,All
     }
-
+    public enum EEPFCategory
+    {
+        A,B,C,D,E
+    }
+    public enum ENationalityStatus
+    {
+        Foreign,Local
+    }
 
     public class GenerateWagesPdfRequest
     {
@@ -24,6 +31,10 @@ namespace WorkerRecord
     {
         public string? ID {  get; set; }
         public string? Name { get; set; }
+        public EEPFCategory EPFStatus { get; set; }
+        public ENationalityStatus NationalityStatus { get; set; }
+        public decimal Age { get; set; }
+
         public string? Passport { get; set; }
         public decimal DailyRate { get; set; }
         public decimal OTRate { get; set; }

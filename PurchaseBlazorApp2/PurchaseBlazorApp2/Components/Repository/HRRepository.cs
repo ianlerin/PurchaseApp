@@ -30,45 +30,82 @@ namespace PurchaseBlazorApp2.Components.Repository
         {
             try
             {
-                string ID = info.ID;
+                string id = info.ID ?? string.Empty;
 
                 await using var conn = new NpgsqlConnection(GetConnectionString());
                 await conn.OpenAsync();
-                if (string.IsNullOrEmpty(ID))
+
+                // ===== Generate ID if new record =====
+                if (string.IsNullOrWhiteSpace(id))
                 {
-                    // FIX: Added 'hr.' prefix to find the sequence
-                    string seqSql = "SELECT nextval('hr.worker_info_id')";
-
+                    const string seqSql = "SELECT nextval('hr.worker_info_id')";
                     await using var seqCmd = new NpgsqlCommand(seqSql, conn);
-                    var nextVal = await seqCmd.ExecuteScalarAsync();
 
-                    ID = $"Worker{nextVal}";
+                    var nextVal = await seqCmd.ExecuteScalarAsync();
+                    id = $"Worker{nextVal}";
                 }
 
-                string sql = @"
-                                INSERT INTO hr.workerinfo
-                                (id, name, passport, daily_rate, ot_rate, sunday_rate, monthly_rate, worker_status)
-                                VALUES
-                                (@id, @name, @passport, @daily_rate, @ot_rate, @sunday_rate, @monthly_rate, @worker_status)
-                                ON CONFLICT(id) DO UPDATE SET
-                                    name = EXCLUDED.name,
-                                    passport = EXCLUDED.passport,
-                                    daily_rate = EXCLUDED.daily_rate,
-                                    ot_rate = EXCLUDED.ot_rate,
-                                    sunday_rate = EXCLUDED.sunday_rate,
-                                    monthly_rate = EXCLUDED.monthly_rate,
-                                    worker_status = EXCLUDED.worker_status;
-                            ";
+                const string sql = @"
+            INSERT INTO hr.workerinfo
+            (
+                id,
+                name,
+                passport,
+                epf_status,
+                nationality_status,
+                age,
+                daily_rate,
+                ot_rate,
+                sunday_rate,
+                monthly_rate,
+                hourly_rate,
+                worker_status
+            )
+            VALUES
+            (
+                @id,
+                @name,
+                @passport,
+                @epf_status,
+                @nationality_status,
+                @age,
+                @daily_rate,
+                @ot_rate,
+                @sunday_rate,
+                @monthly_rate,
+                @hourly_rate,
+                @worker_status
+            )
+            ON CONFLICT (id) DO UPDATE SET
+                name               = EXCLUDED.name,
+                passport           = EXCLUDED.passport,
+                epf_status         = EXCLUDED.epf_status,
+                nationality_status = EXCLUDED.nationality_status,
+                age                = EXCLUDED.age,
+                daily_rate         = EXCLUDED.daily_rate,
+                ot_rate            = EXCLUDED.ot_rate,
+                sunday_rate        = EXCLUDED.sunday_rate,
+                monthly_rate       = EXCLUDED.monthly_rate,
+                hourly_rate        = EXCLUDED.hourly_rate,
+                worker_status      = EXCLUDED.worker_status;
+        ";
 
                 await using var cmd = new NpgsqlCommand(sql, conn);
 
-                cmd.Parameters.AddWithValue("@id", ID ?? "");
-                cmd.Parameters.AddWithValue("@name", info.Name ?? "");
-                cmd.Parameters.AddWithValue("@passport", info.Passport ?? "");
+                cmd.Parameters.AddWithValue("@id", id);
+                cmd.Parameters.AddWithValue("@name", info.Name ?? string.Empty);
+                cmd.Parameters.AddWithValue("@passport", info.Passport ?? string.Empty);
+
+                cmd.Parameters.AddWithValue("@epf_status", info.EPFStatus.ToString());
+                cmd.Parameters.AddWithValue("@nationality_status", info.NationalityStatus.ToString());
+                cmd.Parameters.AddWithValue("@age", info.Age);
+
                 cmd.Parameters.AddWithValue("@daily_rate", info.DailyRate);
                 cmd.Parameters.AddWithValue("@ot_rate", info.OTRate);
                 cmd.Parameters.AddWithValue("@sunday_rate", info.SundayRate);
                 cmd.Parameters.AddWithValue("@monthly_rate", info.MonthlyRate);
+                cmd.Parameters.AddWithValue("@hourly_rate", info.HourlyRate);
+
                 cmd.Parameters.AddWithValue("@worker_status", info.WorkerStatus.ToString());
 
                 int affected = await cmd.ExecuteNonQueryAsync();
@@ -85,18 +122,30 @@ namespace PurchaseBlazorApp2.Components.Repository
 
         public async Task<List<WorkerRecord.WorkerRecord>> GetWorkersByStatus(EWorkerStatus status)
         {
-            List<WorkerRecord.WorkerRecord> results = new();
+            var results = new List<WorkerRecord.WorkerRecord>();
 
             try
             {
                 await using var conn = new NpgsqlConnection(GetConnectionString());
                 await conn.OpenAsync();
 
-                string sql = @"
-                                SELECT id, name, passport, daily_rate, ot_rate, sunday_rate, monthly_rate, worker_status
-                                FROM hr.workerinfo
-                                WHERE worker_status = @status;
-                            ";
+                const string sql = @"
+            SELECT
+                id,
+                name,
+                passport,
+                epf_status,
+                nationality_status,
+                age,
+                daily_rate,
+                ot_rate,
+                sunday_rate,
+                monthly_rate,
+                hourly_rate,
+                worker_status
+            FROM hr.workerinfo
+            WHERE worker_status = @status;
+        ";
 
                 await using var cmd = new NpgsqlCommand(sql, conn);
                 cmd.Parameters.AddWithValue("@status", status.ToString());
@@ -105,22 +154,36 @@ namespace PurchaseBlazorApp2.Components.Repository
 
                 while (await reader.ReadAsync())
                 {
-                    var rawStatus = reader["worker_status"].ToString() ?? "";
+                    string ParseString(string column) =>
+                        reader[column] is DBNull ? string.Empty : reader[column]!.ToString()!;
+
+                    decimal ParseDecimal(string column) =>
+                        reader[column] is DBNull ? 0m : reader.GetDecimal(reader.GetOrdinal(column));
+
+                    TEnum ParseEnum<TEnum>(string column, TEnum fallback)
+                        where TEnum : struct, Enum
+                    {
+                        var raw = ParseString(column);
+                        return Enum.TryParse<TEnum>(raw, out var value) ? value : fallback;
+                    }
 
                     var worker = new WorkerRecord.WorkerRecord
                     {
-                        ID = reader["id"].ToString(),
-                        Name = reader["name"].ToString(),
-                        Passport = reader["passport"].ToString(),
-                        DailyRate = reader.GetDecimal(reader.GetOrdinal("daily_rate")),
-                        OTRate = reader.GetDecimal(reader.GetOrdinal("ot_rate")),
-                        SundayRate = reader.GetDecimal(reader.GetOrdinal("sunday_rate")),
-                        MonthlyRate = reader.GetDecimal(reader.GetOrdinal("monthly_rate")),
+                        ID = ParseString("id"),
+                        Name = ParseString("name"),
+                        Passport = ParseString("passport"),
 
-                        // Convert string → enum safely
-                        WorkerStatus = Enum.TryParse<EWorkerStatus>(rawStatus, out var parsedStatus)
-                            ? parsedStatus
-                            : EWorkerStatus.Inactive
+                        EPFStatus = ParseEnum("epf_status", EEPFCategory.A),
+                        NationalityStatus = ParseEnum("nationality_status", ENationalityStatus.Local),
+                        Age = ParseDecimal("age"),
+
+                        DailyRate = ParseDecimal("daily_rate"),
+                        OTRate = ParseDecimal("ot_rate"),
+                        SundayRate = ParseDecimal("sunday_rate"),
+                        MonthlyRate = ParseDecimal("monthly_rate"),
+                        HourlyRate = ParseDecimal("hourly_rate"),
+
+                        WorkerStatus = ParseEnum("worker_status", EWorkerStatus.Inactive)
                     };
 
                     results.Add(worker);

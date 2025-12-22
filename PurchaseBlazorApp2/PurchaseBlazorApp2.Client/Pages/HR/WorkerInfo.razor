@@ -20,7 +20,7 @@
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label class="form-label">Worker ID</label>
-                    <input class="form-control" @bind="Record.ID" readonly/>
+                    <input class="form-control" @bind="Record.ID" readonly />
                 </div>
 
                 <div class="col-md-6">
@@ -35,11 +35,41 @@
                     <input class="form-control" @bind="Record.Passport" />
                 </div>
             </div>
+
             <div class="row mb-3">
                 <div class="col-md-6">
-                    <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="Record.WorkerStatus" TEnum="EWorkerStatus" />
-                </div>                                                           
+                    <label class="form-label">Age</label>
+                    <input class="form-control" @bind="Record.Age" />
+                </div>
+            </div>
+        </div>
+    </div>
 
+    <!-- Status Card -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-warning text-dark">
+            Worker Status
+        </div>
+
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label fw-semibold">Worker Status</label>
+                    <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="Record.WorkerStatus"
+                                                                                 TEnum="EWorkerStatus" />
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label fw-semibold">EPF Status</label>
+                    <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="Record.EPFStatus"
+                                                                                 TEnum="EEPFCategory" />
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label fw-semibold">Nationality Status</label>
+                    <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="Record.NationalityStatus"
+                                                                                 TEnum="ENationalityStatus" />
+                </div>
             </div>
         </div>
     </div>
@@ -73,13 +103,22 @@
                     <label class="form-label">Monthly Rate (RM)</label>
                     <input type="number" class="form-control" step="0.01" @bind="Record.MonthlyRate" />
                 </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Hourly Rate (RM)</label>
+                    <input type="number" class="form-control" step="0.01" @bind="Record.HourlyRate" />
+                </div>
             </div>
         </div>
     </div>
+
     <!-- Submit Button -->
     <div class="mt-3">
-        <button class="btn btn-primary" @onclick="SubmitWorker">Submit Worker</button>
+        <button class="btn btn-primary" @onclick="SubmitWorker">
+            Submit Worker
+        </button>
     </div>
+
 </div>
 
 @code {
