@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using PurchaseBlazorApp2.Components.Repository;
+using PurchaseBlazorApp2.Resource;
 using WorkerRecord;
 
 namespace PurchaseBlazorApp2.Controller
@@ -9,10 +10,11 @@ namespace PurchaseBlazorApp2.Controller
     public class HRController : ControllerBase
     {
         private readonly HRRepository _repo;
-
-        public HRController()
+        private readonly IEPFTableService _epfService;
+        public HRController(IEPFTableService epfService)
         {
             _repo = new HRRepository();
+            _epfService = epfService;
         }
         [HttpPost("SubmitWorker")]
         public async Task<IActionResult> SubmitWorker([FromBody] WorkerRecord.WorkerRecord worker)
@@ -93,6 +95,20 @@ namespace PurchaseBlazorApp2.Controller
 
             var workers = await _repo.GetWorkersByStatus(status);
             return Ok(workers);
+        }
+
+        [HttpPost("calculateEPF")]
+        public IActionResult Calculate([FromBody] SingleWageRecord record)
+        {
+            if (record == null)
+                return BadRequest("Record is null.");
+
+            var result = _epfService.UpdateWageInfo(record);
+            return Ok(new
+            {
+                EmployerContribution = result.Employer,
+                EmployeeContribution = result.Employee
+            });
         }
     }
 }

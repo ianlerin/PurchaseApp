@@ -33,7 +33,7 @@ else
             <thead>
                 <tr>
                     <th>Worker Name</th>
-
+                    <th>EPFStatus</th>
                     <!-- Daily -->
                     <th class="col-daily">Daily Hours</th>
                     <th class="col-daily">Daily Rate</th>
@@ -54,6 +54,9 @@ else
                     <th class="col-hourly">Hourly Hours</th>
                     <th class="col-hourly">Hourly Rate</th>
                     <th class="col-hourly">Hourly Wages</th>
+                    <th>Gross Wages</th>
+                    <th>Employer EPF</th>
+                    <th>Employee EPF</th>
                     <th>Total Wages</th>
                 </tr>
             </thead>
@@ -64,7 +67,7 @@ else
                 {
                     <tr>
                         <td>@record.Name</td>
-
+                        <td>@record.EPFCategory.ToString()</td>
                         <!-- Daily -->
                         <td class="col-daily"><input type="number" class="form-control" @bind="record.DailyHours" /></td>
                         <td class="col-daily"><input type="number" class="form-control" @bind="record.DailyRate" /></td>
@@ -90,7 +93,10 @@ else
                         <td class="col-hourly"><input type="number" class="form-control" @bind="record.HourlyRate" /></td>
                         <td class="col-hourly"><input type="number" class="form-control" @bind="record.Hourly_wages" /></td>
 
+                        <td>@record.Gross_wages</td>
                         <td>@record.Total_wages</td>
+                        <td>@record.EPF_Employer</td>
+                        <td>@record.EPF_Employee</td>
                     </tr>
                 }
             </tbody>

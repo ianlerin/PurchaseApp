@@ -14,12 +14,23 @@ namespace WorkerRecord
     }
     public enum EEPFCategory
     {
-        A,B,C,D,E
+        A,C,E
     }
     public enum ENationalityStatus
     {
         Foreign,Local
     }
+
+    public class ContributionRange
+    {
+        public decimal From { get; set; }
+        public decimal To { get; set; }
+        public decimal EmployerContribute { get; set; }
+        public decimal EmployeeContribute { get; set; }
+
+     
+    }
+
 
     public class GenerateWagesPdfRequest
     {
@@ -90,6 +101,8 @@ namespace WorkerRecord
         {
             public string? ID { get; set; }
             public string? Name { get; set; }
+
+           public EEPFCategory EPFCategory { get; set; }
             // --- Hours ---
             private decimal _DailyHours;
             public decimal DailyHours
@@ -200,8 +213,22 @@ namespace WorkerRecord
                  set { _Hourly_wages = value; }
             }
 
+        private decimal _EPF_Employer;
+        public decimal EPF_Employer
+        {
+            get => _EPF_Employer;
+            set { _EPF_Employer = value; }
+        }
 
-            private void RecalculateWages()
+        private decimal _EPF_Employee;
+        public decimal EPF_Employee
+        {
+            get => _EPF_Employee;
+            set { _EPF_Employee = value; }
+        }
+        public decimal Gross_wages { get; set; }
+        public decimal Total_wages { get; set; }
+        private void RecalculateWages()
             {
                 Daily_wages = DailyHours * DailyRate;
                 OT_wages = OTHours * OTRate;
@@ -211,11 +238,12 @@ namespace WorkerRecord
                 OnRecalculateTotalPrice();
             }
 
-            public decimal Total_wages { get; set; }
+          
 
             private void OnRecalculateTotalPrice()
             {
-                Total_wages = Daily_wages + OT_wages + Sunday_wages + Monthly_wages + Hourly_wages;
+              Gross_wages = Daily_wages + OT_wages + Sunday_wages + Monthly_wages + Hourly_wages;
+              Total_wages = Gross_wages - EPF_Employee;
             }
 
         }

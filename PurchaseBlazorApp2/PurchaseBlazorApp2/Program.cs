@@ -1,14 +1,15 @@
+using Azure.Identity;
+using Microsoft.Graph;
 using PurchaseBlazorApp2.Client.Pages;
 using PurchaseBlazorApp2.Components;
 using PurchaseBlazorApp2.Components.Global;
 using PurchaseBlazorApp2.Components.Helper;
-using Radzen;
+using PurchaseBlazorApp2.Resource;
+using PurchaseBlazorApp2.Service;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
-using Azure.Identity;
-using Microsoft.Graph;
-using PurchaseBlazorApp2.Service;
+using Radzen;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -56,6 +57,7 @@ builder.Services.AddSingleton(provider =>
 });
 
 builder.Services.AddHostedService<ReminderEmailService>();
+builder.Services.AddSingleton<IEPFTableService, EPFExcelConverter>();
 builder.Services.AddScoped<EmailService>();
 var app = builder.Build();
 
