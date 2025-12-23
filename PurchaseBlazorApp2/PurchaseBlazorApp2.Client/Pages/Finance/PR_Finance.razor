@@ -125,6 +125,30 @@ else
         </div>
     </div>
 
+        <!-- ============================= -->
+        <!-- 5️⃣  APPROVAL SECTION -->
+        <!-- ============================= -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-success text-white fw-bold">
+                Approval Area
+            </div>
+            <div class="card-body">
+                <ApprovalArea Approvals="PurchaseOrderRecord._Approvals"
+                              bIsEditable="@bNewRequisition"
+                              OnApprovalChanged="OnPOApprovalChanged">
+                </ApprovalArea>
+
+                @if (PurchaseOrderRecord.approvalstatus == EApprovalStatus.Rejected)
+                {
+                    <div class="form-group mt-3">
+                        <label class="form-label">Reject Reason</label>
+                        <InputText @bind-Value="PurchaseOrderRecord.Rejectreason"
+                                   class="form-control"
+                                   readonly />
+                    </div>
+                }
+            </div>
+        </div>
     <!-- ============================= -->
     <!-- 4️⃣  ACTION BUTTONS -->
     <!-- ============================= -->
@@ -148,6 +172,7 @@ else
 @code {
     [Parameter] public string? PO_ID { get; set; }
     private bool bCanEdit = false;
+    private bool bNewRequisition = false;
     private FinanceRecord FinanceRecord = new();
     private PurchaseOrderRecord PurchaseOrderRecord = new();
     protected async override void OnInitialized()
@@ -191,6 +216,12 @@ else
         await SetupPO(PO_ID);
         StateHasChanged();
     }
+    private Task OnPOApprovalChanged((bool NewValue, ApprovalInfo Approval) args)
+    {
+        PurchaseOrderRecord?.OnApprovalChanged();
+        return Task.CompletedTask;
+    }
+
 
     private async Task SetupPO(string PO_ID)
     {

@@ -311,7 +311,43 @@ namespace PurchaseBlazorApp2.Components.Data
         public ReceiveInfo ReceiveInfo { get; set; } = new ReceiveInfo();
 
         public InvoiceInfo InvoiceInfo { get; set; } = new InvoiceInfo();
-        
+
+        public List<ApprovalInfo> _Approvals { get; set; } = new();
+        public EApprovalStatus approvalstatus { get; set; }
+        public string Rejectreason { get; set; } = string.Empty;
+
+        public void OnApprovalChanged()
+        {
+            if (_Approvals == null || _Approvals.Count == 0)
+            {
+                approvalstatus = EApprovalStatus.PreApproval;
+                return;
+            }
+
+            // At least one approval exists → default to PendingApproval
+            approvalstatus = EApprovalStatus.PendingApproval;
+
+            bool allApproved = true;
+
+            foreach (var item in _Approvals)
+            {
+                if (item.ApproveStatus == ESingleApprovalStatus.Rejected)
+                {
+                    approvalstatus = EApprovalStatus.Rejected;
+                    return; // rejected overrides everything
+                }
+
+                if (item.ApproveStatus != ESingleApprovalStatus.Approved)
+                {
+                    allApproved = false; // found something not approved yet
+                }
+            }
+
+            if (allApproved)
+            {
+                approvalstatus = EApprovalStatus.Approved;
+            }
+        }
         public PurchaseOrderRecord()
         {
           mycompanyname = "LCDA MSB PINEAPPLE SDN BHD 202201032786 (1478483-W)";
