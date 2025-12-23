@@ -108,7 +108,8 @@
                 <div class="card-body">
                     <PurchaseBlazorApp2.Client.Components.Helper.UploadImageHelper
                         bNewRequisition=bNewRequisition
-                        UploadedImages="PurchaseRequisitionRecord.SupportDocuments" />
+                        UploadedImages="PurchaseRequisitionRecord.SupportDocuments"
+                        @ref="MyImageHelper" />
                 </div>
             </div>
 
@@ -213,7 +214,7 @@
     private EmailWorkflowService MyEmailHelper;
     private bool bCanEditApproval;
     private bool bIsProcurementManager;
-
+    private UploadImageHelper MyImageHelper;
     private bool bIsDepartmentMatchApproval;
     UserName? MyUser;
     public class CurrencyItem
@@ -520,7 +521,13 @@
     private async void OnCreateNew()
     {
         PurchaseRequisitionRecord.ApprovedItemRequested = PurchaseRequisitionRecord.ItemRequested;
+       
         await AddPurchaseRequisitionRecord();
+        if (MyImageHelper != null)
+        {
+
+            await MyImageHelper.UploadItem(PurchaseRequisitionRecord.RequisitionNumber, "primagegenesis");
+        }
     }
 
     private Task OnInputChange(ChangeEventArgs args, ApprovalInfo approval)
