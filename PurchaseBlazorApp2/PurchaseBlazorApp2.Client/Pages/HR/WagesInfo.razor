@@ -34,6 +34,7 @@ else
                 <tr>
                     <th>Worker Name</th>
                     <th>EPFStatus</th>
+                    <th>SocsoStatus</th>
                     <!-- Daily -->
                     <th class="col-daily">Daily Hours</th>
                     <th class="col-daily">Daily Rate</th>
@@ -57,6 +58,8 @@ else
                     <th>Gross Wages</th>
                     <th>Employer EPF</th>
                     <th>Employee EPF</th>
+                    <th>Employer Socso</th>
+                    <th>Employee Socso</th>
                     <th>Total Wages</th>
                 </tr>
             </thead>
@@ -68,6 +71,7 @@ else
                     <tr>
                         <td>@record.Name</td>
                         <td>@record.EPFCategory.ToString()</td>
+                        <td>@record.SocsoCategory.ToString()</td>
                         <!-- Daily -->
                         <td class="col-daily"><input type="number" class="form-control" @bind="record.DailyHours" /></td>
                         <td class="col-daily"><input type="number" class="form-control" @bind="record.DailyRate" /></td>
@@ -94,9 +98,11 @@ else
                         <td class="col-hourly"><input type="number" class="form-control" @bind="record.Hourly_wages" /></td>
 
                         <td>@record.Gross_wages</td>
-                        <td>@record.Total_wages</td>
                         <td>@record.EPF_Employer</td>
                         <td>@record.EPF_Employee</td>
+                        <td>@record.Socso_Employer</td>
+                        <td>@record.Socso_Employee</td>
+                        <td>@record.Total_wages</td>
                     </tr>
                 }
             </tbody>
@@ -120,7 +126,21 @@ else
 
 @code {
     List<WorkerRecord> CurrentActiveWorkers { get; set; }
-    WageRecord MyWageInfo { get; set; } = new WageRecord();
+    private WageRecord _myWageInfo = new WageRecord();
+    public WageRecord MyWageInfo
+    {
+        get => _myWageInfo;
+        set
+        {
+            if (_myWageInfo != value)
+            {
+                _myWageInfo = value;
+
+                BindEPFRecalculation();
+                RecalculateEPFAsync(this, EventArgs.Empty);
+            }
+        }
+    }
     string FilterName = "";
     [Inject]
     private HttpClient Http { get; set; }
@@ -155,10 +175,47 @@ else
             await GetNewActiveWorkers(EWorkerStatus.Active);
             await JS.InvokeVoidAsync("alert", "No data found for the selected year and month");
         }
+        BindEPFRecalculation();
         StateHasChanged();
     }
 
+    private void BindEPFRecalculation()
+    {
+        foreach (var Record in MyWageInfo.WageRecords)
+        {
+            Record.EPFRecalculateHandler += RecalculateEPFAsync;
+        }
+    }
 
+    private async void RecalculateEPFAsync(object o, EventArgs e)
+    {
+        foreach (SingleWageRecord record in MyWageInfo.WageRecords)
+        {
+            try
+            {
+                var response = await Http.PostAsJsonAsync("api/HR/calculateEPF", record);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<ContributeResult>();
+
+                    if (result != null)
+                    {
+                        record.EPF_Employer = result.EPFEmployerContribution;
+                        record.EPF_Employee = result.EPFEmployeeContribution;
+                        record.Socso_Employer = result.EPFEmployerContribution;
+                        record.Socso_Employee = result.EPFEmployeeContribution;
+                    }
+                }
+                
+            }
+            catch (Exception ex)
+            {
+               
+            }
+        }
+        StateHasChanged();
+    }
 
     private async Task InsertWageInfo()
     {
@@ -195,6 +252,9 @@ else
                 ?? new List<WorkerRecord>();
 
             MyWageInfo.FormWageRecordFromWorkerRecords(CurrentActiveWorkers);
+
+            await JS.InvokeVoidAsync("alert", $"SearchResult: {MyWageInfo.WageRecords.Count()}");
+            BindEPFRecalculation();
             StateHasChanged();
         }
         catch (Exception ex)

@@ -98,17 +98,23 @@ namespace PurchaseBlazorApp2.Controller
         }
 
         [HttpPost("calculateEPF")]
-        public IActionResult Calculate([FromBody] SingleWageRecord record)
+        public ActionResult<ContributeResult> Calculate([FromBody] SingleWageRecord record)
         {
             if (record == null)
                 return BadRequest("Record is null.");
 
-            var result = _epfService.UpdateWageInfo(record);
-            return Ok(new
+            var (EPFemployer, EPFemployee) = _epfService.UpdateEPFWageInfo(record);
+            var (Socsoemployer, Socsoemployee) = _epfService.UpdateSocsoWageInfo(record);
+            var result = new ContributeResult
             {
-                EmployerContribution = result.Employer,
-                EmployeeContribution = result.Employee
-            });
+                EPFEmployerContribution = EPFemployer,
+                EPFEmployeeContribution = EPFemployee,
+                SocsoEmployerContribution=Socsoemployer,
+                SocsoEmployeeContribution=Socsoemployer,
+
+            };
+
+            return Ok(result);
         }
     }
 }

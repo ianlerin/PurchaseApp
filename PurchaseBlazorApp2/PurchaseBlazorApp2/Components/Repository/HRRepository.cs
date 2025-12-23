@@ -59,7 +59,8 @@ namespace PurchaseBlazorApp2.Components.Repository
                 sunday_rate,
                 monthly_rate,
                 hourly_rate,
-                worker_status
+                worker_status,
+                socso_status
             )
             VALUES
             (
@@ -74,7 +75,8 @@ namespace PurchaseBlazorApp2.Components.Repository
                 @sunday_rate,
                 @monthly_rate,
                 @hourly_rate,
-                @worker_status
+                @worker_status,
+                @socso_status
             )
             ON CONFLICT (id) DO UPDATE SET
                 name               = EXCLUDED.name,
@@ -87,7 +89,8 @@ namespace PurchaseBlazorApp2.Components.Repository
                 sunday_rate        = EXCLUDED.sunday_rate,
                 monthly_rate       = EXCLUDED.monthly_rate,
                 hourly_rate        = EXCLUDED.hourly_rate,
-                worker_status      = EXCLUDED.worker_status;
+                worker_status      = EXCLUDED.worker_status,
+                socso_status       = EXCLUDED.socso_status;
         ";
 
                 await using var cmd = new NpgsqlCommand(sql, conn);
@@ -108,6 +111,8 @@ namespace PurchaseBlazorApp2.Components.Repository
 
                 cmd.Parameters.AddWithValue("@worker_status", info.WorkerStatus.ToString());
 
+                cmd.Parameters.AddWithValue("@socso_status", info.SocsoCategory.ToString());
+
                 int affected = await cmd.ExecuteNonQueryAsync();
                 return affected > 0;
             }
@@ -117,7 +122,6 @@ namespace PurchaseBlazorApp2.Components.Repository
                 return false;
             }
         }
-
 
 
         public async Task<List<WorkerRecord.WorkerRecord>> GetWorkersByStatus(EWorkerStatus status)
@@ -142,7 +146,8 @@ namespace PurchaseBlazorApp2.Components.Repository
                 sunday_rate,
                 monthly_rate,
                 hourly_rate,
-                worker_status
+                worker_status,
+                socso_status
             FROM hr.workerinfo
             WHERE worker_status = @status;
         ";
@@ -167,24 +172,30 @@ namespace PurchaseBlazorApp2.Components.Repository
                         return Enum.TryParse<TEnum>(raw, out var value) ? value : fallback;
                     }
 
+                    // 🔒 Prevent side-effects during load
                     var worker = new WorkerRecord.WorkerRecord
                     {
-                        ID = ParseString("id"),
-                        Name = ParseString("name"),
-                        Passport = ParseString("passport"),
-
-                        EPFStatus = ParseEnum("epf_status", EEPFCategory.A),
-                        NationalityStatus = ParseEnum("nationality_status", ENationalityStatus.Local),
-                        Age = ParseDecimal("age"),
-
-                        DailyRate = ParseDecimal("daily_rate"),
-                        OTRate = ParseDecimal("ot_rate"),
-                        SundayRate = ParseDecimal("sunday_rate"),
-                        MonthlyRate = ParseDecimal("monthly_rate"),
-                        HourlyRate = ParseDecimal("hourly_rate"),
-
-                        WorkerStatus = ParseEnum("worker_status", EWorkerStatus.Inactive)
+                        IsLoading = true
                     };
+
+                    worker.ID = ParseString("id");
+                    worker.Name = ParseString("name");
+                    worker.Passport = ParseString("passport");
+
+                    worker.EPFStatus = ParseEnum("epf_status", EEPFCategory.A);
+                    worker.NationalityStatus = ParseEnum("nationality_status", ENationalityStatus.Local);
+                    worker.Age = ParseDecimal("age");
+
+                    worker.DailyRate = ParseDecimal("daily_rate");
+                    worker.OTRate = ParseDecimal("ot_rate");
+                    worker.SundayRate = ParseDecimal("sunday_rate");
+                    worker.MonthlyRate = ParseDecimal("monthly_rate");
+                    worker.HourlyRate = ParseDecimal("hourly_rate");
+                    worker.SocsoCategory = ParseEnum("socso_status", ESocsoCategory.Act4);
+                    worker.WorkerStatus = ParseEnum("worker_status", EWorkerStatus.Inactive);
+
+                    // 🔓 Re-enable logic after hydration
+                    worker.IsLoading = false;
 
                     results.Add(worker);
                 }
@@ -210,7 +221,7 @@ namespace PurchaseBlazorApp2.Components.Repository
 
             try
             {
-                // 1. Delete existing records for the year and month
+                // 1. Delete existing records
                 using (var deleteCmd = new NpgsqlCommand(
                     "DELETE FROM hr.wagesinfo WHERE year = @year AND month = @month", conn))
                 {
@@ -219,52 +230,81 @@ namespace PurchaseBlazorApp2.Components.Repository
                     deleteCmd.ExecuteNonQuery();
                 }
 
-                // 2. Insert new wage records
+                // 2. Insert new records
                 foreach (var record in wageRecord.WageRecords)
                 {
                     using var insertCmd = new NpgsqlCommand(@"
-                    INSERT INTO hr.wagesinfo (
-                        year, month, workerid, workername,
-                        daily_hours, ot_hours, sunday_hours, monthly_hours, hourly_hours,
-                        daily_rate, ot_rate, sunday_rate, monthly_rate, hourly_rate,
-                        daily_wages, ot_wages, sunday_wages, monthly_wages, hourly_wages, total_wages
-                    ) VALUES (
-                        @year, @month, @workerid, @workername,
-                        @daily_hours, @ot_hours, @sunday_hours, @monthly_hours, @hourly_hours,
-                        @daily_rate, @ot_rate, @sunday_rate, @monthly_rate, @hourly_rate,
-                        @daily_wages, @ot_wages, @sunday_wages, @monthly_wages, @hourly_wages, @total_wages
-                    )", conn);
+            INSERT INTO hr.wagesinfo (
+                year, month,
+                workerid, workername, epf_status,
 
+                daily_hours, ot_hours, sunday_hours, monthly_hours, hourly_hours,
+                daily_rate, ot_rate, sunday_rate, monthly_rate, hourly_rate,
+
+                daily_wages, ot_wages, sunday_wages, monthly_wages, hourly_wages,
+                socso_status,socso_employee,socso_employer,
+                gross_wages,
+                epf_employer,
+                epf_employee,
+                total_wages
+            ) VALUES (
+                @year, @month,
+                @workerid, @workername, @epf_status,
+
+                @daily_hours, @ot_hours, @sunday_hours, @monthly_hours, @hourly_hours,
+                @daily_rate, @ot_rate, @sunday_rate, @monthly_rate, @hourly_rate,
+
+                @daily_wages, @ot_wages, @sunday_wages, @monthly_wages, @hourly_wages,
+                @socso_status,@socso_employee,@socso_employer,
+                @gross_wages,
+                @epf_employer,
+                @epf_employee,
+                @total_wages
+            )", conn);
+
+                    // --- Meta ---
                     insertCmd.Parameters.AddWithValue("year", year);
                     insertCmd.Parameters.AddWithValue("month", month);
                     insertCmd.Parameters.AddWithValue("workerid", record.ID ?? string.Empty);
                     insertCmd.Parameters.AddWithValue("workername", record.Name ?? string.Empty);
+                    insertCmd.Parameters.AddWithValue("epf_status", record.EPFCategory.ToString());
 
+                    // --- Hours ---
                     insertCmd.Parameters.AddWithValue("daily_hours", record.DailyHours);
                     insertCmd.Parameters.AddWithValue("ot_hours", record.OTHours);
                     insertCmd.Parameters.AddWithValue("sunday_hours", record.SundayHours);
                     insertCmd.Parameters.AddWithValue("monthly_hours", record.MonthlyHours);
                     insertCmd.Parameters.AddWithValue("hourly_hours", record.HourlyHours);
 
+                    // --- Rates ---
                     insertCmd.Parameters.AddWithValue("daily_rate", record.DailyRate);
                     insertCmd.Parameters.AddWithValue("ot_rate", record.OTRate);
                     insertCmd.Parameters.AddWithValue("sunday_rate", record.SundayRate);
                     insertCmd.Parameters.AddWithValue("monthly_rate", record.MonthlyRate);
                     insertCmd.Parameters.AddWithValue("hourly_rate", record.HourlyRate);
 
+                    // --- Wages ---
                     insertCmd.Parameters.AddWithValue("daily_wages", record.Daily_wages);
                     insertCmd.Parameters.AddWithValue("ot_wages", record.OT_wages);
                     insertCmd.Parameters.AddWithValue("sunday_wages", record.Sunday_wages);
                     insertCmd.Parameters.AddWithValue("monthly_wages", record.Monthly_wages);
                     insertCmd.Parameters.AddWithValue("hourly_wages", record.Hourly_wages);
+
+                    // --- Totals / EPF ---
+                    insertCmd.Parameters.AddWithValue("gross_wages", record.Gross_wages);
+                    insertCmd.Parameters.AddWithValue("epf_employer", record.EPF_Employer);
+                    insertCmd.Parameters.AddWithValue("epf_employee", record.EPF_Employee);
                     insertCmd.Parameters.AddWithValue("total_wages", record.Total_wages);
+                    insertCmd.Parameters.AddWithValue("socso_status", record.SocsoCategory.ToString());
+                    insertCmd.Parameters.AddWithValue("socso_employee", record.Socso_Employee);
+                    insertCmd.Parameters.AddWithValue("socso_employer", record.Socso_Employer);
 
                     insertCmd.ExecuteNonQuery();
                 }
 
                 transaction.Commit();
             }
-            catch (Exception ex)
+            catch
             {
                 transaction.Rollback();
                 throw;
@@ -286,15 +326,24 @@ namespace PurchaseBlazorApp2.Components.Repository
                 await conn.OpenAsync();
 
                 await using var cmd = new NpgsqlCommand(@"
-                                                            SELECT 
-                                                                workerid, workername,
-                                                                daily_hours, ot_hours, sunday_hours, monthly_hours, hourly_hours,
-                                                                daily_rate, ot_rate, sunday_rate, monthly_rate, hourly_rate,
-                                                                daily_wages, ot_wages, sunday_wages, monthly_wages, hourly_wages, total_wages
-                                                            FROM hr.wagesinfo
-                                                            WHERE year = @year AND month = @month
-                                                            ORDER BY workername ASC;
-                                                        ", conn);
+            SELECT
+                workerid,
+                workername,
+                epf_status,
+
+                daily_hours, ot_hours, sunday_hours, monthly_hours, hourly_hours,
+                daily_rate, ot_rate, sunday_rate, monthly_rate, hourly_rate,
+
+                daily_wages, ot_wages, sunday_wages, monthly_wages, hourly_wages,
+                socso_status, socso_employee, socso_employer,
+                gross_wages,
+                epf_employer,
+                epf_employee,
+                total_wages
+            FROM hr.wagesinfo
+            WHERE year = @year AND month = @month
+            ORDER BY workername ASC;
+        ", conn);
 
                 cmd.Parameters.AddWithValue("year", year);
                 cmd.Parameters.AddWithValue("month", month);
@@ -303,58 +352,88 @@ namespace PurchaseBlazorApp2.Components.Repository
 
                 while (await reader.ReadAsync())
                 {
-                    try
+                    var record = new SingleWageRecord
                     {
-                        var record = new SingleWageRecord
-                        {
-                            ID = reader["workerid"]?.ToString() ?? "",
-                            Name = reader["workername"]?.ToString() ?? "",
+                        IsLoading = true
+                    };
 
-                            DailyHours = reader.GetDecimal(reader.GetOrdinal("daily_hours")),
-                            OTHours = reader.GetDecimal(reader.GetOrdinal("ot_hours")),
-                            SundayHours = reader.GetDecimal(reader.GetOrdinal("sunday_hours")),
-                            MonthlyHours = reader.GetDecimal(reader.GetOrdinal("monthly_hours")),
-                            HourlyHours = reader.GetDecimal(reader.GetOrdinal("hourly_hours")),
-                            
-                            DailyRate = reader.GetDecimal(reader.GetOrdinal("daily_rate")),
-                            OTRate = reader.GetDecimal(reader.GetOrdinal("ot_rate")),
-                            SundayRate = reader.GetDecimal(reader.GetOrdinal("sunday_rate")),
-                            MonthlyRate = reader.GetDecimal(reader.GetOrdinal("monthly_rate")),
-                            HourlyRate = reader.GetDecimal(reader.GetOrdinal("hourly_rate")),
-                            
-                            Daily_wages = reader.GetDecimal(reader.GetOrdinal("daily_wages")),
-                            OT_wages = reader.GetDecimal(reader.GetOrdinal("ot_wages")),
-                            Sunday_wages = reader.GetDecimal(reader.GetOrdinal("sunday_wages")),
-                            Monthly_wages = reader.GetDecimal(reader.GetOrdinal("monthly_wages")),
-                            Hourly_wages = reader.GetDecimal(reader.GetOrdinal("hourly_wages")),
-                            Total_wages = reader.GetDecimal(reader.GetOrdinal("total_wages"))
-                          
-                            };
+                    // ---------- Strings ----------
+                    record.ID = reader.IsDBNull(reader.GetOrdinal("workerid"))
+                        ? string.Empty
+                        : reader.GetString(reader.GetOrdinal("workerid"));
 
-                        result.WageRecords.Add(record);
-                    }
-                    catch (Exception ex)
-                    {
-                        // Log the specific record read error
-                        Console.WriteLine($"Failed to read a wage record: {ex.Message}");
-                        // Optionally continue to next record
-                    }
+                    record.Name = reader.IsDBNull(reader.GetOrdinal("workername"))
+                        ? string.Empty
+                        : reader.GetString(reader.GetOrdinal("workername"));
+
+                    // ---------- EPF Category ----------
+                    var epfCatStr = reader.IsDBNull(reader.GetOrdinal("epf_status"))
+                        ? string.Empty
+                        : reader.GetString(reader.GetOrdinal("epf_status"));
+
+                    record.EPFCategory = Enum.TryParse<EEPFCategory>(epfCatStr, out var epfCat)
+                        ? epfCat
+                        : default;
+
+                    // ---------- Hours ----------
+                    record.DailyHours = reader.IsDBNull(reader.GetOrdinal("daily_hours")) ? 0m : reader.GetDecimal(reader.GetOrdinal("daily_hours"));
+                    record.OTHours = reader.IsDBNull(reader.GetOrdinal("ot_hours")) ? 0m : reader.GetDecimal(reader.GetOrdinal("ot_hours"));
+                    record.SundayHours = reader.IsDBNull(reader.GetOrdinal("sunday_hours")) ? 0m : reader.GetDecimal(reader.GetOrdinal("sunday_hours"));
+                    record.MonthlyHours = reader.IsDBNull(reader.GetOrdinal("monthly_hours")) ? 0m : reader.GetDecimal(reader.GetOrdinal("monthly_hours"));
+                    record.HourlyHours = reader.IsDBNull(reader.GetOrdinal("hourly_hours")) ? 0m : reader.GetDecimal(reader.GetOrdinal("hourly_hours"));
+
+                    // ---------- Rates ----------
+                    record.DailyRate = reader.IsDBNull(reader.GetOrdinal("daily_rate")) ? 0m : reader.GetDecimal(reader.GetOrdinal("daily_rate"));
+                    record.OTRate = reader.IsDBNull(reader.GetOrdinal("ot_rate")) ? 0m : reader.GetDecimal(reader.GetOrdinal("ot_rate"));
+                    record.SundayRate = reader.IsDBNull(reader.GetOrdinal("sunday_rate")) ? 0m : reader.GetDecimal(reader.GetOrdinal("sunday_rate"));
+                    record.MonthlyRate = reader.IsDBNull(reader.GetOrdinal("monthly_rate")) ? 0m : reader.GetDecimal(reader.GetOrdinal("monthly_rate"));
+                    record.HourlyRate = reader.IsDBNull(reader.GetOrdinal("hourly_rate")) ? 0m : reader.GetDecimal(reader.GetOrdinal("hourly_rate"));
+
+                    // ---------- Wages ----------
+                    record.Daily_wages = reader.IsDBNull(reader.GetOrdinal("daily_wages")) ? 0m : reader.GetDecimal(reader.GetOrdinal("daily_wages"));
+                    record.OT_wages = reader.IsDBNull(reader.GetOrdinal("ot_wages")) ? 0m : reader.GetDecimal(reader.GetOrdinal("ot_wages"));
+                    record.Sunday_wages = reader.IsDBNull(reader.GetOrdinal("sunday_wages")) ? 0m : reader.GetDecimal(reader.GetOrdinal("sunday_wages"));
+                    record.Monthly_wages = reader.IsDBNull(reader.GetOrdinal("monthly_wages")) ? 0m : reader.GetDecimal(reader.GetOrdinal("monthly_wages"));
+                    record.Hourly_wages = reader.IsDBNull(reader.GetOrdinal("hourly_wages")) ? 0m : reader.GetDecimal(reader.GetOrdinal("hourly_wages"));
+
+                    // ---------- Totals ----------
+                    record.Gross_wages = reader.IsDBNull(reader.GetOrdinal("gross_wages")) ? 0m : reader.GetDecimal(reader.GetOrdinal("gross_wages"));
+                    record.EPF_Employer = reader.IsDBNull(reader.GetOrdinal("epf_employer")) ? 0m : reader.GetDecimal(reader.GetOrdinal("epf_employer"));
+                    record.EPF_Employee = reader.IsDBNull(reader.GetOrdinal("epf_employee")) ? 0m : reader.GetDecimal(reader.GetOrdinal("epf_employee"));
+                    record.Total_wages = reader.IsDBNull(reader.GetOrdinal("total_wages")) ? 0m : reader.GetDecimal(reader.GetOrdinal("total_wages"));
+                    record.Socso_Employee = reader.IsDBNull(reader.GetOrdinal("socso_employee")) ? 0m : reader.GetDecimal(reader.GetOrdinal("socso_employee"));
+                    record.Socso_Employer = reader.IsDBNull(reader.GetOrdinal("socso_employer")) ? 0m : reader.GetDecimal(reader.GetOrdinal("socso_employer"));
+
+                    // ---------- SOCSO Category ----------
+                    var socsoCatStr = reader.IsDBNull(reader.GetOrdinal("socso_status"))
+                        ? string.Empty
+                        : reader.GetString(reader.GetOrdinal("socso_status"));
+
+                    record.SocsoCategory = Enum.TryParse<ESocsoCategory>(socsoCatStr, out var socsoCat)
+                        ? socsoCat
+                        : default;
+
+                    record.IsLoading = false;
+
+                    result.AddRecord(record);
                 }
+
+                return result;
             }
-            catch (NpgsqlException ex)
+            catch (PostgresException pgEx)
             {
-                // Log database-specific errors
-                Console.WriteLine($"Database error: {ex.Message}");
-                throw; // Re-throw if you want the caller to handle it
+                // 🔹 Database-specific error
+                throw new Exception(
+                    $"Database error while retrieving wage records for {month}/{year}: {pgEx.Message}",
+                    pgEx);
             }
             catch (Exception ex)
             {
-                // Log any other errors
-                Console.WriteLine($"Unexpected error: {ex.Message}");
-                throw;
+                // 🔹 General error
+                throw new Exception(
+                    $"Unexpected error while retrieving wage records for {month}/{year}: {ex.Message}",
+                    ex);
             }
-
-            return result;
         }
     }
 
