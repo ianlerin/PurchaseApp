@@ -136,6 +136,7 @@ namespace PurchaseBlazorApp2.Components.Repository
         public async Task<List<PurchaseOrderRecord>> GetRecordsAsync(List<string> requisitionNumbers = null)
         {
             List<PurchaseOrderRecord> ToReturn = new List<PurchaseOrderRecord>();
+            var PRRepository = new PRRepository();
 
             try
             {
@@ -170,6 +171,12 @@ namespace PurchaseBlazorApp2.Components.Repository
                         InsertInfoOfBasicInfo(MainInfo, reader);
                         MainInfo.ReceiveInfo= await GetReceiveInfo(MainInfo.PO_ID);
                         MainInfo.InvoiceInfo = await GetInvoiceInfo(MainInfo.PO_ID);
+
+                        var PRRecords = await PRRepository.GetRecordsAsync(new List<string> { MainInfo.PR_ID });
+                        if (PRRecords.Count > 0)
+                        {
+                            MainInfo._Approvals = PRRecords[0].Approvals;
+                        }
                         ToReturn.Add(MainInfo);
                     }
                 }
