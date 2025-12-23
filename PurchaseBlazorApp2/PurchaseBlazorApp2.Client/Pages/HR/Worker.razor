@@ -31,12 +31,17 @@ else
                 <tr>
                     <th>ID</th>
                     <th>Name</th>
+                    <th>Age</th>
                     <th>Passport</th>
-                    <th>Status</th>
+                    <th>Active</th>
+                    <th>EPF</th>
+                    <th>Nationality</th>
+                    <th>Monthly Rate</th>
+                    <th>Hourly Rate</th>
                     <th>Daily Rate</th>
                     <th>OT Rate</th>
                     <th>Sunday Rate</th>
-                    <th>Monthly Rate</th>
+                   
                     
                 </tr>
             </thead>
@@ -49,15 +54,26 @@ else
                     <tr>
                         <td>@worker.ID</td>
                         <td><input type="text" class="form-control" @bind="worker.Name" /></td>
+                        <td><input type="text" class="form-control" @bind="worker.Age" /></td>
                         <td><input type="text" class="form-control" @bind="worker.Passport" /></td>
-                        <td><select class="form-select" @bind="worker.WorkerStatus">
-                                <option value="Active">Active</option>
-                                <option value="Inactive">Inactive</option></select>
+                        <td>
+                            <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="worker.WorkerStatus"
+                                                                                         TEnum="EWorkerStatus" />
                         </td>
-                        <td><input type="number" class="form-control" step="0.01" @bind="worker.DailyRate" /></td>
-                        <td><input type="number" class="form-control" step="0.01" @bind="worker.OTRate" /></td>
-                        <td><input type="number" class="form-control" step="0.01" @bind="worker.SundayRate" /></td>
+                        <td>
+                            <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="worker.EPFStatus"
+                                                                                         TEnum="EEPFCategory" />
+                        </td>
+                        <td>
+                            <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="worker.NationalityStatus"
+                                                                                         TEnum="ENationalityStatus" />
+                        </td>
                         <td><input type="number" class="form-control" step="0.01" @bind="worker.MonthlyRate" /></td>
+                        <td><input type="number" class="form-control" step="0.01" @bind="worker.HourlyRate" /></td>
+                        <td><input type="number" class="form-control" step="0.01" @bind="worker.DailyRate" readonly /></td>
+                        <td><input type="number" class="form-control" step="0.01" @bind="worker.OTRate" readonly /></td>
+                        <td><input type="number" class="form-control" step="0.01" @bind="worker.SundayRate" readonly /></td>
+             
                         
                     </tr>
                 }

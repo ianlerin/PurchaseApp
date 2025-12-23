@@ -222,11 +222,19 @@ namespace PurchaseBlazorApp2.Components.Data
         }
         public bool bShouldSendEmail = false;
     }
-
+    public class UploadRequest
+    {
+        public string requisitionNumber { get; set; } = "";
+        public string bucket_name { get; set; } = "";
+        public List<string> dataformats { get; set; } = new List<string>();
+        public List<string> s3_keys { get; set; } =  new List<string>();
+    }
     public class ImageUploadInfo
     {
         public byte[] Data { get; set; }
         public string DataFormat {  get; set; }
+
+        public string Url { get; set; }
         public Guid Id { get; set; } = Guid.NewGuid();
     }
 

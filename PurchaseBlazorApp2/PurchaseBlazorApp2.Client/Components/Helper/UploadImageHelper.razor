@@ -1,7 +1,9 @@
-﻿@using Radzen
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using Radzen
 @using Radzen.Blazor
 @using PurchaseBlazorApp2.Components.Data
 @using Microsoft.AspNetCore.Components.Forms
+@using System.Net.Http.Headers
 @inject IJSRuntime JS
 
 @if (bNewRequisition)
@@ -35,8 +37,7 @@
 
                 @if (image.DataFormat.StartsWith("image/"))
                 {
-                    <!-- Show as Image -->
-                    <img src="@GetImageSrc(image)"
+                    <img src="@image.Url"
                          class="img-thumbnail"
                          style="width: 100%; height: auto; max-height:@ImageHeightPx; cursor:pointer;"
                          @onclick="@(() => ShowZoom(image))" />
@@ -45,7 +46,7 @@
                 {
                     <!-- Show as PDF Preview -->
                     <div style="position: relative; width: 100%; height:@ImageHeightPx;">
-                        <iframe src="@GetImageSrc(image)"
+                        <iframe src="@image.Url"
                                 style="width: 100%; height:100%; border:none;"
                                 title="PDF Preview">
                         </iframe>
@@ -100,16 +101,31 @@ else
         Horizontal,
         Vertical
     }
-
+    [Inject]
+    private HttpClient Http { get; set; }
     [Parameter] public EventCallback<int> OnImageSelected { get; set; }
-    [Parameter] public List<ImageUploadInfo> UploadedImages { get; set; } = new();
+    private List<ImageUploadInfo> _uploadedImages = new();
+
+    [Parameter]
+    public List<ImageUploadInfo> UploadedImages
+    {
+        get => _uploadedImages;
+        set
+        {
+            if (_uploadedImages != value)
+            {
+                _uploadedImages = value;
+                OnUploadedImagesChangedAsync();
+            }
+        }
+    }
     [Parameter] public ESelectionType SelectionType { get; set; } = ESelectionType.None;
 
     [Parameter] public int? SelectedIndex { get; set; }
     [Parameter] public EventCallback<int?> SelectedIndexChanged { get; set; }
 
     public HashSet<int> SelectedIndices { get; set; } = new();
-
+    private const long MaxFileSize = 20 * 1024 * 1024;
     [Parameter] public EOrientation Orientation { get; set; } = EOrientation.Horizontal;
     [Parameter] public bool bNewRequisition { get; set; } = false;
     [Parameter] public int ImageWidth { get; set; } = 150;
@@ -121,6 +137,8 @@ else
 
     private string ImageWidthPx => $"{ImageWidth}px";
     private string ImageHeightPx => $"{ImageHeight}px";
+    @inject AuthenticationStateProvider AuthStateProvider
+
 
     private string GetContainerClass()
     {
@@ -130,9 +148,10 @@ else
     }
     private async Task OnUploadChange(UploadChangeEventArgs args)
     {
+
         foreach (var file in args.Files)
         {
-            using var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+            using var stream = file.OpenReadStream(MaxFileSize);
             using var ms = new MemoryStream();
             await stream.CopyToAsync(ms);
             var buffer = ms.ToArray();
@@ -158,10 +177,33 @@ else
                 SelectedIndices.Add(newIndex);
             }
         }
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        string name = user.FindFirst(c => c.Type == "name")?.Value;
+        for (int i = 0; i < UploadedImages.Count(); i++)
+        {
+            string FileName = name + "Temp_" + i;
+            string url = await UploadFileAndGetUrlAsync(UploadedImages[i].Data, FileName, UploadedImages[i].DataFormat);
+            UploadedImages[i].Url = url;
 
+        }
         StateHasChanged();
     }
 
+    private async Task OnUploadedImagesChangedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        string name = user.FindFirst(c => c.Type == "name")?.Value;
+        for (int i = 0; i < UploadedImages.Count(); i++)
+        {
+            string FileName = name + "Temp_" + i;
+            string url = await UploadFileAndGetUrlAsync(UploadedImages[i].Data, FileName, UploadedImages[i].DataFormat);
+            UploadedImages[i].Url = url;
+
+        }
+        StateHasChanged();
+    }
     private void RemoveImage(Guid id)
     {
         var index = UploadedImages.FindIndex(img => img.Id == id);
@@ -188,7 +230,6 @@ else
     {
         ZoomedUploadInfo=image;
         ZoomedImageSrc = GetImageSrc(image);
-        await JS.InvokeVoidAsync("console.log", $"zoom {ZoomedImageSrc}");
         IsZoomVisible = true;
     }
 
@@ -234,5 +275,107 @@ else
     {
         var src = GetImageSrc(image);
         await JS.InvokeVoidAsync("open", src, "_blank"); // Opens PDF in new tab
+    }
+
+    public async Task UploadItem(string PrimaryKey, string BucketName)
+    {
+        List<string> formats = new List<string>();
+        List<string> s3keys = new List<string>();
+        for(int i=0;i<UploadedImages.Count();i++)
+        {
+            string Name=PrimaryKey + "_"+ BucketName + "_" + i;
+            s3keys.Add(Name);
+            formats.Add(UploadedImages[i].DataFormat);
+        }
+        try
+        {
+            var request = new UploadRequest
+            {
+                requisitionNumber = PrimaryKey,
+                bucket_name = BucketName,
+                s3_keys = s3keys,
+                dataformats = formats
+            };
+
+            var response = await Http.PostAsJsonAsync(
+                "https://pfd3awi6h6.execute-api.ap-southeast-1.amazonaws.com/default/UploadImageToDynamo",
+                request
+            );
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>();
+
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Exception: {ex.Message}");
+        }
+        
+
+    }
+
+    public async Task<string> UploadFileAndGetUrlAsync(byte[] fileBytes, string fileName,string filetype)
+    {
+        try
+        {
+            // --- Step 1: Request signed PUT URL ---
+            var lambdaUploadUrl = "https://pfd3awi6h6.execute-api.ap-southeast-1.amazonaws.com/BetaTesting/CreateImageUploadSignURl";
+            var uploadRequestBody = new
+            {
+                bucketname = "primagegenesis",
+                filename = fileName
+            };
+
+            var jsonRequest = new StringContent(System.Text.Json.JsonSerializer.Serialize(uploadRequestBody));
+            jsonRequest.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+
+            var signedUrlResponse = await Http.PostAsync(lambdaUploadUrl, jsonRequest);
+            signedUrlResponse.EnsureSuccessStatusCode();
+
+            var json = await signedUrlResponse.Content.ReadAsStringAsync();
+            var signedUrlObj = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(json);
+            var uploadUrl = signedUrlObj["uploadUrl"];
+
+            // --- Step 2: Upload file bytes to S3 via signed PUT URL ---
+            using var content = new ByteArrayContent(fileBytes);
+            content.Headers.ContentType = new MediaTypeHeaderValue(filetype);
+
+            var putResponse = await Http.PutAsync(uploadUrl, content);
+            putResponse.EnsureSuccessStatusCode();
+
+            // --- Step 3: Request signed GET URL immediately after upload ---
+            var lambdaGetUrl = "https://pfd3awi6h6.execute-api.ap-southeast-1.amazonaws.com/BetaTesting/GetImageSignURL";
+            var getRequestBody = new
+            {
+                bucketname = "primagegenesis",
+                filename = fileName,
+                filetype = filetype
+            };
+
+            var getJsonRequest = new StringContent(System.Text.Json.JsonSerializer.Serialize(getRequestBody));
+            getJsonRequest.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+
+            var getUrlResponse = await Http.PostAsync(lambdaGetUrl, getJsonRequest);
+            getUrlResponse.EnsureSuccessStatusCode();
+
+            var getJson = await getUrlResponse.Content.ReadAsStringAsync();
+            var getUrlObj = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(getJson);
+
+            
+            var downloadUrl = getUrlObj["downloadUrl"];
+            return downloadUrl;
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Error: {ex.Message}");
+            return null;
+        }
     }
 }

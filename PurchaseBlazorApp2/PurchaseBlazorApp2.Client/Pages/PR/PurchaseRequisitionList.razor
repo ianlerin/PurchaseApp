@@ -25,20 +25,13 @@
             else
             {
                 <div style="overflow-x:auto;">
-                    @if(bProcurementOrFinance)
-                    {
-                        <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="SearchFilterType"
-                                                                                     TEnum="PurchaseBlazorApp2.Components.Data.EPRSearchStatus">
-                        </PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox>
-
-                    }
-                    else
-                    {
-                        <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="FilterType"
-                                                                                     TEnum="PurchaseBlazorApp2.Components.Data.EFilterPRType">
-                        </PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox>
-                    }
                   
+                <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="FilterType"
+                                                                             TEnum="PurchaseBlazorApp2.Components.Data.EFilterPRType">
+                </PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox>
+                <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="SearchFilterType"
+                                                                             TEnum="PurchaseBlazorApp2.Components.Data.EPRSearchStatus">
+                </PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox>
                   
                     <RadzenDataGrid Data="@Records"
                     TItem="PurchaseRequisitionRecord"
@@ -153,113 +146,171 @@
 
     private async Task ReloadList()
     {
-        IsLoading = true; // show loading
+        IsLoading = true;
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
         try
         {
-            HttpResponseMessage? response = new HttpResponseMessage();
+            HttpResponseMessage? response = null;
 
-            EDepartment MyDepartment = await GeneralLibrary.GetCurrentDepartmentRole(JS);
-            if (MyDepartment == EDepartment.ProcurementManager || MyDepartment == EDepartment.Finance)
+            var department = await GeneralLibrary.GetCurrentDepartmentRole(JS);
+
+            bProcurementOrFinance =
+                department == EDepartment.ProcurementManager ||
+                department == EDepartment.Finance;
+
+            await JS.InvokeVoidAsync(
+                "console.log",
+                $"ReloadList department = {department}"
+            );
+
+            switch (department)
             {
-                await JS.InvokeVoidAsync("console.log", $"ReloadList procurement or finance");
-                bProcurementOrFinance = true;
-            }
-
-            else
-            {
-
-                await JS.InvokeVoidAsync("console.log", $"ReloadList not procurement or finance");
-            }
-
-            if (MyDepartment == EDepartment.ProcurementManager)
-            {
-                response = await Http.PostAsJsonAsync(
-                    NavigationManager.ToAbsoluteUri("api/pr/get-list-partial-all"),
-                   SearchFilterType);
-
-            }
-            else if (MyDepartment == EDepartment.Finance)
-            {
-                response = await Http.PostAsJsonAsync(
-                   NavigationManager.ToAbsoluteUri("api/pr/get-finance"),
-                   new List<PurchaseRequisitionRecord>());
-                HashSet<string> FilterHashrecords = await response.Content.ReadFromJsonAsync<HashSet<string>>();
-                List<string> StringRecords=FilterHashrecords.ToList();
-                if (StringRecords.Count() > 0)
-                {
-                    response = await Http.PostAsJsonAsync(
-    NavigationManager.ToAbsoluteUri("api/pr/get-list-partial"),
-    StringRecords);
-                }
-            }
-            else
-            {
-                List<string> StringRecords = await GetRecordsToView();
-                foreach (string Record in StringRecords)
-                {
-                    await JS.InvokeVoidAsync("console.log", $"Load Records {Record}");
-                }
-                if (StringRecords.Count() > 0)
-                {
-                    response = await Http.PostAsJsonAsync(
-    NavigationManager.ToAbsoluteUri("api/pr/get-list-partial"),
-    StringRecords);
-                }
-
-            }
-
-            if (response.IsSuccessStatusCode)
-            {
-                try
-                {
-                    var records = await response.Content.ReadFromJsonAsync<List<PurchaseRequisitionRecord>>();
-
-                    if (records is not null)
+                case EDepartment.ProcurementManager:
                     {
-                        Records = records;
-                        await JS.InvokeVoidAsync("console.log", $"✅ Loaded {records.Count} purchase requisitions");
+                        response = await Http.PostAsJsonAsync(
+                            NavigationManager.ToAbsoluteUri("api/pr/get-list-partial-all"),
+                            SearchFilterType
+                        );
+                        break;
                     }
-                    else
+
+                case EDepartment.Finance:
                     {
-                        await JS.InvokeVoidAsync("console.warn", "⚠️ Received null when deserializing PurchaseRequisitionRecord list.");
-                        Records = new List<PurchaseRequisitionRecord>();
+                        // ===== Finance-specific PR numbers =====
+                        var financeResponse = await Http.PostAsJsonAsync(
+                            NavigationManager.ToAbsoluteUri("api/pr/get-finance"),
+                            new List<PurchaseRequisitionRecord>()
+                        );
+
+                        var financeRecords =
+                            await financeResponse.Content.ReadFromJsonAsync<HashSet<string>>()
+                            ?? new HashSet<string>();
+
+                        // ===== Default PR numbers (same as normal users) =====
+                        var defaultRecords = await GetRecordsToView();
+
+                        // ===== Merge + deduplicate =====
+                        var mergedRecords = financeRecords
+                            .Union(defaultRecords)
+                            .ToList();
+
+                        foreach (var record in mergedRecords)
+                        {
+                            await JS.InvokeVoidAsync("console.log", $"Load Records {record}");
+                        }
+
+                        if (mergedRecords.Count > 0)
+                        {
+                            response = await Http.PostAsJsonAsync(
+                                NavigationManager.ToAbsoluteUri("api/pr/get-list-partial"),
+                                mergedRecords
+                            );
+                        }
+                        break;
                     }
-                }
-                catch (Exception ex)
-                {
-                    await JS.InvokeVoidAsync("console.error", $"❌ Error deserializing response: {ex.Message}");
-                    Records = new List<PurchaseRequisitionRecord>();
-                }
+
+                default:
+                    {
+                        var recordsToView = await GetRecordsToView();
+
+                        foreach (var record in recordsToView)
+                        {
+                            await JS.InvokeVoidAsync("console.log", $"Load Records {record}");
+                        }
+
+                        if (recordsToView.Count > 0)
+                        {
+                            response = await Http.PostAsJsonAsync(
+                                NavigationManager.ToAbsoluteUri("api/pr/get-list-partial"),
+                                recordsToView
+                            );
+                        }
+                        break;
+                    }
             }
-            else
-            {
-                var error = await response.Content.ReadAsStringAsync();
-                await JS.InvokeVoidAsync("console.error", $"HTTP error {response.StatusCode}: {error}");
-                Records = new List<PurchaseRequisitionRecord>();
-            }
-          
+
+            Records = response != null
+                ? await ExtractPRListAsync(response)
+                : new List<PurchaseRequisitionRecord>();
         }
         catch (HttpRequestException ex)
         {
-            await JS.InvokeVoidAsync("console.error", $"🌐 Network error while fetching list: {ex.Message}");
+            await JS.InvokeVoidAsync(
+                "console.error",
+                $"🌐 Network error while fetching list: {ex.Message}"
+            );
             Records = new List<PurchaseRequisitionRecord>();
         }
         catch (Exception ex)
         {
-            await JS.InvokeVoidAsync("console.error", $"🔥 Unexpected error: {ex}");
+            await JS.InvokeVoidAsync(
+                "console.error",
+                $"🔥 Unexpected error: {ex}"
+            );
             Records = new List<PurchaseRequisitionRecord>();
         }
         finally
         {
-            IsLoading = false; // hide loading
+            IsLoading = false;
+            stopwatch.Stop();
         }
 
-        stopwatch.Stop();
-        await JS.InvokeVoidAsync("console.log", $"⏱ Loaded PR list in {stopwatch.ElapsedMilliseconds} ms");
+        await JS.InvokeVoidAsync(
+            "console.log",
+            $"⏱ Loaded PR list in {stopwatch.ElapsedMilliseconds} ms"
+        );
+
         StateHasChanged();
     }
+    private async Task<List<PurchaseRequisitionRecord>> ExtractPRListAsync(HttpResponseMessage response)
+    {
+        if (response == null)
+        {
+            await JS.InvokeVoidAsync("console.warn", "⚠️ HTTP response is null.");
+            return new List<PurchaseRequisitionRecord>();
+        }
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            await JS.InvokeVoidAsync(
+                "console.error",
+                $"HTTP error {response.StatusCode}: {error}"
+            );
+            return new List<PurchaseRequisitionRecord>();
+        }
+
+        try
+        {
+            var records = await response.Content.ReadFromJsonAsync<List<PurchaseRequisitionRecord>>();
+
+            if (records == null)
+            {
+                await JS.InvokeVoidAsync(
+                    "console.warn",
+                    "⚠️ Received null when deserializing PurchaseRequisitionRecord list."
+                );
+                return new List<PurchaseRequisitionRecord>();
+            }
+
+            await JS.InvokeVoidAsync(
+                "console.log",
+                $"✅ Loaded {records.Count} purchase requisitions"
+            );
+
+            return records;
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync(
+                "console.error",
+                $"❌ Error deserializing response: {ex.Message}"
+            );
+            return new List<PurchaseRequisitionRecord>();
+        }
+    }
+
 
     private async Task<List<string>> GetRecordsToView()
     {
