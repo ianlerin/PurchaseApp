@@ -242,6 +242,7 @@ namespace WorkerRecord
         public EventHandler EPFRecalculateHandler;
             public string? ID { get; set; }
             public string? Name { get; set; }
+            public string? Deduction_Reason { get; set;}
         private EEPFCategory _EPFCategory;
         public EEPFCategory EPFCategory
         {
@@ -390,7 +391,13 @@ namespace WorkerRecord
             get => _Socso_Employee;
             set { _Socso_Employee = value; OnRecalculateTotalPrice(); }
         }
+        private decimal _Deduction;
 
+        public decimal Deduction
+        {
+            get => _Deduction;
+            set { _Deduction = value; OnRecalculateTotalPrice(); }
+        }
         private decimal _Gross_wages;
         public decimal Gross_wages
         {
@@ -430,7 +437,7 @@ namespace WorkerRecord
                 return;
             }
 
-            Total_wages = Gross_wages - EPF_Employee- Socso_Employee;
+            Total_wages = Gross_wages - EPF_Employee- Socso_Employee - Deduction;
         }
 
 

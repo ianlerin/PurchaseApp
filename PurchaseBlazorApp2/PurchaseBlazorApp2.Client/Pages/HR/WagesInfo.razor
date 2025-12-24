@@ -60,6 +60,8 @@ else
                     <th>Employee EPF</th>
                     <th>Employer Socso</th>
                     <th>Employee Socso</th>
+                    <th>Deduction</th>
+                    <th>Deduction Reason</th>
                     <th>Total Wages</th>
                 </tr>
             </thead>
@@ -102,6 +104,8 @@ else
                         <td>@record.EPF_Employee</td>
                         <td>@record.Socso_Employer</td>
                         <td>@record.Socso_Employee</td>
+                        <td><input type="number" class="form-control"@bind="record.Deduction" /></td>
+                        <td><input type="text" class="form-control" @bind="record.Deduction_Reason" /></td>
                         <td>@record.Total_wages</td>
                     </tr>
                 }

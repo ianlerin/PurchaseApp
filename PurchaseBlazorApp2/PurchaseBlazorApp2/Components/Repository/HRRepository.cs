@@ -1,4 +1,5 @@
-﻿using Npgsql;
+﻿using DocumentFormat.OpenXml.Office.Word;
+using Npgsql;
 using PurchaseBlazorApp2.Client.Pages.HR;
 using PurchaseBlazorApp2.Components.Data;
 using PurchaseBlazorApp2.Resource;
@@ -246,6 +247,8 @@ namespace PurchaseBlazorApp2.Components.Repository
                 gross_wages,
                 epf_employer,
                 epf_employee,
+                deduction,
+                deduction_reason,
                 total_wages
             ) VALUES (
                 @year, @month,
@@ -259,6 +262,8 @@ namespace PurchaseBlazorApp2.Components.Repository
                 @gross_wages,
                 @epf_employer,
                 @epf_employee,
+                @Deduction,
+                @DeductionReason,
                 @total_wages
             )", conn);
 
@@ -298,7 +303,10 @@ namespace PurchaseBlazorApp2.Components.Repository
                     insertCmd.Parameters.AddWithValue("socso_status", record.SocsoCategory.ToString());
                     insertCmd.Parameters.AddWithValue("socso_employee", record.Socso_Employee);
                     insertCmd.Parameters.AddWithValue("socso_employer", record.Socso_Employer);
+                    insertCmd.Parameters.AddWithValue("@Deduction", record.Deduction);
+                    insertCmd.Parameters.AddWithValue("@DeductionReason", record.Deduction_Reason );
 
+                    
                     insertCmd.ExecuteNonQuery();
                 }
 
@@ -339,6 +347,8 @@ namespace PurchaseBlazorApp2.Components.Repository
                 gross_wages,
                 epf_employer,
                 epf_employee,
+                deduction,
+                deduction_reason,
                 total_wages
             FROM hr.wagesinfo
             WHERE year = @year AND month = @month
@@ -403,6 +413,9 @@ namespace PurchaseBlazorApp2.Components.Repository
                     record.Total_wages = reader.IsDBNull(reader.GetOrdinal("total_wages")) ? 0m : reader.GetDecimal(reader.GetOrdinal("total_wages"));
                     record.Socso_Employee = reader.IsDBNull(reader.GetOrdinal("socso_employee")) ? 0m : reader.GetDecimal(reader.GetOrdinal("socso_employee"));
                     record.Socso_Employer = reader.IsDBNull(reader.GetOrdinal("socso_employer")) ? 0m : reader.GetDecimal(reader.GetOrdinal("socso_employer"));
+                    record.Deduction = reader.IsDBNull(reader.GetOrdinal("deduction")) ? 0m : reader.GetDecimal(reader.GetOrdinal("deduction"));
+                    record.Deduction_Reason = reader.IsDBNull(reader.GetOrdinal("deduction_reason")) ? string.Empty : reader.GetString(reader.GetOrdinal("deduction_reason"));
+  
 
                     // ---------- SOCSO Category ----------
                     var socsoCatStr = reader.IsDBNull(reader.GetOrdinal("socso_status"))
