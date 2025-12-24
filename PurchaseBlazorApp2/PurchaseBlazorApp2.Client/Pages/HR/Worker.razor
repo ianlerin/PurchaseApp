@@ -14,6 +14,14 @@
         <select class="form-select" @bind="FilterStatus">
             <option value="Active">Active</option>
             <option value="Inactive">Inactive</option>
+            <option value="All">All</option>
+        </select>
+    </div>
+    <div class="col-sm-2">
+        <select class="form-select" @bind="FilterNationality">
+            <option value="Local">Local</option>
+            <option value="Foreign">Foreign</option>
+            <option value="All">All</option>
         </select>
     </div>
 
@@ -48,8 +56,9 @@ else
             <tbody>
                 @foreach (var worker in Workers.Where(w =>
                             (string.IsNullOrWhiteSpace(FilterName) || w.Name.Contains(FilterName, StringComparison.OrdinalIgnoreCase)) &&
-                            (string.IsNullOrWhiteSpace(FilterStatus) || w.WorkerStatus.ToString() == FilterStatus)))
-                         
+                            (FilterStatus == "All" || string.IsNullOrWhiteSpace(FilterStatus) || w.WorkerStatus.ToString() == FilterStatus) &&
+                            (FilterNationality == "All" || string.IsNullOrWhiteSpace(FilterNationality) || w.NationalityStatus.ToString() == FilterNationality)))
+                
                 {
                     <tr>
                         <td>@worker.ID</td>
@@ -79,8 +88,11 @@ else
                 }
             </tbody>
         </table>
-        <button class="btn btn-primary" @onclick="SubmitWorker">Submit Worker
-           
+        <button class="btn btn-primary" @onclick="SubmitWorker">Submit Worker 
+             
+        </button>
+        <button  class ="btn btn-success" @onclick ="DownloadPdf" >
+            Download PDF
         </button>
     </div>
 }
@@ -88,7 +100,9 @@ else
 @code {
     List<WorkerRecord> Workers = new List<WorkerRecord>();
     string FilterName = "";
-    string FilterStatus = "";
+    string FilterStatus = "All";
+    string FilterNationality = "All";
+
 
     [Inject]
     private HttpClient Http { get; set; } 
@@ -136,6 +150,28 @@ else
         {
             await JS.InvokeVoidAsync("alert", $"SubmitFail! Exception: {ex.Message}");
         }
+    }
+    private async Task DownloadPdf()
+    {
+        if (Workers == null || Workers.Count == 0)
+        {
+            await JS.InvokeVoidAsync("alert", "Table is empty");
+            return;
+        }
+
+        var status = string.IsNullOrWhiteSpace(FilterStatus) ? "All" : FilterStatus;        
+        var nationality = string.IsNullOrWhiteSpace(FilterNationality) ? "All" : FilterNationality;
+        var pdfBytes = await Http.GetByteArrayAsync(
+            $"api/pdf/hr/workers?status={status}&nationality={nationality}"
+        );
+
+        var base64 = Convert.ToBase64String(pdfBytes);
+
+        await JS.InvokeVoidAsync(
+            "downloadFileFromBase64",
+            $"Workers{status}{nationality}.pdf",
+            base64
+        );
     }
 
 }
