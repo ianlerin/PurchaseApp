@@ -168,6 +168,7 @@ namespace WorkerRecord
     public class WageRecord
     {
         //public EventHandler EPFRecalculateHandler;
+      
         public int Year { get; set; }
             public int Month { get; set; }
 

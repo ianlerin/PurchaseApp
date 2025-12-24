@@ -127,6 +127,7 @@ else
 @code {
     List<WorkerRecord> CurrentActiveWorkers { get; set; }
     private WageRecord _myWageInfo = new WageRecord();
+    bool bIsLoading = false;
     public WageRecord MyWageInfo
     {
         get => _myWageInfo;
@@ -160,6 +161,8 @@ else
             var result = await Http.GetFromJsonAsync<WageRecord>(
                 $"api/HR/GetWagesInfo?year={MyWageInfo.Year}&month={MyWageInfo.Month}");
 
+
+            bIsLoading = true;
             if (result != null)
             {
                 MyWageInfo = result;
@@ -176,6 +179,7 @@ else
             await JS.InvokeVoidAsync("alert", "No data found for the selected year and month");
         }
         BindEPFRecalculation();
+        bIsLoading = false;
         StateHasChanged();
     }
 
@@ -189,8 +193,24 @@ else
 
     private async void RecalculateEPFAsync(object o, EventArgs e)
     {
+        if (bIsLoading)
+        {
+            return;
+        }
+
+        if (o is not SingleWageRecord targetRecord)
+        {
+            await JS.InvokeVoidAsync("alert", "Recalculate object not wage record");
+            return;
+        }
+     
+
         foreach (SingleWageRecord record in MyWageInfo.WageRecords)
         {
+            // Only process the matching record
+            if (record.ID != targetRecord.ID)
+                continue;
+
             try
             {
                 var response = await Http.PostAsJsonAsync("api/HR/calculateEPF", record);
@@ -207,13 +227,13 @@ else
                         record.Socso_Employee = result.EPFEmployeeContribution;
                     }
                 }
-                
             }
             catch (Exception ex)
             {
-               
+                // Consider logging the exception
             }
         }
+
         StateHasChanged();
     }
 
