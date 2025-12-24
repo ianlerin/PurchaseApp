@@ -19,6 +19,9 @@
 
   <ItemGroup>
     <None Remove="PineappleLogo.jpeg" />
+    <None Remove="Resource\EPFTableA.xlsx" />
+    <None Remove="Resource\EPFTableC.xlsx" />
+    <None Remove="Resource\EPFTableE.xlsx" />
     <None Remove="Resource\PineappleLogo.jpeg" />
   </ItemGroup>
 
@@ -26,6 +29,7 @@
     <ProjectReference Include="..\..\SharedDataType\SharedDataType.csproj" />
     <ProjectReference Include="..\PurchaseBlazorApp2.Client\PurchaseBlazorApp2.Client.csproj" />
     <PackageReference Include="Azure.Identity" Version="1.16.0" />
+    <PackageReference Include="ClosedXML" Version="0.105.0" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.15" />
     <PackageReference Include="Microsoft.Authentication.WebAssembly.Msal" Version="9.0.9" />
@@ -53,6 +57,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Resource\EPFTableA.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resource\EPFTableC.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resource\EPFTableE.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Resource\PineappleLogo.jpeg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

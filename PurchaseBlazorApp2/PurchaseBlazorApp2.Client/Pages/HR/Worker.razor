@@ -43,6 +43,7 @@ else
                     <th>Passport</th>
                     <th>Active</th>
                     <th>EPF</th>
+                    <th>Socso</th>
                     <th>Nationality</th>
                     <th>Monthly Rate</th>
                     <th>Hourly Rate</th>
@@ -72,6 +73,10 @@ else
                         <td>
                             <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="worker.EPFStatus"
                                                                                          TEnum="EEPFCategory" />
+                        </td>
+                        <td>
+                            <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="worker.SocsoCategory"
+                                                                                         TEnum="ESocsoCategory" />
                         </td>
                         <td>
                             <PurchaseBlazorApp2.Client.Components.Helper.EnumDropDownBox @bind-Value="worker.NationalityStatus"
