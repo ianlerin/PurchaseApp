@@ -27,6 +27,12 @@ namespace WorkerRecord
         public int Month { get; set; }
         public UserName MyUser { get; set; }
     }
+
+    public class WorkerPdfRequest
+    {
+        public string FilterStatus { get; set; }
+    }
+
     public class WorkerRecord
     {
         public string? ID {  get; set; }
