@@ -60,108 +60,107 @@ else
                 </Template>
             </RadzenDataGridColumn>
 
-            <!-- Daily -->
-            <RadzenDataGridColumn TItem="SingleWageRecord" Property="DailyHours" Title="Daily Hours" Width="140px">
-                <Template Context="record">
+                <!-- Daily -->
+                <RadzenDataGridColumn TItem="SingleWageRecord" Property="DailyHours" Title="Daily Hours" Width="140px">
+                    <Template Context="record">
                         <RadzenNumeric TValue="decimal" @bind-Value="record.DailyHours" Style="width:100%; background:#D9EAF7;" Step="0.01" />
-                </Template>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="SingleWageRecord" Property="DailyRate" Title="Daily Rate" Width="140px">
-                <Template Context="record">
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="SingleWageRecord" Property="DailyRate" Title="Daily Rate" Width="140px">
+                    <Template Context="record">
                         <RadzenNumeric TValue="decimal" @bind-Value="record.DailyRate" Style="width:100%; background:#D9EAF7;" Step="0.01" />
-                </Template>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="SingleWageRecord" Property="Daily_wages" Title="Daily Wages" Width="140px">
-                <Template Context="record">
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="SingleWageRecord" Property="Daily_wages" Title="Daily Wages" Width="140px">
+                    <Template Context="record">
                         <RadzenNumeric TValue="decimal" Value="record.Daily_wages" ReadOnly="true" Style="width:100%; background:#D9EAF7;" Step="0.01" />
-                </Template>
-            </RadzenDataGridColumn>
+                    </Template>
+                </RadzenDataGridColumn>
 
-            <!-- OT -->
-            <RadzenDataGridColumn TItem="SingleWageRecord" Property="OTHours" Title="OT Hours"  Width="140px">
-                <Template Context="record">
+                <!-- OT -->
+                <RadzenDataGridColumn TItem="SingleWageRecord" Property="OTHours" Title="OT Hours" Width="140px">
+                    <Template Context="record">
                         <RadzenNumeric TValue="decimal" @bind-Value="record.OTHours" Style="width:100%; background:#FFE5E5;" Step="0.01" />
-                </Template>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="SingleWageRecord" Property="OTRate" Title="OT Rate" Width="140px">
-                <Template Context="record">
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="SingleWageRecord" Property="OTRate" Title="OT Rate" Width="140px">
+                    <Template Context="record">
                         <RadzenNumeric TValue="decimal" Value="record.OTRate" ReadOnly="true" Style="width:100%; background:#FFE5E5;" Step="0.01" />
-                </Template>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="SingleWageRecord" Property="OT_wages" Title="OT Wages" Width="140px">
-                <Template Context="record">
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="SingleWageRecord" Property="OT_wages" Title="OT Wages" Width="140px">
+                    <Template Context="record">
                         <RadzenNumeric TValue="decimal" Value="record.OT_wages" ReadOnly="true" Style="width:100%; background:#FFE5E5;" Step="0.01" />
-                </Template>
-            </RadzenDataGridColumn>
-
-            <!-- Sunday -->
-            <RadzenDataGridColumn TItem="SingleWageRecord" Property="SundayHours" Title="Sunday Hours" Width="140px">
-                <Template Context="record">
+                    </Template>
+                </RadzenDataGridColumn>
+                <!-- Sunday -->
+                <RadzenDataGridColumn TItem="SingleWageRecord" Property="SundayHours" Title="Sunday Hours" Width="140px">
+                    <Template Context="record">
                         <RadzenNumeric TValue="decimal" @bind-Value="record.SundayHours" Style="width:100%; background:#FFFFE0;" Step="0.01" />
-                </Template>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="SingleWageRecord" Property="SundayRate" Title="Sunday Rate" Width="140px">
-                <Template Context="record">
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="SingleWageRecord" Property="SundayRate" Title="Sunday Rate" Width="140px">
+                    <Template Context="record">
                         <RadzenNumeric TValue="decimal" Value="record.SundayRate" ReadOnly="true" Style="width:100%; background:#FFFFE0;" Step="0.01" />
-                </Template>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="SingleWageRecord" Property="Sunday_wages" Title="Sunday Wages" Width="140px">
-                <Template Context="record">
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="SingleWageRecord" Property="Sunday_wages" Title="Sunday Wages" Width="140px">
+                    <Template Context="record">
                         <RadzenNumeric TValue="decimal" Value="record.Sunday_wages" ReadOnly="true" Style="width:100%; background:#FFFFE0;" Step="0.01" />
-                </Template>
-            </RadzenDataGridColumn>
+                    </Template>
+                </RadzenDataGridColumn>
 
-            <!-- Monthly -->
-            <RadzenDataGridColumn TItem="SingleWageRecord" Property="MonthlyHours" Title="Monthly Hours" Width="140px">
-                <Template Context="record">
-                        <RadzenNumeric TValue="decimal" @bind-Value="record.MonthlyHours" Style="width:100%; background:#E0F7E9;" " Step="0.01" />
-                </Template>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="SingleWageRecord" Property="MonthlyRate" Title="Monthly Rate" Width="140px">
-                <Template Context="record">
+                <!-- Monthly -->
+                <RadzenDataGridColumn TItem="SingleWageRecord" Property="MonthlyHours" Title="Monthly Hours" Width="140px">
+                    <Template Context="record">
+                        <RadzenNumeric TValue="decimal" @bind-Value="record.MonthlyHours" Style="width:100%; background:#E0F7E9;" Step="0.01" />
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="SingleWageRecord" Property="MonthlyRate" Title="Monthly Rate" Width="140px">
+                    <Template Context="record">
                         <RadzenNumeric TValue="decimal" @bind-Value="record.MonthlyRate" Style="width:100%; background:#E0F7E9;" Step="0.01" />
-                </Template>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="SingleWageRecord" Property="Monthly_wages" Title="Monthly Wages" Width="140px">
-                <Template Context="record">
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="SingleWageRecord" Property="Monthly_wages" Title="Monthly Wages" Width="140px">
+                    <Template Context="record">
                         <RadzenNumeric TValue="decimal" Value="record.Monthly_wages" ReadOnly="true" Style="width:100%; background:#E0F7E9" Step="0.01" />
-                </Template>
-            </RadzenDataGridColumn>
-
-            <!-- Hourly -->
-            <RadzenDataGridColumn TItem="SingleWageRecord" Property="HourlyHours" Title="Hourly Hours" Width="140px">
-                <Template Context="record">
+                    </Template>
+                </RadzenDataGridColumn>
+                <!-- Hourly -->
+                <RadzenDataGridColumn TItem="SingleWageRecord" Property="HourlyHours" Title="Hourly Hours" Width="140px">
+                    <Template Context="record">
                         <RadzenNumeric TValue="decimal" @bind-Value="record.HourlyHours" Style="width:100%; background:#E6E6FA" Step="0.01" />
-                </Template>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="SingleWageRecord" Property="HourlyRate" Title="Hourly Rate" Width="140px">
-                <Template Context="record">
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="SingleWageRecord" Property="HourlyRate" Title="Hourly Rate" Width="140px">
+                    <Template Context="record">
                         <RadzenNumeric TValue="decimal" @bind-Value="record.HourlyRate" Style="width:100%; background:#E6E6FA;" Step="0.01" />
-                </Template>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="SingleWageRecord" Property="Hourly_wages" Title="Hourly Wages" Width="140px">
-                <Template Context="record">
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="SingleWageRecord" Property="Hourly_wages" Title="Hourly Wages" Width="140px">
+                    <Template Context="record">
                         <RadzenNumeric TValue="decimal" Value="record.Hourly_wages" ReadOnly="true" Style="width:100%; background:#E6E6FA;" Step="0.01" />
-                </Template>
-            </RadzenDataGridColumn>
+                    </Template>
+                </RadzenDataGridColumn>
 
-            <!-- Totals -->
-            <RadzenDataGridColumn TItem="SingleWageRecord" Property="Gross_wages" Title="Gross Wages" Width="140px" />
-            <RadzenDataGridColumn TItem="SingleWageRecord" Property="EPF_Employer" Title="Employer EPF" Width="140px" />
-            <RadzenDataGridColumn TItem="SingleWageRecord" Property="EPF_Employee" Title="Employee EPF" Width="140px" />
-            <RadzenDataGridColumn TItem="SingleWageRecord" Property="Socso_Employer" Title="Employer Socso" Width="140px" />
-            <RadzenDataGridColumn TItem="SingleWageRecord" Property="Socso_Employee" Title="Employee Socso" Width="140px" />
+                <!-- Totals -->
+                <RadzenDataGridColumn TItem="SingleWageRecord" Property="Gross_wages" Title="Gross Wages" Width="140px" />
+                <RadzenDataGridColumn TItem="SingleWageRecord" Property="EPF_Employer" Title="Employer EPF" Width="140px" />
+                <RadzenDataGridColumn TItem="SingleWageRecord" Property="EPF_Employee" Title="Employee EPF" Width="140px" />
+                <RadzenDataGridColumn TItem="SingleWageRecord" Property="Socso_Employer" Title="Employer Socso" Width="140px" />
+                <RadzenDataGridColumn TItem="SingleWageRecord" Property="Socso_Employee" Title="Employee Socso" Width="140px" />
                 <RadzenDataGridColumn TItem="SingleWageRecord" Property="Deduction" Title="Deduction" Width="140px">
-                <Template Context="record">
+                    <Template Context="record">
                         <RadzenNumeric TValue="decimal" @bind-Value="record.Deduction" Style="width:100% ; background:#FFF3E0;" Step="0.01" />
-                </Template>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="SingleWageRecord" Property="Deduction_Reason" Title="Deduction Reason" Width="140px">
-                <Template Context="record">
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="SingleWageRecord" Property="Deduction_Reason" Title="Deduction Reason" Width="140px">
+                    <Template Context="record">
                         <RadzenTextBox @bind-Value="record.Deduction_Reason" Style="width:100% ; background:#FFF3E0;" />
-                </Template>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="SingleWageRecord" Property="Total_wages" Title="Total Wages" Width="140px" />
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="SingleWageRecord" Property="Total_wages" Title="Total Wages" Width="140px" />
         </Columns>
     </RadzenDataGrid>
   </div>
