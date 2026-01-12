@@ -52,6 +52,9 @@ namespace PurchaseBlazorApp2.Components.Repository
                 id,
                 name,
                 passport,
+                designation_status,
+                status,
+                recommendation,
                 epf_status,
                 nationality_status,
                 age,
@@ -68,6 +71,9 @@ namespace PurchaseBlazorApp2.Components.Repository
                 @id,
                 @name,
                 @passport,
+                @designation_status,
+                @status,
+                @recommendation,
                 @epf_status,
                 @nationality_status,
                 @age,
@@ -82,6 +88,9 @@ namespace PurchaseBlazorApp2.Components.Repository
             ON CONFLICT (id) DO UPDATE SET
                 name               = EXCLUDED.name,
                 passport           = EXCLUDED.passport,
+                designation_status = EXCLUDED.designation_status,
+                status             = EXCLUDED.status,
+                recommendation     = EXCLUDED.recommendation,
                 epf_status         = EXCLUDED.epf_status,
                 nationality_status = EXCLUDED.nationality_status,
                 age                = EXCLUDED.age,
@@ -99,6 +108,9 @@ namespace PurchaseBlazorApp2.Components.Repository
                 cmd.Parameters.AddWithValue("@id", id);
                 cmd.Parameters.AddWithValue("@name", info.Name ?? string.Empty);
                 cmd.Parameters.AddWithValue("@passport", info.Passport ?? string.Empty);
+                cmd.Parameters.AddWithValue("@designation_status", info.Designation ?? string.Empty);
+                cmd.Parameters.AddWithValue("@status", info.Status ?? string.Empty);
+                cmd.Parameters.AddWithValue("@recommendation", info.Recommendation ?? string.Empty);
 
                 cmd.Parameters.AddWithValue("@epf_status", info.EPFStatus.ToString());
                 cmd.Parameters.AddWithValue("@nationality_status", info.NationalityStatus.ToString());
@@ -139,6 +151,9 @@ namespace PurchaseBlazorApp2.Components.Repository
                 id,
                 name,
                 passport,
+                designation_status,
+                status,
+                recommendation,
                 epf_status,
                 nationality_status,
                 age,
@@ -182,6 +197,9 @@ namespace PurchaseBlazorApp2.Components.Repository
                     worker.ID = ParseString("id");
                     worker.Name = ParseString("name");
                     worker.Passport = ParseString("passport");
+                    worker.Designation = ParseString("designation_status");
+                    worker.Status = ParseString("status");
+                    worker.Recommendation = ParseString("recommendation");
 
                     worker.EPFStatus = ParseEnum("epf_status", EEPFCategory.A);
                     worker.NationalityStatus = ParseEnum("nationality_status", ENationalityStatus.Local);

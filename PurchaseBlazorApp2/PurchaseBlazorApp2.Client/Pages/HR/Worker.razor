@@ -38,7 +38,7 @@ else
     <RadzenDataGrid Data="@FilteredWorkers" 
                   TItem="WorkerRecord" 
                   AllowSorting="true"
-                  Style="min-width:2000px"
+                  Style="min-width:3000px"
                   Class="shadow-sm border rounded p-3">
       <Columns>   
         <RadzenDataGridColumn TItem="WorkerRecord" Property="ID" Title="ID" Width="140px" />
@@ -57,6 +57,24 @@ else
         <RadzenDataGridColumn TItem="WorkerRecord" Property="Passport" Title="Passport" Width="160px">
             <Template Context="worker">
                     <RadzenTextBox @bind-Value="worker.Passport" Style="width:100%" />
+            </Template>
+        </RadzenDataGridColumn>
+
+        <RadzenDataGridColumn TItem="WorkerRecord" Property="Designation" Title="Designation" Width="280px">
+            <Template Context="worker">
+                    <RadzenTextBox @bind-Value="worker.Designation" Style="width:100%" />
+            </Template>
+        </RadzenDataGridColumn>
+
+        <RadzenDataGridColumn TItem="WorkerRecord" Property="Status" Title="Status" Width="190px">
+            <Template Context="worker">
+                    <RadzenTextBox @bind-Value="worker.Status" Style="width:100%" />
+            </Template>
+        </RadzenDataGridColumn>
+
+        <RadzenDataGridColumn TItem="WorkerRecord" Property="Recommendation" Title="Recommendation" Width="160px">
+            <Template Context="worker">
+                    <RadzenTextBox @bind-Value="worker.Recommendation" Style="width:100%" />
             </Template>
         </RadzenDataGridColumn>
 

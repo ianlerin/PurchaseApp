@@ -60,6 +60,9 @@ namespace PurchaseBlazorApp2.Service
                     cols.RelativeColumn(2);     // Name
                     cols.RelativeColumn();      //Age
                     cols.RelativeColumn();     //Passport
+                    cols.RelativeColumn();     //Designation
+                    cols.RelativeColumn();     //Status
+                    cols.RelativeColumn();     //Recommendation
                     cols.RelativeColumn();     // Status
                     cols.RelativeColumn();     // EPF
                     cols.RelativeColumn();     // Nationality
@@ -75,7 +78,7 @@ namespace PurchaseBlazorApp2.Service
                 {
                     string[] headers =
                     {
-                        "ID", "Name", "Age","Passport","Status", "EPF", "Nationality",
+                        "ID", "Name", "Age","Passport","Designation","Status","Recommendation","Status", "EPF", "Nationality",
                         "Monthly", "Hourly", "Daily", "OT", "Sunday"
                     };
 
@@ -92,6 +95,9 @@ namespace PurchaseBlazorApp2.Service
                     table.Cell().Element(CellBody).Text(w.Name);
                     table.Cell().Element(CellBody).Text(w.Age);
                     table.Cell().Element(CellBody).Text(w.Passport);
+                    table.Cell().Element(CellBody).Text(w.Designation);
+                    table.Cell().Element(CellBody).Text(w.Status);
+                    table.Cell().Element(CellBody).Text(w.Recommendation);
                     table.Cell().Element(CellBody).AlignCenter().Text(w.WorkerStatus.ToString());
                     table.Cell().Element(CellBody).AlignCenter().Text(w.EPFStatus.ToString());
                     table.Cell().Element(CellBody).AlignCenter().Text(w.NationalityStatus.ToString());
