@@ -119,7 +119,8 @@ namespace WorkerRecord
         }
 
         public string? Passport { get; set; }
-        public string? DesignationStatus{ get; set; }
+        public string? Designation { get; set; }
+        public string? Status { get; set; }
         public string? Recommendation { get; set; }
         public decimal DailyRate { get; set; }
         public decimal OTRate { get; set; }

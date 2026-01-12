@@ -60,9 +60,15 @@ else
             </Template>
         </RadzenDataGridColumn>
 
-        <RadzenDataGridColumn TItem="WorkerRecord" Property="DesignationStatus" Title="DesignationStatus" Width="250px">
+        <RadzenDataGridColumn TItem="WorkerRecord" Property="Designation" Title="Designation" Width="280px">
             <Template Context="worker">
-                    <RadzenTextBox @bind-Value="worker.DesignationStatus" Style="width:100%" />
+                    <RadzenTextBox @bind-Value="worker.Designation" Style="width:100%" />
+            </Template>
+        </RadzenDataGridColumn>
+
+        <RadzenDataGridColumn TItem="WorkerRecord" Property="Status" Title="Status" Width="190px">
+            <Template Context="worker">
+                    <RadzenTextBox @bind-Value="worker.Status" Style="width:100%" />
             </Template>
         </RadzenDataGridColumn>
 
