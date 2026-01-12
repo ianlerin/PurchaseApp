@@ -51,7 +51,7 @@
                                       Click="@StartLogin" 
                                       Style="width: 100%;" />
                     }
-                    else if (remoteAuthServiceAvailable)
+                    else
                     {
                         <!-- Redirect Logic -->
                         <div class="rz-mt-4">
@@ -62,13 +62,7 @@
                             <RemoteAuthenticatorView Action="login" OnLogInSucceeded="HandleLogInSucceeded" />
                         </div>
                     }
-                    else
-                    {
-                        <!-- Show Error State -->
-                        <RadzenAlert AlertStyle="AlertStyle.Danger" Variant="Variant.Flat" Shade="Shade.Lighter" Class="rz-mt-4">
-                            Login service unavailable.
-                        </RadzenAlert>
-                    }
+                   
                 </RadzenCard>
             }
             else
@@ -112,12 +106,14 @@
             authState = null;
         }
 
-        // Check if RemoteAuthenticationService is registered
-        remoteAuthServiceAvailable = ServiceProvider.GetService<IRemoteAuthenticationService<RemoteAuthenticationState>>() != null;
+   
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
+    {    
+        // Check if RemoteAuthenticationService is registered
+        remoteAuthServiceAvailable = ServiceProvider.GetService<IRemoteAuthenticationService<RemoteAuthenticationState>>() != null;
+        
         if (firstRender)
         {
             try
@@ -132,7 +128,7 @@
         }
         
         // Avoid rendering loop, force reload only if not in browser or no auth state
-        if (!OperatingSystem.IsBrowser() || authState == null)
+        if (!OperatingSystem.IsBrowser() || authState == null || !remoteAuthServiceAvailable)
         {
             await Task.Delay(1000);
             NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);

@@ -234,7 +234,7 @@ namespace PurchaseBlazorApp2.Components.Data
         public byte[] Data { get; set; }
         public string DataFormat {  get; set; }
 
-        public string Url { get; set; }
+        public string? Url { get; set; }
         public Guid Id { get; set; } = Guid.NewGuid();
     }
 
