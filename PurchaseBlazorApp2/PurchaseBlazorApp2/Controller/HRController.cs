@@ -17,12 +17,13 @@ namespace PurchaseBlazorApp2.Controller
             _epfService = epfService;
         }
         [HttpPost("SubmitWorker")]
-        public async Task<IActionResult> SubmitWorker([FromBody] WorkerRecord.WorkerRecord worker)
+        public async Task<IActionResult> SubmitWorker([FromBody] List<WorkerRecord.WorkerRecord> workers
+)
         {
-            if (worker == null)
+            if (workers == null)
                 return BadRequest("Worker record is empty.");
 
-            bool ok = await _repo.Submit(worker);
+            bool ok = await _repo.Submit(workers);
 
             if (ok)
                 return Ok(new { message = "Worker saved successfully." });
