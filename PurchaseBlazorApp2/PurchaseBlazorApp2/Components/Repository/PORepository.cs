@@ -597,8 +597,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                                 foreach (var prop in props)
                                 {
                                     string propName = prop.Name;
-
-                                    if (propName == "PO_ID"|| propName == "ApprovalInfo" || propName == "ReceiveInfo" || propName == "InvoiceInfo")
+                                    if (propName == "PO_ID"|| propName == "ApprovalInfo" || propName == "ReceiveInfo" || propName == "InvoiceInfo"|| propName == "_Approvals" || propName == "approvalstatus" || propName == "Rejectreason")
                                         continue;
 
                                     sqlCommand += propName + ",";
