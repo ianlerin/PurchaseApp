@@ -49,6 +49,7 @@ namespace PurchaseBlazorApp2.Components.Repository
 
                         var nextVal = await seqCmd.ExecuteScalarAsync();
                         id = $"Worker{nextVal}";
+                        worker.ID = id; 
                     }
 
                     const string sql = @"
@@ -108,7 +109,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                 socso_status       = EXCLUDED.socso_status;
         ";
 
-                    await using var cmd = new NpgsqlCommand(sql, conn);
+                    await using var cmd = new NpgsqlCommand(sql, conn, transaction);
 
                     cmd.Parameters.AddWithValue("@id", id);
                     cmd.Parameters.AddWithValue("@name", worker.Name ?? string.Empty);

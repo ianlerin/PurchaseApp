@@ -155,7 +155,8 @@
     {
         try
         {
-            var response = await Http.PostAsJsonAsync("api/HR/SubmitWorker", Record);
+            var workers = new List<WorkerRecord> {Record};
+            var response = await Http.PostAsJsonAsync("api/HR/SubmitWorker", workers);
 
             if (response.IsSuccessStatusCode)
             {
