@@ -187,9 +187,8 @@ else
     {
         try
         {
-            foreach (var worker in Workers)
-            {
-                var response = await Http.PostAsJsonAsync("api/HR/SubmitWorker", worker);
+          
+                var response = await Http.PostAsJsonAsync("api/HR/SubmitWorker", Workers);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -197,7 +196,7 @@ else
                     await JS.InvokeVoidAsync("alert", $"SubmitFail! Reason: {errorMessage}");
                 
                 }
-            }
+            
 
             await JS.InvokeVoidAsync("alert", "SubmitSuccess!");
         }

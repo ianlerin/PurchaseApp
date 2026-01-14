@@ -27,26 +27,31 @@ namespace PurchaseBlazorApp2.Components.Repository
             Database=purchase
             ";
         }
-        public async Task<bool> Submit(WorkerRecord.WorkerRecord info)
-        {
+       public async Task<bool> Submit(List<WorkerRecord.WorkerRecord> workers)
+
+       {
             try
             {
-                string id = info.ID ?? string.Empty;
-
                 await using var conn = new NpgsqlConnection(GetConnectionString());
                 await conn.OpenAsync();
-
-                // ===== Generate ID if new record =====
-                if (string.IsNullOrWhiteSpace(id))
+                await using var transaction = await conn.BeginTransactionAsync();
+                foreach (var worker in workers)
                 {
-                    const string seqSql = "SELECT nextval('hr.worker_info_id')";
-                    await using var seqCmd = new NpgsqlCommand(seqSql, conn);
+                    string id = worker.ID;
 
-                    var nextVal = await seqCmd.ExecuteScalarAsync();
-                    id = $"Worker{nextVal}";
-                }
+       
 
-                const string sql = @"
+                    // ===== Generate ID if new record =====
+                    if (string.IsNullOrWhiteSpace(id))
+                    {
+                        const string seqSql = "SELECT nextval('hr.worker_info_id')";
+                        await using var seqCmd = new NpgsqlCommand(seqSql, conn, transaction);
+
+                        var nextVal = await seqCmd.ExecuteScalarAsync();
+                        id = $"Worker{nextVal}";
+                    }
+
+                    const string sql = @"
             INSERT INTO hr.workerinfo
             (
                 id,
@@ -103,38 +108,43 @@ namespace PurchaseBlazorApp2.Components.Repository
                 socso_status       = EXCLUDED.socso_status;
         ";
 
-                await using var cmd = new NpgsqlCommand(sql, conn);
+                    await using var cmd = new NpgsqlCommand(sql, conn);
 
-                cmd.Parameters.AddWithValue("@id", id);
-                cmd.Parameters.AddWithValue("@name", info.Name ?? string.Empty);
-                cmd.Parameters.AddWithValue("@passport", info.Passport ?? string.Empty);
-                cmd.Parameters.AddWithValue("@designation_status", info.Designation ?? string.Empty);
-                cmd.Parameters.AddWithValue("@status", info.Status ?? string.Empty);
-                cmd.Parameters.AddWithValue("@recommendation", info.Recommendation ?? string.Empty);
+                    cmd.Parameters.AddWithValue("@id", id);
+                    cmd.Parameters.AddWithValue("@name", worker.Name ?? string.Empty);
+                    cmd.Parameters.AddWithValue("@passport", worker.Passport ?? string.Empty);
+                    cmd.Parameters.AddWithValue("@designation_status", worker.Designation ?? string.Empty);
+                    cmd.Parameters.AddWithValue("@status", worker.Status ?? string.Empty);
+                    cmd.Parameters.AddWithValue("@recommendation", worker.Recommendation ?? string.Empty);
 
-                cmd.Parameters.AddWithValue("@epf_status", info.EPFStatus.ToString());
-                cmd.Parameters.AddWithValue("@nationality_status", info.NationalityStatus.ToString());
-                cmd.Parameters.AddWithValue("@age", info.Age);
+                    cmd.Parameters.AddWithValue("@epf_status", worker.EPFStatus.ToString());
+                    cmd.Parameters.AddWithValue("@nationality_status", worker.NationalityStatus.ToString());
+                    cmd.Parameters.AddWithValue("@age", worker.Age);
 
-                cmd.Parameters.AddWithValue("@daily_rate", info.DailyRate);
-                cmd.Parameters.AddWithValue("@ot_rate", info.OTRate);
-                cmd.Parameters.AddWithValue("@sunday_rate", info.SundayRate);
-                cmd.Parameters.AddWithValue("@monthly_rate", info.MonthlyRate);
-                cmd.Parameters.AddWithValue("@hourly_rate", info.HourlyRate);
+                    cmd.Parameters.AddWithValue("@daily_rate", worker.DailyRate);
+                    cmd.Parameters.AddWithValue("@ot_rate", worker.OTRate);
+                    cmd.Parameters.AddWithValue("@sunday_rate", worker.SundayRate);
+                    cmd.Parameters.AddWithValue("@monthly_rate", worker.MonthlyRate);
+                    cmd.Parameters.AddWithValue("@hourly_rate", worker.HourlyRate);
 
-                cmd.Parameters.AddWithValue("@worker_status", info.WorkerStatus.ToString());
+                    cmd.Parameters.AddWithValue("@worker_status", worker.WorkerStatus.ToString());
 
-                cmd.Parameters.AddWithValue("@socso_status", info.SocsoCategory.ToString());
+                    cmd.Parameters.AddWithValue("@socso_status", worker.SocsoCategory.ToString());
 
-                int affected = await cmd.ExecuteNonQueryAsync();
-                return affected > 0;
+                    //int affected = await cmd.ExecuteNonQueryAsync();
+                   // return affected > 0;
+                    await cmd.ExecuteNonQueryAsync();
+                }
+                await transaction.CommitAsync();
+
+                return true;
             }
             catch (Exception ex)
             {
                 Console.WriteLine("Worker Submit Error: " + ex);
                 return false;
             }
-        }
+       }
 
 
         public async Task<List<WorkerRecord.WorkerRecord>> GetWorkersByStatus(EWorkerStatus status)
