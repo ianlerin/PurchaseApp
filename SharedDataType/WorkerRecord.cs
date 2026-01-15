@@ -125,7 +125,22 @@ namespace WorkerRecord
         public decimal DailyRate { get; set; }
         public decimal OTRate { get; set; }
         public decimal SundayRate { get; set; }
-        public decimal HourlyRate { get; set; }
+
+        private decimal _HourlyRate;
+        public decimal HourlyRate
+        {
+            get => _HourlyRate;
+            set
+            {
+                if (_HourlyRate != value)
+                {
+                    _HourlyRate = value;
+                    AutoComputeWagesBasedOnMonthly();
+                    
+                }
+            }
+        }
+
         public EWorkerStatus WorkerStatus { get; set; }
 
         private void UpdateEPFStatus()
@@ -168,9 +183,11 @@ namespace WorkerRecord
 
             DailyRate = Math.Round(MonthlyRate / 26m, 2);
 
-            OTRate = Math.Round((DailyRate / 8m) * 1.5m, 2);
+            HourlyRate = Math.Round(DailyRate / 8m, 2);
 
-            SundayRate = Math.Round((DailyRate / 8m) * 2m, 2);
+            OTRate = Math.Round(HourlyRate * 1.5m, 2);
+
+            SundayRate = Math.Round(HourlyRate * 2m, 2);
         }
     }
 
