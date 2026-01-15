@@ -63,12 +63,12 @@ else
                 <!-- Daily -->
                 <RadzenDataGridColumn TItem="SingleWageRecord" Property="DailyHours" Title="Daily Hours" Width="140px">
                     <Template Context="record">
-                        <RadzenNumeric TValue="decimal" @bind-Value="record.DailyHours" Style="width:100%; background:#D9EAF7;" Step="0.01" />
+                        <RadzenNumeric TValue="decimal" Value="record.DailyHours" ReadOnly="true" Style="width:100%; background:#D9EAF7;" Step="0.01" />
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="SingleWageRecord" Property="DailyRate" Title="Daily Rate" Width="140px">
                     <Template Context="record">
-                        <RadzenNumeric TValue="decimal" @bind-Value="record.DailyRate" Style="width:100%; background:#D9EAF7;" Step="0.01" />
+                        <RadzenNumeric TValue="decimal" Value="record.DailyRate" ReadOnly="true" Style="width:100%; background:#D9EAF7;" Step="0.01" />
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="SingleWageRecord" Property="Daily_wages" Title="Daily Wages" Width="140px">
@@ -80,7 +80,7 @@ else
                 <!-- OT -->
                 <RadzenDataGridColumn TItem="SingleWageRecord" Property="OTHours" Title="OT Hours" Width="140px">
                     <Template Context="record">
-                        <RadzenNumeric TValue="decimal" @bind-Value="record.OTHours" Style="width:100%; background:#FFE5E5;" Step="0.01" />
+                        <RadzenNumeric TValue="decimal" Value="record.OTHours" ReadOnly="true" Style="width:100%; background:#FFE5E5;" Step="0.01" />
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="SingleWageRecord" Property="OTRate" Title="OT Rate" Width="140px">
@@ -96,7 +96,7 @@ else
                 <!-- Sunday -->
                 <RadzenDataGridColumn TItem="SingleWageRecord" Property="SundayHours" Title="Sunday Hours" Width="140px">
                     <Template Context="record">
-                        <RadzenNumeric TValue="decimal" @bind-Value="record.SundayHours" Style="width:100%; background:#FFFFE0;" Step="0.01" />
+                        <RadzenNumeric TValue="decimal" Value="record.SundayHours" ReadOnly="true" Style="width:100%; background:#FFFFE0;" Step="0.01" />
                     </Template>
                 </RadzenDataGridColumn>
 
