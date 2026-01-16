@@ -333,9 +333,11 @@ namespace PurchaseBlazorApp2.Components.Repository
                     insertCmd.Parameters.AddWithValue("socso_employee", record.Socso_Employee);
                     insertCmd.Parameters.AddWithValue("socso_employer", record.Socso_Employer);
                     insertCmd.Parameters.AddWithValue("@Deduction", record.Deduction);
-                    insertCmd.Parameters.AddWithValue("@DeductionReason", record.Deduction_Reason );
+                    insertCmd.Parameters.AddWithValue("@DeductionReason",
+                    string.IsNullOrWhiteSpace(record.Deduction_Reason) ? (object)DBNull.Value : record.Deduction_Reason);
 
-                    
+
+
                     insertCmd.ExecuteNonQuery();
                 }
 

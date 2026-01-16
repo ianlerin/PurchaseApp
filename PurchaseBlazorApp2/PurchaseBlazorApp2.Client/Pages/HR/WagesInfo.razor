@@ -63,7 +63,7 @@ else
                 <!-- Daily -->
                 <RadzenDataGridColumn TItem="SingleWageRecord" Property="DailyHours" Title="Daily Hours" Width="140px">
                     <Template Context="record">
-                        <RadzenNumeric TValue="decimal" Value="record.DailyHours" ReadOnly="true" Style="width:100%; background:#D9EAF7;" Step="0.01" />
+                        <RadzenNumeric TValue="decimal" @bind-Value="record.DailyHours" Style="width:100%; background:#D9EAF7;" Step="0.01" />
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="SingleWageRecord" Property="DailyRate" Title="Daily Rate" Width="140px">
@@ -80,7 +80,7 @@ else
                 <!-- OT -->
                 <RadzenDataGridColumn TItem="SingleWageRecord" Property="OTHours" Title="OT Hours" Width="140px">
                     <Template Context="record">
-                        <RadzenNumeric TValue="decimal" Value="record.OTHours" ReadOnly="true" Style="width:100%; background:#FFE5E5;" Step="0.01" />
+                        <RadzenNumeric TValue="decimal" @bind-Value="record.OTHours"  Style="width:100%; background:#FFE5E5;" Step="0.01" />
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="SingleWageRecord" Property="OTRate" Title="OT Rate" Width="140px">
@@ -96,7 +96,7 @@ else
                 <!-- Sunday -->
                 <RadzenDataGridColumn TItem="SingleWageRecord" Property="SundayHours" Title="Sunday Hours" Width="140px">
                     <Template Context="record">
-                        <RadzenNumeric TValue="decimal" Value="record.SundayHours" ReadOnly="true" Style="width:100%; background:#FFFFE0;" Step="0.01" />
+                        <RadzenNumeric TValue="decimal" @bind-Value="record.SundayHours" Style="width:100%; background:#FFFFE0;" Step="0.01" />
                     </Template>
                 </RadzenDataGridColumn>
 
@@ -119,7 +119,7 @@ else
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="SingleWageRecord" Property="MonthlyRate" Title="Monthly Rate" Width="140px">
                     <Template Context="record">
-                        <RadzenNumeric TValue="decimal" @bind-Value="record.MonthlyRate" Style="width:100%; background:#E0F7E9;" Step="0.01" />
+                        <RadzenNumeric TValue="decimal" Value="record.MonthlyRate" ReadOnly="true" Style="width:100%; background:#E0F7E9;" Step="0.01" />
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="SingleWageRecord" Property="Monthly_wages" Title="Monthly Wages" Width="140px">
@@ -135,7 +135,7 @@ else
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="SingleWageRecord" Property="HourlyRate" Title="Hourly Rate" Width="140px">
                     <Template Context="record">
-                        <RadzenNumeric TValue="decimal" @bind-Value="record.HourlyRate" Style="width:100%; background:#E6E6FA;" Step="0.01" />
+                        <RadzenNumeric TValue="decimal" Value="record.HourlyRate" ReadOnly="true" Style="width:100%; background:#E6E6FA;" Step="0.01" />
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="SingleWageRecord" Property="Hourly_wages" Title="Hourly Wages" Width="140px">

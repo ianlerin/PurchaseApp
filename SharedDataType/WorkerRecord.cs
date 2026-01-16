@@ -135,7 +135,7 @@ namespace WorkerRecord
                 if (_HourlyRate != value)
                 {
                     _HourlyRate = value;
-                    AutoComputeWagesBasedOnMonthly();
+                    
                     
                 }
             }
