@@ -7,19 +7,16 @@
         //
         private const string LocalhostConnectionId = "localhost";
         private const string AwsConnectionId = "einvoice.cdnonchautom.ap-southeast-1.rds.amazonaws.com";
-
-        public static string ConnectionId(string? baseAddress = null)
+        public static string BaseAddress { get; set; } = "einvoice.cdnonchautom.ap-southeast-1.rds.amazonaws.com";
+        public static string ConnectionId()
         {
-
-            if (string.IsNullOrWhiteSpace(baseAddress))
-                baseAddress = Environment.GetEnvironmentVariable("BASE_ADDRESS") ?? "localhost";
+            var baseAddress = BaseAddress ?? "localhost";
 
             if (baseAddress.Contains("localhost"))
                 return LocalhostConnectionId;
 
             if (baseAddress.StartsWith("https://purchase.genesis-e-invoice.com/"))
                 return AwsConnectionId;
-
 
             return LocalhostConnectionId;
         }
