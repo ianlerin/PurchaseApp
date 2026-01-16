@@ -16,7 +16,7 @@ namespace PurchaseBlazorApp2.Components.Repository
 
         private NpgsqlConnection GetConnection()
         {
-            return new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432; User Id=postgres; Password=password; Database=purchase");
+            return new NpgsqlConnection($"Server={StaticResources.ConnectionId()};Port=5432; User Id=postgres; Password=password; Database=purchase");
         }
 
 

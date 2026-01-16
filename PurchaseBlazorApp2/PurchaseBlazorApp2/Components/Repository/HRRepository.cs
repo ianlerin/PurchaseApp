@@ -14,13 +14,13 @@ namespace PurchaseBlazorApp2.Components.Repository
         private NpgsqlConnection Connection;
         public HRRepository()
         {
-            Connection = new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432; User Id=postgres; Password=password; Database=purchase");
+            Connection = new NpgsqlConnection($"Server={StaticResources.ConnectionId()};Port=5432; User Id=postgres; Password=password; Database=purchase");
 
         }
         private string GetConnectionString()
         {
             return $@"
-            Server={StaticResources.ConnectionId};
+            Server={StaticResources.ConnectionId()};
             Port=5432;
             User Id=postgres;
             Password=password;
