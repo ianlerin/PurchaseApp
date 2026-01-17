@@ -165,7 +165,7 @@ namespace WorkerRecord
                 return EEPFCategory.C;
 
             return EEPFCategory.F;
-        }
+        }   
 
         private ESocsoCategory AutoDetectSocsoStatus()
         {

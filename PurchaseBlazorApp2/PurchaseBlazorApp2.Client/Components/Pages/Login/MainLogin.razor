@@ -94,7 +94,8 @@
     protected override async Task OnInitializedAsync()
     {
         startLogin = false;
-
+        
+   
         // Safe check for AuthStateProvider
         try
         {
@@ -133,7 +134,7 @@
             await Task.Delay(1000);
             NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
         }
-        
+      
     }
 
     private void StartLogin()

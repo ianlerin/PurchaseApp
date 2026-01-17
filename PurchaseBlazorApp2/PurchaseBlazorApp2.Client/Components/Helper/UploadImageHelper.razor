@@ -131,6 +131,21 @@ else
     [Parameter] public bool bNewRequisition { get; set; } = false;
     [Parameter] public int ImageWidth { get; set; } = 150;
     [Parameter] public int ImageHeight { get; set; } = 150;
+    private string _prefix = "";
+
+    [Parameter]
+    public string Prefix
+    {
+        get => _prefix;
+        set
+        {
+            if (_prefix != value)
+            {
+                _prefix = value;
+              OnUploadedImagesChangedAsync();
+            }
+        }
+    }
 
     private ImageUploadInfo? ZoomedUploadInfo;
     private string? ZoomedImageSrc;
@@ -183,7 +198,10 @@ else
         string name = user.FindFirst(c => c.Type == "name")?.Value;
         for (int i = 0; i < UploadedImages.Count(); i++)
         {
-            string FileName = name + "Temp_" + i;
+            string FileName = name + "Temp_" + Prefix + i;
+
+          
+
             string url = await UploadFileAndGetUrlAsync(UploadedImages[i].Data, FileName, UploadedImages[i].DataFormat);
             UploadedImages[i].Url = url;
 
@@ -197,8 +215,8 @@ else
         var user = authState.User;
         string name = user.FindFirst(c => c.Type == "name")?.Value;
         for (int i = 0; i < UploadedImages.Count(); i++)
-        {
-            string FileName = name + "Temp_" + i;
+        { string FileName = name + "Temp_" + Prefix+ i;
+           
             string url = await UploadFileAndGetUrlAsync(UploadedImages[i].Data, FileName, UploadedImages[i].DataFormat);
             UploadedImages[i].Url = url;
 
@@ -278,52 +296,10 @@ else
         await JS.InvokeVoidAsync("open", src, "_blank"); // Opens PDF in new tab
     }
 
-    public async Task UploadItem(string PrimaryKey, string BucketName)
-    {
-        List<string> formats = new List<string>();
-        List<string> s3keys = new List<string>();
-        for(int i=0;i<UploadedImages.Count();i++)
-        {
-            string Name=PrimaryKey + "_"+ BucketName + "_" + i;
-            s3keys.Add(Name);
-            formats.Add(UploadedImages[i].DataFormat);
-        }
-        try
-        {
-            var request = new UploadRequest
-            {
-                requisitionNumber = PrimaryKey,
-                bucket_name = BucketName,
-                s3_keys = s3keys,
-                dataformats = formats
-            };
 
-            var response = await Http.PostAsJsonAsync(
-                "https://pfd3awi6h6.execute-api.ap-southeast-1.amazonaws.com/default/UploadImageToDynamo",
-                request
-            );
-
-            if (response.IsSuccessStatusCode)
-            {
-                var result = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>();
-
-            }
-            else
-            {
-                var error = await response.Content.ReadAsStringAsync();
-
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Exception: {ex.Message}");
-        }
-        
-
-    }
 
     public async Task<string> UploadFileAndGetUrlAsync(byte[] fileBytes, string fileName,string filetype)
-    {
+    {  
         try
         {
             // --- Step 1: Request signed PUT URL ---

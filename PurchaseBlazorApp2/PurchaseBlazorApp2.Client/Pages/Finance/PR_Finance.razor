@@ -52,7 +52,7 @@ else
                                        Orientation="UploadImageHelper.EOrientation.Vertical"
                                        bNewRequisition="false"
                                        ImageHeight="400"
-                                       ImageWidth="400" />
+                                       ImageWidth="400" Prefix="PO"/>
                 }
                 else
                 {
@@ -109,7 +109,7 @@ else
                             <div class="mt-3">
                                 <label class="form-label fw-bold">Support Documents</label>
                                 <UploadImageHelper UploadedImages="@update.SupportDocuments"
-                                                   bNewRequisition="@bCanEdit" />
+                                                   bNewRequisition="@bCanEdit" Prefix="Finance" />
                             </div>
                         </div>
                     }
