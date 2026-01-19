@@ -125,7 +125,7 @@ namespace WorkerRecord
         public decimal DailyRate { get; set; }
         public decimal OTRate { get; set; }
         public decimal SundayRate { get; set; }
-
+        private bool _isHourly = false;
         private decimal _HourlyRate;
         public decimal HourlyRate
         {
@@ -135,6 +135,7 @@ namespace WorkerRecord
                 if (_HourlyRate != value)
                 {
                     _HourlyRate = value;
+                    _isHourly = true;
                     AutoComputeWagesBasedOnHourly();
 
                 }
@@ -176,16 +177,17 @@ namespace WorkerRecord
             return ESocsoCategory.Act4;
         }
 
-        private bool _isMonthly = false;
-
         private void AutoComputeWagesBasedOnMonthly()
         {
             if (IsLoading || MonthlyRate <= 0)
                 return;
 
-            _isMonthly = true;
-            HourlyRate = Math.Round(MonthlyRate / 26m / 8m, 2);
-            _isMonthly = false;
+            if (!_isHourly)
+                HourlyRate = Math.Round(MonthlyRate / 26m / 8m, 2);
+
+            DailyRate = Math.Round(HourlyRate * 8m, 2);
+            OTRate = Math.Round(HourlyRate * 1.5m, 2);
+            SundayRate = Math.Round(HourlyRate * 2m, 2);
         }
 
         private void AutoComputeWagesBasedOnHourly()
@@ -193,14 +195,12 @@ namespace WorkerRecord
             if (IsLoading || HourlyRate <= 0)
                 return;
 
-            if (_isMonthly)
-                return;
+            _isHourly = true;
 
             DailyRate = Math.Round(HourlyRate * 8m, 2);
             OTRate = Math.Round(HourlyRate * 1.5m, 2);
             SundayRate = Math.Round(HourlyRate * 2m, 2);
         }
-
     }
 
     public class WageRecord
@@ -211,7 +211,7 @@ namespace WorkerRecord
             public int Month { get; set; }
 
             public List<SingleWageRecord>  WageRecords{get;set;}
-           public void FormWageRecordFromWorkerRecords(List<WorkerRecord> records)
+        public void FormWageRecordFromWorkerRecords(List<WorkerRecord> records)
         {
             if (records == null || records.Count == 0)
             {
@@ -264,8 +264,8 @@ namespace WorkerRecord
             WageRecords = new List<SingleWageRecord>();
             Year =DateTime.Now.Year;
                 Month=DateTime.Now.Month;
-            }
         }
+    }
 
         public class SingleWageRecord
         {
@@ -450,7 +450,7 @@ namespace WorkerRecord
         }
 
          private void RecalculateWages()
-        {
+         {
             if (IsLoading)
             {
                 return;
@@ -461,7 +461,7 @@ namespace WorkerRecord
                 Monthly_wages = MonthlyHours * MonthlyRate;
                 Hourly_wages = HourlyHours * HourlyRate;
                 OnRecalculateWages();
-            }
+         }
         private void OnRecalculateTotalPrice()
         {
             if (IsLoading)
