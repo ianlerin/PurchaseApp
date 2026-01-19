@@ -65,7 +65,7 @@ namespace WorkerRecord
         public EEPFCategory EPFStatus
         {
             get => _epfStatus;
-            set => _epfStatus = value; 
+            set => _epfStatus = value;
         }
         private ESocsoCategory _SocsoCategory;
         public ESocsoCategory SocsoCategory
@@ -74,7 +74,7 @@ namespace WorkerRecord
             set => _SocsoCategory = value;
         }
 
-        
+
 
         private ENationalityStatus _nationalityStatus;
         public ENationalityStatus NationalityStatus
@@ -135,8 +135,8 @@ namespace WorkerRecord
                 if (_HourlyRate != value)
                 {
                     _HourlyRate = value;
-                    
-                    
+                    AutoComputeWagesBasedOnHourly();
+
                 }
             }
         }
@@ -176,20 +176,31 @@ namespace WorkerRecord
             return ESocsoCategory.Act4;
         }
 
+        private bool _isMonthly = false;
+
         private void AutoComputeWagesBasedOnMonthly()
         {
             if (IsLoading || MonthlyRate <= 0)
                 return;
 
-            DailyRate = Math.Round(MonthlyRate / 26m, 2);
+            _isMonthly = true;
+            HourlyRate = Math.Round(MonthlyRate / 26m / 8m, 2);
+            _isMonthly = false;
+        }
 
-            if (HourlyRate <= 0)
-                HourlyRate = Math.Round(DailyRate / 8m, 2);
+        private void AutoComputeWagesBasedOnHourly()
+        {
+            if (IsLoading || HourlyRate <= 0)
+                return;
 
+            if (_isMonthly)
+                return;
+
+            DailyRate = Math.Round(HourlyRate * 8m, 2);
             OTRate = Math.Round(HourlyRate * 1.5m, 2);
-
             SundayRate = Math.Round(HourlyRate * 2m, 2);
         }
+
     }
 
     public class WageRecord
