@@ -183,7 +183,8 @@ namespace WorkerRecord
 
             DailyRate = Math.Round(MonthlyRate / 26m, 2);
 
-            HourlyRate = Math.Round(DailyRate / 8m, 2);
+            if (HourlyRate <= 0)
+                HourlyRate = Math.Round(DailyRate / 8m, 2);
 
             OTRate = Math.Round(HourlyRate * 1.5m, 2);
 
