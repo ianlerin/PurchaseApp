@@ -125,7 +125,7 @@ namespace WorkerRecord
         public decimal DailyRate { get; set; }
         public decimal OTRate { get; set; }
         public decimal SundayRate { get; set; }
-        private bool _isHourly = false;
+     
         private decimal _HourlyRate;
         public decimal HourlyRate
         {
@@ -135,7 +135,6 @@ namespace WorkerRecord
                 if (_HourlyRate != value)
                 {
                     _HourlyRate = value;
-                    _isHourly = true;
                     AutoComputeWagesBasedOnHourly();
 
                 }
@@ -182,12 +181,9 @@ namespace WorkerRecord
             if (IsLoading || MonthlyRate <= 0)
                 return;
 
-            if (!_isHourly)
-                HourlyRate = Math.Round(MonthlyRate / 26m / 8m, 2);
 
-            DailyRate = Math.Round(HourlyRate * 8m, 2);
-            OTRate = Math.Round(HourlyRate * 1.5m, 2);
-            SundayRate = Math.Round(HourlyRate * 2m, 2);
+            HourlyRate = Math.Round(MonthlyRate / 26m / 8m, 2);
+
         }
 
         private void AutoComputeWagesBasedOnHourly()
@@ -195,7 +191,7 @@ namespace WorkerRecord
             if (IsLoading || HourlyRate <= 0)
                 return;
 
-            _isHourly = true;
+         
 
             DailyRate = Math.Round(HourlyRate * 8m, 2);
             OTRate = Math.Round(HourlyRate * 1.5m, 2);
