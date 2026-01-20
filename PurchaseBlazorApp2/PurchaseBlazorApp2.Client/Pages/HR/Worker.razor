@@ -143,6 +143,9 @@ else
         <button  class ="btn btn-success" @onclick ="DownloadPdf" >
             Download PDF
         </button>
+        <button type="button" @onclick="DownloadExcel" class="btn btn-primary">
+            Download Excel
+        </button>
   </div>
 }
 
@@ -157,7 +160,7 @@ else
     string FilterName = "";
     string FilterStatus = "All";
     string FilterNationality = "All";
-
+    ExcelWriter excelWriter;
 
     [Inject]
     private HttpClient Http { get; set; } 
@@ -167,6 +170,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         await LoadWorkers();
+        excelWriter = new ExcelWriter(JS);
     }
 
     private async Task LoadWorkers()
@@ -228,6 +232,63 @@ else
         );
     }
 
+
+    private async Task DownloadExcel()
+    {
+        await excelWriter.write(
+            "workers.xlsx",
+            FilteredWorkers.ToList(),
+            new ExcelWriterConfig
+            {
+                dictInclude = new Dictionary<string, List<string>>
+                {
+                    {
+                        "main",
+                        new List<string>
+                        {
+                            nameof(WorkerRecord.ID),
+                            nameof(WorkerRecord.Name),
+                            nameof(WorkerRecord.Age),
+                            nameof(WorkerRecord.Passport),
+                            nameof(WorkerRecord.Designation),
+                            nameof(WorkerRecord.Status),
+                            nameof(WorkerRecord.Recommendation),
+                            nameof(WorkerRecord.WorkerStatus),
+                            nameof(WorkerRecord.EPFStatus),
+                            nameof(WorkerRecord.SocsoCategory),
+                            nameof(WorkerRecord.NationalityStatus),
+                            nameof(WorkerRecord.MonthlyRate),
+                            nameof(WorkerRecord.HourlyRate),
+                            nameof(WorkerRecord.DailyRate),
+                            nameof(WorkerRecord.OTRate),
+                            nameof(WorkerRecord.SundayRate)
+                        }
+                    }
+                },
+                listColConfig = new List<ExcelColConfig>
+                {
+                    new ExcelColConfig(nameof(WorkerRecord.ID)),
+                    new ExcelColConfig(nameof(WorkerRecord.Name)),
+                    new ExcelColConfig(nameof(WorkerRecord.Age)),
+                    new ExcelColConfig(nameof(WorkerRecord.Passport)),
+                    new ExcelColConfig(nameof(WorkerRecord.Designation)),
+                    new ExcelColConfig(nameof(WorkerRecord.Status)),
+                    new ExcelColConfig(nameof(WorkerRecord.Recommendation)),
+                    new ExcelColConfig(nameof(WorkerRecord.WorkerStatus)),
+                    new ExcelColConfig(nameof(WorkerRecord.EPFStatus)),
+                    new ExcelColConfig(nameof(WorkerRecord.SocsoCategory)),
+                    new ExcelColConfig(nameof(WorkerRecord.NationalityStatus)),
+                    new ExcelColConfig(nameof(WorkerRecord.MonthlyRate)),
+                    new ExcelColConfig(nameof(WorkerRecord.HourlyRate)),
+                    new ExcelColConfig(nameof(WorkerRecord.DailyRate)),
+                    new ExcelColConfig(nameof(WorkerRecord.OTRate)),
+                    new ExcelColConfig(nameof(WorkerRecord.SundayRate))
+                }
+            }
+        );
+
+        return;
+    }
 }
 
 
