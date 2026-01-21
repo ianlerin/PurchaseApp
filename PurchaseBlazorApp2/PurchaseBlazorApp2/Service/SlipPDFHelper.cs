@@ -70,6 +70,7 @@ namespace PurchaseBlazorApp2
                                     c.Spacing(5);
                                     c.Item().Text("EARNINGS / INCOME").Bold();
                                     c.Item().LineHorizontal(1).LineColor(Colors.Black);
+                                    c.Item().Text($"BASIC PAY: {0}");
                                     c.Item().Text($"ALLOWANCE: {r.Allowance}");
                                 });
 
@@ -82,6 +83,8 @@ namespace PurchaseBlazorApp2
                                     c.Spacing(5);
                                     c.Item().Text("DEDUCTION").Bold();
                                     c.Item().LineHorizontal(1).LineColor(Colors.Black);
+                                    c.Item().Text($"EMPLOYEE EPF: {r.EPF_Employee}");
+                                    c.Item().Text($"EMPLOYEE SOCSO: {r.Socso_Employee}");
                                     c.Item().Text($"DEDUCTION: {r.Deduction}");
                                     c.Item().Text($"DEDUCTION REASON: {r.Deduction_Reason}");
                                 });
@@ -132,10 +135,10 @@ namespace PurchaseBlazorApp2
                                          });
 
                                          table.Cell().BorderRight(1).Padding(3).Text("EPF");  
-                                         table.Cell().Padding(3).AlignRight().Text($"{r.EPF_Employee}");
+                                         table.Cell().Padding(3).AlignRight().Text($"{r.EPF_Employer}");
                               
                                          table.Cell().BorderRight(1).Padding(3).Text("SOCSO");
-                                         table.Cell().Padding(3).AlignRight().Text($"{r.Socso_Employee}");
+                                         table.Cell().Padding(3).AlignRight().Text($"{r.Socso_Employer}");
 
                                          table.Cell().BorderRight(1).Padding(3).Text("EIS");
                                          table.Cell().Padding(3).AlignRight().Text($"{0}");

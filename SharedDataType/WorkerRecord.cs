@@ -441,7 +441,7 @@ namespace WorkerRecord
         public decimal Allowance
         {
             get => _Allowance;
-            set { _Allowance = value; OnRecalculateTotalPrice(); }
+            set { _Allowance = value; RecalculateWages(); }
         }
 
         public decimal Total_wages { get; set; }
