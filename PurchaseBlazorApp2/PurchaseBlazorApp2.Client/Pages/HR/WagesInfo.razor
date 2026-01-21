@@ -191,6 +191,9 @@ else
        </button>
 
 
+        <button type="button" @onclick="DownloadExcel" class="btn btn-primary">
+            Download Excel
+        </button>
           
     </div>
     
@@ -219,6 +222,7 @@ else
         }
     }
     string FilterName = "";
+    ExcelWriter excelWriter;
     [Inject]
     private HttpClient Http { get; set; }
     [Inject] 
@@ -226,7 +230,7 @@ else
     protected async override void OnInitialized()
     {
         await SearchWageInfo();
-
+        excelWriter = new ExcelWriter(JS);
 
     }
 
@@ -279,7 +283,7 @@ else
             await JS.InvokeVoidAsync("alert", "Recalculate object not wage record");
             return;
         }
-     
+
 
         foreach (SingleWageRecord record in MyWageInfo.WageRecords)
         {
@@ -382,8 +386,8 @@ else
 
             }
         }
-      
-        
+
+
         var response = await Http.PostAsJsonAsync("api/pdf/purchase", wagesPdfRequest);
         byte[] pdfBytes = await response.Content.ReadAsByteArrayAsync();
         //var pdfBytes = await Http.GetByteArrayAsync($"api/pdf/purchase?year={MyWageInfo.Year}&month={MyWageInfo.Month}");
@@ -419,4 +423,82 @@ else
 
 
     
+    private async Task DownloadExcel()
+    {
+        await excelWriter.write(
+            "wages.xlsx",
+            FilteredWageRecords.ToList(),
+            new ExcelWriterConfig
+            {
+                dictInclude = new Dictionary<string, List<string>>
+                {
+                    {
+                        "main",
+                        new List<string>
+                        {
+                            nameof(SingleWageRecord.ID),
+                            nameof(SingleWageRecord.Name),
+                            nameof(SingleWageRecord.EPFCategory),
+                            nameof(SingleWageRecord.SocsoCategory),
+                            nameof(SingleWageRecord.DailyHours),
+                            nameof(SingleWageRecord.DailyRate),
+                            nameof(SingleWageRecord.Daily_wages),
+                            nameof(SingleWageRecord.OTHours),
+                            nameof(SingleWageRecord.OTRate),
+                            nameof(SingleWageRecord.OT_wages),
+                            nameof(SingleWageRecord.SundayHours),
+                            nameof(SingleWageRecord.SundayRate),
+                            nameof(SingleWageRecord.Sunday_wages),
+                            nameof(SingleWageRecord.MonthlyHours),
+                            nameof(SingleWageRecord.MonthlyRate),
+                            nameof(SingleWageRecord.Monthly_wages),
+                            nameof(SingleWageRecord.HourlyHours),
+                            nameof(SingleWageRecord.HourlyRate),
+                            nameof(SingleWageRecord.Hourly_wages),
+                            nameof(SingleWageRecord.Gross_wages),
+                            nameof(SingleWageRecord.EPF_Employer),
+                            nameof(SingleWageRecord.EPF_Employee),
+                            nameof(SingleWageRecord.Socso_Employer),
+                            nameof(SingleWageRecord.Socso_Employee),
+                            nameof(SingleWageRecord.Deduction),
+                            nameof(SingleWageRecord.Deduction_Reason),
+                            nameof(SingleWageRecord.Total_wages)
+                        }
+                    }
+                },
+                listColConfig = new List<ExcelColConfig>
+                {
+                    new ExcelColConfig(nameof(SingleWageRecord.ID)),
+                    new ExcelColConfig(nameof(SingleWageRecord.Name)),
+                    new ExcelColConfig(nameof(SingleWageRecord.EPFCategory)),
+                    new ExcelColConfig(nameof(SingleWageRecord.SocsoCategory)),
+                    new ExcelColConfig(nameof(SingleWageRecord.DailyHours)),
+                    new ExcelColConfig(nameof(SingleWageRecord.DailyRate)),
+                    new ExcelColConfig(nameof(SingleWageRecord.Daily_wages)),
+                    new ExcelColConfig(nameof(SingleWageRecord.OTHours)),
+                    new ExcelColConfig(nameof(SingleWageRecord.OTRate)),
+                    new ExcelColConfig(nameof(SingleWageRecord.OT_wages)),
+                    new ExcelColConfig(nameof(SingleWageRecord.SundayHours)),
+                    new ExcelColConfig(nameof(SingleWageRecord.SundayRate)),
+                    new ExcelColConfig(nameof(SingleWageRecord.Sunday_wages)),
+                    new ExcelColConfig(nameof(SingleWageRecord.MonthlyHours)),
+                    new ExcelColConfig(nameof(SingleWageRecord.MonthlyRate)),
+                    new ExcelColConfig(nameof(SingleWageRecord.Monthly_wages)),
+                    new ExcelColConfig(nameof(SingleWageRecord.HourlyHours)),
+                    new ExcelColConfig(nameof(SingleWageRecord.HourlyRate)),
+                    new ExcelColConfig(nameof(SingleWageRecord.Hourly_wages)),
+                    new ExcelColConfig(nameof(SingleWageRecord.Gross_wages)),
+                    new ExcelColConfig(nameof(SingleWageRecord.EPF_Employer)),
+                    new ExcelColConfig(nameof(SingleWageRecord.EPF_Employee)),
+                    new ExcelColConfig(nameof(SingleWageRecord.Socso_Employer)),
+                    new ExcelColConfig(nameof(SingleWageRecord.Socso_Employee)),
+                    new ExcelColConfig(nameof(SingleWageRecord.Deduction)),
+                    new ExcelColConfig(nameof(SingleWageRecord.Deduction_Reason)),
+                    new ExcelColConfig(nameof(SingleWageRecord.Total_wages))
+                }
+            }
+        );
+
+        return;
+    }
 }
