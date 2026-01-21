@@ -162,7 +162,7 @@ else
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="SingleWageRecord" Property="Allowance" Title="Allowance" Width="140px">
                     <Template Context="record">
-                        <RadzenNumeric  TValue="decimal" Value="record.Allowance" Style="width:100% ; background:#FFF3E0;" Step="0.01" />
+                        <RadzenNumeric  TValue="decimal" @bind-Value="record.Allowance" Style="width:100% ; background:#FFF3E0;" Step="0.01" />
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="SingleWageRecord" Property="Total_wages" Title="Total Wages" Width="140px" />

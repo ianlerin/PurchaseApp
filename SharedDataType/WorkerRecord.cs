@@ -441,7 +441,7 @@ namespace WorkerRecord
         public decimal Allowance
         {
             get => _Allowance;
-            set { _Allowance = value; }
+            set { _Allowance = value; OnRecalculateTotalPrice(); }
         }
 
         public decimal Total_wages { get; set; }
@@ -487,7 +487,7 @@ namespace WorkerRecord
                 return;
             }
 
-            Gross_wages = Daily_wages + OT_wages + Sunday_wages + Monthly_wages + Hourly_wages;
+            Gross_wages = Daily_wages + OT_wages + Sunday_wages + Monthly_wages + Hourly_wages + Allowance;
              
             }
 
