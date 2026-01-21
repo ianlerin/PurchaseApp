@@ -497,7 +497,7 @@ namespace WorkerRecord
         {
             get
             {
-                return DailyRate + MonthlyRate + OTRate + SundayRate + HourlyRate;
+                return Daily_wages + Monthly_wages + OT_wages + Sunday_wages + Hourly_wages;
             }
         }
 

@@ -143,6 +143,11 @@ else
                         <RadzenNumeric TValue="decimal" Value="record.Hourly_wages" ReadOnly="true" Style="width:100%; background:#E6E6FA;" Step="0.01" />
                     </Template>
                 </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="SingleWageRecord" Property="Allowance" Title="Allowance" Width="140px">
+                    <Template Context="record">
+                        <RadzenNumeric TValue="decimal" @bind-Value="record.Allowance" Style="width:100% ; background:#FFF3E0;" Step="0.01" />
+                    </Template>
+                </RadzenDataGridColumn>
 
                 <!-- Totals -->
                 <RadzenDataGridColumn TItem="SingleWageRecord" Property="Gross_wages" Title="Gross Wages" Width="140px" />
@@ -160,11 +165,7 @@ else
                         <RadzenTextBox @bind-Value="record.Deduction_Reason" Style="width:100% ; background:#FFF3E0;" />
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="SingleWageRecord" Property="Allowance" Title="Allowance" Width="140px">
-                    <Template Context="record">
-                        <RadzenNumeric  TValue="decimal" @bind-Value="record.Allowance" Style="width:100% ; background:#FFF3E0;" Step="0.01" />
-                    </Template>
-                </RadzenDataGridColumn>
+              
                 <RadzenDataGridColumn TItem="SingleWageRecord" Property="Total_wages" Title="Total Wages" Width="140px" />
                 <RadzenDataGridColumn TItem="SingleWageRecord" Title="Slip PDF" Width="140px">
                     <Template Context="record">
