@@ -224,6 +224,8 @@ namespace WorkerRecord
                 {
                     ID = worker.ID,
                     Name = worker.Name,
+                    Passport = worker.Passport,
+                    Designation = worker.Designation,
                     // Initialize hours to 0
                     DailyHours = 0,
                     OTHours = 0,
@@ -263,130 +265,132 @@ namespace WorkerRecord
         }
     }
 
-        public class SingleWageRecord
-        {
+    public class SingleWageRecord
+    {
 
         public bool IsLoading = false;
         public EventHandler EPFRecalculateHandler;
-            public string? ID { get; set; }
-            public string? Name { get; set; }
-            public string? Deduction_Reason { get; set;}
+        public string? ID { get; set; }
+        public string? Name { get; set; }
+        public string? Passport { get; set; }
+        public string? Designation { get; set; }
+        public string? Deduction_Reason { get; set; }
         private EEPFCategory _EPFCategory;
         public EEPFCategory EPFCategory
         {
             get => _EPFCategory;
             set { _EPFCategory = value; BroadcastRecalculateEvent(); }
         }
-       
-            // --- Hours ---
-            private decimal _DailyHours;
-            public decimal DailyHours
-            {
-                get => _DailyHours;
-                set { _DailyHours = value; RecalculateWages(); }
-            }
 
-            private decimal _OTHours;
-            public decimal OTHours
-            {
-                get => _OTHours;
-                set { _OTHours = value; RecalculateWages(); }
-            }
+        // --- Hours ---
+        private decimal _DailyHours;
+        public decimal DailyHours
+        {
+            get => _DailyHours;
+            set { _DailyHours = value; RecalculateWages(); }
+        }
 
-            private decimal _SundayHours;
-            public decimal SundayHours
-            {
-                get => _SundayHours;
-                set { _SundayHours = value; RecalculateWages(); }
-            }
+        private decimal _OTHours;
+        public decimal OTHours
+        {
+            get => _OTHours;
+            set { _OTHours = value; RecalculateWages(); }
+        }
 
-            private decimal _MonthlyHours;
-            public decimal MonthlyHours
-            {
-                get => _MonthlyHours;
-                set { _MonthlyHours = value; RecalculateWages(); }
-            }
+        private decimal _SundayHours;
+        public decimal SundayHours
+        {
+            get => _SundayHours;
+            set { _SundayHours = value; RecalculateWages(); }
+        }
 
-            private decimal _HourlyHours;
-            public decimal HourlyHours
-            {
-                get => _HourlyHours;
-                set { _HourlyHours = value; RecalculateWages(); }
-            }
+        private decimal _MonthlyHours;
+        public decimal MonthlyHours
+        {
+            get => _MonthlyHours;
+            set { _MonthlyHours = value; RecalculateWages(); }
+        }
 
-
-            // --- Rates ---
-            private decimal _DailyRate;
-            public decimal DailyRate
-            {
-                get => _DailyRate;
-                set { _DailyRate = value; RecalculateWages(); }
-            }
-
-            private decimal _OTRate;
-            public decimal OTRate
-            {
-                get => _OTRate;
-                set { _OTRate = value; RecalculateWages(); }
-            }
-
-            private decimal _SundayRate;
-            public decimal SundayRate
-            {
-                get => _SundayRate;
-                set { _SundayRate = value; RecalculateWages(); }
-            }
-
-            private decimal _MonthlyRate;
-            public decimal MonthlyRate
-            {
-                get => _MonthlyRate;
-                set { _MonthlyRate = value; RecalculateWages(); }
-            }
-
-            private decimal _HourlyRate;
-            public decimal HourlyRate
-            {
-                get => _HourlyRate;
-                set { _HourlyRate = value; RecalculateWages(); }
-            }
+        private decimal _HourlyHours;
+        public decimal HourlyHours
+        {
+            get => _HourlyHours;
+            set { _HourlyHours = value; RecalculateWages(); }
+        }
 
 
-            // --- Calculated Wages ---
-            private decimal _Daily_wages;
-            public decimal Daily_wages
-            {
-                get => _Daily_wages;
-                 set { _Daily_wages = value; }
-            }
+        // --- Rates ---
+        private decimal _DailyRate;
+        public decimal DailyRate
+        {
+            get => _DailyRate;
+            set { _DailyRate = value; RecalculateWages(); }
+        }
 
-            private decimal _OT_wages;
-            public decimal OT_wages
-            {
-                get => _OT_wages;
-                 set { _OT_wages = value; }
-            }
+        private decimal _OTRate;
+        public decimal OTRate
+        {
+            get => _OTRate;
+            set { _OTRate = value; RecalculateWages(); }
+        }
 
-            private decimal _Sunday_wages;
-            public decimal Sunday_wages
-            {
-                get => _Sunday_wages;
-                 set { _Sunday_wages = value; }
-            }
+        private decimal _SundayRate;
+        public decimal SundayRate
+        {
+            get => _SundayRate;
+            set { _SundayRate = value; RecalculateWages(); }
+        }
 
-            private decimal _Monthly_wages;
-            public decimal Monthly_wages
-            {
-                get => _Monthly_wages;
-                 set { _Monthly_wages = value; }
-            }
+        private decimal _MonthlyRate;
+        public decimal MonthlyRate
+        {
+            get => _MonthlyRate;
+            set { _MonthlyRate = value; RecalculateWages(); }
+        }
 
-            private decimal _Hourly_wages;
-            public decimal Hourly_wages
-            {
-                get => _Hourly_wages;
-                 set { _Hourly_wages = value; }
-            }
+        private decimal _HourlyRate;
+        public decimal HourlyRate
+        {
+            get => _HourlyRate;
+            set { _HourlyRate = value; RecalculateWages(); }
+        }
+
+
+        // --- Calculated Wages ---
+        private decimal _Daily_wages;
+        public decimal Daily_wages
+        {
+            get => _Daily_wages;
+            set { _Daily_wages = value; }
+        }
+
+        private decimal _OT_wages;
+        public decimal OT_wages
+        {
+            get => _OT_wages;
+            set { _OT_wages = value; }
+        }
+
+        private decimal _Sunday_wages;
+        public decimal Sunday_wages
+        {
+            get => _Sunday_wages;
+            set { _Sunday_wages = value; }
+        }
+
+        private decimal _Monthly_wages;
+        public decimal Monthly_wages
+        {
+            get => _Monthly_wages;
+            set { _Monthly_wages = value; }
+        }
+
+        private decimal _Hourly_wages;
+        public decimal Hourly_wages
+        {
+            get => _Hourly_wages;
+            set { _Hourly_wages = value; }
+        }
 
         private decimal _EPF_Employer;
         public decimal EPF_Employer
@@ -433,7 +437,15 @@ namespace WorkerRecord
             set { _Gross_wages = value; OnRecalculateTotalPrice(); BroadcastRecalculateEvent(); }
         }
 
-   
+        private decimal _Allowance;
+        public decimal Allowance
+        {
+            get => _Allowance;
+            set { _Allowance = value; OnRecalculateWages(); OnRecalculateTotalPrice();
+
+            }
+        }
+
         public decimal Total_wages { get; set; }
 
         private void BroadcastRecalculateEvent()
@@ -445,19 +457,19 @@ namespace WorkerRecord
             EPFRecalculateHandler?.Invoke(this, EventArgs.Empty);
         }
 
-         private void RecalculateWages()
-         {
+        private void RecalculateWages()
+        {
             if (IsLoading)
             {
                 return;
             }
-                Daily_wages = DailyHours * DailyRate;
-                OT_wages = OTHours * OTRate;
-                Sunday_wages = SundayHours * SundayRate;
-                Monthly_wages = MonthlyHours * MonthlyRate;
-                Hourly_wages = HourlyHours * HourlyRate;
-                OnRecalculateWages();
-         }
+            Daily_wages = DailyHours * DailyRate;
+            OT_wages = OTHours * OTRate;
+            Sunday_wages = SundayHours * SundayRate;
+            Monthly_wages = MonthlyHours * MonthlyRate;
+            Hourly_wages = HourlyHours * HourlyRate;
+            OnRecalculateWages();
+        }
         private void OnRecalculateTotalPrice()
         {
             if (IsLoading)
@@ -465,23 +477,31 @@ namespace WorkerRecord
                 return;
             }
 
-            Total_wages = Gross_wages - EPF_Employee- Socso_Employee - Deduction;
+            Total_wages = Gross_wages - EPF_Employee - Socso_Employee - Deduction;
         }
 
 
 
-            private void OnRecalculateWages()
-            {
+        private void OnRecalculateWages()
+        {
             if (IsLoading)
             {
                 return;
             }
 
-            Gross_wages = Daily_wages + OT_wages + Sunday_wages + Monthly_wages + Hourly_wages;
-             
-            }
+           // Gross_wages = Daily_wages + OT_wages + Sunday_wages + Monthly_wages + Hourly_wages;
+               Gross_wages = BasicPay + Allowance;
 
         }
+        public decimal BasicPay
+        {
+            get
+            {
+                return Daily_wages + Monthly_wages + OT_wages + Sunday_wages + Hourly_wages;
+            }
+        }
 
- 
+    }
+
+
 }
