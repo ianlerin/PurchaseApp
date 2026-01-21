@@ -70,8 +70,8 @@ namespace PurchaseBlazorApp2
                                     c.Spacing(5);
                                     c.Item().Text("EARNINGS / INCOME").Bold();
                                     c.Item().LineHorizontal(1).LineColor(Colors.Black);
-                                    c.Item().Text($"BASIC PAY: {0}");
-                                    c.Item().Text($"ALLOWANCE: {r.Allowance}");
+                                    c.Item().Text($"BASIC PAY: {r.BasicPay:C}");
+                                    c.Item().Text($"ALLOWANCE: {r.Allowance:C}");
                                 });
 
                            
@@ -99,7 +99,7 @@ namespace PurchaseBlazorApp2
                                 // Gross Pay 
                                 row.RelativeItem().Column(c => 
                                 {   c.Spacing(5);
-                                    c.Item().Text($"GROSS PAY: {r.Gross_wages}").Bold();
+                                    c.Item().Text($"GROSS PAY: {r.BasicPay:C}").Bold();
                                     c.Item().LineHorizontal(1).LineColor(Colors.Black);
                                 });
                                 row.ConstantItem(1).Background(Colors.Black);
@@ -108,7 +108,7 @@ namespace PurchaseBlazorApp2
                                 row.RelativeItem().Column(c =>
                                 {
                                     c.Spacing(5);
-                                    c.Item().Text($"TOTAL DEDUCTION: {r.Deduction}").Bold();
+                                    c.Item().Text($"TOTAL DEDUCTION: {r.EPF_Employee + r.Socso_Employee + r.Deduction}").Bold();
                                     c.Item().LineHorizontal(1).LineColor(Colors.Black);
 
                                    
