@@ -15,9 +15,9 @@ namespace PurchaseBlazorApp2.Controller
         {
             // Fetch your PO from DB based on poId
             PORepository Repo = new PORepository();
-            List<PurchaseOrderRecord>Records=await Repo.GetRecordsAsync(new List<string> { poId });
+            List<PurchaseOrderRecord> Records = await Repo.GetRecordsAsync(new List<string> { poId });
 
-            if (Records.Count==0) return NotFound();
+            if (Records.Count == 0) return NotFound();
             var PO = Records[0];
             if (PO == null) return NotFound();
 
@@ -80,5 +80,11 @@ namespace PurchaseBlazorApp2.Controller
             );
         }
 
+        [HttpPost("slip")]
+        public async Task<IActionResult> GenerateSlip([FromBody] SingleWageRecord record)
+        {
+            var pdfBytes = new SlipPDFHelper().GeneratePaymentSlip(record);
+            return File(pdfBytes, "application/pdf", $"PaymentSlip-{record.Name}.pdf");
+        }
     }
 }

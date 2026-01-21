@@ -160,7 +160,22 @@ else
                         <RadzenTextBox @bind-Value="record.Deduction_Reason" Style="width:100% ; background:#FFF3E0;" />
                     </Template>
                 </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="SingleWageRecord" Property="Allowance" Title="Allowance" Width="140px">
+                    <Template Context="record">
+                        <RadzenNumeric  TValue="decimal" Value="record.Allowance" Style="width:100% ; background:#FFF3E0;" Step="0.01" />
+                    </Template>
+                </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="SingleWageRecord" Property="Total_wages" Title="Total Wages" Width="140px" />
+                <RadzenDataGridColumn TItem="SingleWageRecord" Title="Slip PDF" Width="140px">
+                    <Template Context="record">
+                        <button class="btn btn-secondary btn-sm"
+                                @onclick="() => SlipPdf(record)"
+                                @onclick:stopPropagation="true">
+                            Download Slip
+                        </button>
+                    </Template>
+                </RadzenDataGridColumn>
+
         </Columns>
     </RadzenDataGrid>
   </div>
@@ -174,6 +189,8 @@ else
         <button type="button" @onclick="DownloadPdf" class="btn btn-primary">
            Download PDF
        </button>
+
+
           
     </div>
     
@@ -361,7 +378,7 @@ else
                 wagesPdfRequest.MyUser = restoredUser;
             }
             catch(Exception ex)
-            {
+            { 
 
             }
         }
@@ -373,5 +390,33 @@ else
         var base64 = Convert.ToBase64String(pdfBytes);
         await JS.InvokeVoidAsync("downloadFileFromBase64", $"Wages-{MyWageInfo.Year}-{MyWageInfo.Month}.pdf", base64);
     }
+
+    private async Task SlipPdf (SingleWageRecord worker)
+    {
+        if (worker == null) return;
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/pdf/slip", worker);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                await JS.InvokeVoidAsync("alert", $"Failed to generate PDF for {worker.Name}");
+                return;
+            }
+
+            var pdfBytes = await response.Content.ReadAsByteArrayAsync();
+            var base64 = Convert.ToBase64String(pdfBytes);
+
+            await JS.InvokeVoidAsync("downloadFileFromBase64", $"PaymentSlip-{worker.Name}.pdf", base64);
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Error generating PDF for {worker.Name}: {ex.Message}");
+        }
+    }
+
+
+
     
 }

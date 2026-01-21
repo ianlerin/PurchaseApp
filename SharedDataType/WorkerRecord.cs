@@ -224,6 +224,8 @@ namespace WorkerRecord
                 {
                     ID = worker.ID,
                     Name = worker.Name,
+                    Passport = worker.Passport,
+                    Designation = worker.Designation,
                     // Initialize hours to 0
                     DailyHours = 0,
                     OTHours = 0,
@@ -268,9 +270,11 @@ namespace WorkerRecord
 
         public bool IsLoading = false;
         public EventHandler EPFRecalculateHandler;
-            public string? ID { get; set; }
-            public string? Name { get; set; }
-            public string? Deduction_Reason { get; set;}
+        public string? ID { get; set; }
+        public string? Name { get; set; }
+        public string? Passport { get; set; }
+        public string? Designation { get; set; }
+        public string? Deduction_Reason { get; set;}
         private EEPFCategory _EPFCategory;
         public EEPFCategory EPFCategory
         {
@@ -433,7 +437,13 @@ namespace WorkerRecord
             set { _Gross_wages = value; OnRecalculateTotalPrice(); BroadcastRecalculateEvent(); }
         }
 
-   
+        private decimal _Allowance;
+        public decimal Allowance
+        {
+            get => _Allowance;
+            set { _Allowance = value; }
+        }
+
         public decimal Total_wages { get; set; }
 
         private void BroadcastRecalculateEvent()
