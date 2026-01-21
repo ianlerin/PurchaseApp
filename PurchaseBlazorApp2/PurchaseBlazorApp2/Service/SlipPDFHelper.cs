@@ -99,7 +99,7 @@ namespace PurchaseBlazorApp2
                                 // Gross Pay 
                                 row.RelativeItem().Column(c => 
                                 {   c.Spacing(5);
-                                    c.Item().Text($"GROSS PAY: {r.BasicPay:C}").Bold();
+                                    c.Item().Text($"GROSS PAY: {r.Gross_wages:C}").Bold();
                                     c.Item().LineHorizontal(1).LineColor(Colors.Black);
                                 });
                                 row.ConstantItem(1).Background(Colors.Black);
