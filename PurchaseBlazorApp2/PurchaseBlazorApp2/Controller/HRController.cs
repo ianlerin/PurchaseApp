@@ -110,12 +110,21 @@ namespace PurchaseBlazorApp2.Controller
             {
                 EPFEmployerContribution = EPFemployer,
                 EPFEmployeeContribution = EPFemployee,
-                SocsoEmployerContribution=Socsoemployer,
-                SocsoEmployeeContribution=Socsoemployer,
+                SocsoEmployerContribution = Socsoemployer,
+                SocsoEmployeeContribution = Socsoemployer,
 
             };
 
             return Ok(result);
         }
+
+        [HttpGet("GetWorkerById")]
+        public async Task<WorkerRecord.WorkerRecord> GetWorkerById(string id)
+        {
+            var workers = await _repo.GetWorkersByStatus(EWorkerStatus.Active);
+            return workers.FirstOrDefault(w => w.ID == id);
+        }
+
+
     }
 }

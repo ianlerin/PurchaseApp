@@ -402,6 +402,16 @@ else
 
         try
         {
+        
+            var workerInfo = await Http.GetFromJsonAsync<WorkerRecord>(
+                $"api/HR/GetWorkerById?id={worker.ID}");
+
+            if (workerInfo != null)
+            {
+                worker.Passport = workerInfo.Passport ?? string.Empty;
+                worker.Designation = workerInfo.Designation ?? string.Empty;
+            }
+
             var response = await Http.PostAsJsonAsync("api/pdf/slip", worker);
 
             if (!response.IsSuccessStatusCode)
