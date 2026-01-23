@@ -195,6 +195,11 @@ else
         <button type="button" @onclick="DownloadExcel" class="btn btn-primary">
             Download Excel
         </button>
+
+        <button type="button" @onclick="PrintWages" class="btn btn-secondary">
+            Print 
+        </button>
+
           
     </div>
     
@@ -502,4 +507,50 @@ else
 
         return;
     }
+
+    private async Task PrintWages()
+    {
+        if (MyWageInfo.WageRecords.Count == 0)
+        {
+            await JS.InvokeVoidAsync("alert", "Table is empty");
+            return;
+        }
+
+        GenerateWagesPdfRequest wagesPdfRequest = new GenerateWagesPdfRequest
+        {
+            Year = MyWageInfo.Year,
+            Month = MyWageInfo.Month
+        };
+
+        var json = await JS.InvokeAsync<string>("getCookie", "userKey");
+        if (!string.IsNullOrWhiteSpace(json))
+        {
+            try
+            {
+                UserName restoredUser = System.Text.Json.JsonSerializer.Deserialize<UserName>(json);
+                wagesPdfRequest.MyUser = restoredUser;
+            }
+            catch { }
+        }
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/pdf/purchase", wagesPdfRequest);
+            if (!response.IsSuccessStatusCode)
+            {
+                await JS.InvokeVoidAsync("alert", "Failed to generate PDF for printing");
+                return;
+            }
+
+            byte[] pdfBytes = await response.Content.ReadAsByteArrayAsync();
+            var base64 = Convert.ToBase64String(pdfBytes);
+            await JS.InvokeVoidAsync("Print", base64);
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Error printing PDF: {ex.Message}");
+        }
+    }
+
+
+
 }
