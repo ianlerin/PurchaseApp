@@ -40,7 +40,15 @@ else
                   AllowSorting="true"
                   Style="min-width:3000px"
                   Class="shadow-sm border rounded p-3">
-      <Columns>   
+      <Columns>
+        <RadzenDataGridColumn TItem="WorkerRecord" Property="bSelected" Width="60px">
+            <HeaderTemplate>
+                <RadzenCheckBox TValue="bool" Value="@CheckAllSelected()" Change="@CheckBSelected" />
+            </HeaderTemplate>
+            <Template Context="worker">
+                <RadzenCheckBox @bind-Value="worker.bSelected" />
+            </Template>
+        </RadzenDataGridColumn>
         <RadzenDataGridColumn TItem="WorkerRecord" Property="ID" Title="ID" Width="140px" />
         <RadzenDataGridColumn TItem="WorkerRecord" Property="Name" Title="Name" Width="200px">
             <Template Context="worker">
@@ -237,7 +245,7 @@ else
     {
         await excelWriter.write(
             "workers.xlsx",
-            FilteredWorkers.ToList(),
+            FilteredWorkers.Where(i => i.bSelected).ToList(),
             new ExcelWriterConfig
             {
                 dictInclude = new Dictionary<string, List<string>>
@@ -286,6 +294,29 @@ else
                 }
             }
         );
+
+        return;
+    }
+
+
+    private bool CheckAllSelected()
+    {
+        bool bAllSelected = FilteredWorkers.All(i => i.bSelected);
+
+        return bAllSelected;
+    }
+
+    private void CheckBSelected(bool bAllSelected)
+    {
+        HashSet<string> setId = FilteredWorkers.Select(i => i.ID).ToHashSet();
+
+        for (int i = 0; i < Workers.Count; i++)
+        {
+            if (setId.Contains(Workers[i].ID))
+            {
+                Workers[i].bSelected = bAllSelected;
+            }
+        }
 
         return;
     }
