@@ -154,6 +154,10 @@ else
         <button type="button" @onclick="DownloadExcel" class="btn btn-primary">
             Download Excel
         </button>
+        <button type="button" @onclick="PrintWorker" class="btn btn-secondary">
+            Print
+        </button>
+
   </div>
 }
 
@@ -297,6 +301,28 @@ else
 
         return;
     }
+
+    private async Task PrintWorker()
+    {
+        if (Workers == null || Workers.Count == 0)
+        {
+            await JS.InvokeVoidAsync("alert", "Table is empty");
+            return;
+        }
+
+        var status = string.IsNullOrWhiteSpace(FilterStatus) ? "All" : FilterStatus;
+        var nationality = string.IsNullOrWhiteSpace(FilterNationality) ? "All" : FilterNationality;
+
+        var pdfBytes = await Http.GetByteArrayAsync
+        (
+            $"api/pdf/hr/workers?status={status}&nationality={nationality}"
+        );
+
+        var base64 = Convert.ToBase64String(pdfBytes);
+
+        await JS.InvokeVoidAsync("Print", base64);
+    }
+
 
 
     private bool CheckAllSelected()
