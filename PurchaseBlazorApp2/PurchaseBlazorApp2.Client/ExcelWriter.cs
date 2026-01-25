@@ -611,7 +611,7 @@ public class ExcelWriter
     {
         if (getCount(listObj) == 0)
         {
-            JS.InvokeVoidAsync("alert", "No data can be downloaded as Excel file");
+            JS.InvokeVoidAsync("alert", "No data can be downloaded as Excel file. Please check the checkbox on first column of table.");
 
             return null;
         }

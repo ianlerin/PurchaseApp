@@ -42,6 +42,15 @@ else
         Style="min-width:4000px"
         Class="shadow-sm border rounded p-3">
         <Columns>
+            <RadzenDataGridColumn TItem="SingleWageRecord" Property="bSelected" Width="60px">
+                <HeaderTemplate>
+                    <RadzenCheckBox TValue="bool" Value="@CheckAllSelected()" Change="@CheckBSelected"/>
+                </HeaderTemplate>
+                <Template Context="record">
+                    <RadzenCheckBox @bind-Value="record.bSelected"/>
+                </Template>
+            </RadzenDataGridColumn>
+
             <RadzenDataGridColumn TItem="SingleWageRecord" Property="Name" Title="Worker Name" Width="160px">
                 <Template Context="record">
                     <RadzenTextBox @bind-Value="record.Name" Style="width:100%" />
@@ -407,6 +416,16 @@ else
 
         try
         {
+        
+            var workerInfo = await Http.GetFromJsonAsync<WorkerRecord>(
+                $"api/HR/GetWorkerById?id={worker.ID}");
+
+            if (workerInfo != null)
+            {
+                worker.Passport = workerInfo.Passport ?? string.Empty;
+                worker.Designation = workerInfo.Designation ?? string.Empty;
+            }
+
             var response = await Http.PostAsJsonAsync("api/pdf/slip", worker);
 
             if (!response.IsSuccessStatusCode)
@@ -433,7 +452,7 @@ else
     {
         await excelWriter.write(
             "wages.xlsx",
-            FilteredWageRecords.ToList(),
+            FilteredWageRecords.Where(i => i.bSelected).ToList(),
             new ExcelWriterConfig
             {
                 dictInclude = new Dictionary<string, List<string>>
@@ -553,4 +572,25 @@ else
 
 
 
+    private bool CheckAllSelected()
+    {
+        bool bAllSelected = FilteredWageRecords.All(i => i.bSelected);
+
+        return bAllSelected;
+    }
+
+    private void CheckBSelected(bool bAllSelected)
+    {
+        HashSet<string> setId = FilteredWageRecords.Select(i => i.ID).ToHashSet();
+
+        for(int i = 0; i < MyWageInfo.WageRecords.Count; i++)
+        {
+            if(setId.Contains(MyWageInfo.WageRecords[i].ID))
+            {
+                MyWageInfo.WageRecords[i].bSelected = bAllSelected;
+            }
+        }
+
+        return;
+    }
 }

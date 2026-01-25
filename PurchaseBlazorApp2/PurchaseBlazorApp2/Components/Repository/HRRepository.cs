@@ -372,8 +372,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                 workerid,
                 workername,
                 epf_status,
-                passport,
-                designation_status,
+             
                 daily_hours, ot_hours, sunday_hours, monthly_hours, hourly_hours,
                 daily_rate, ot_rate, sunday_rate, monthly_rate, hourly_rate,
 
@@ -452,8 +451,8 @@ namespace PurchaseBlazorApp2.Components.Repository
                     record.Deduction = reader.IsDBNull(reader.GetOrdinal("deduction")) ? 0m : reader.GetDecimal(reader.GetOrdinal("deduction"));
                     record.Deduction_Reason = reader.IsDBNull(reader.GetOrdinal("deduction_reason")) ? string.Empty : reader.GetString(reader.GetOrdinal("deduction_reason"));
                     record.Allowance = reader.IsDBNull(reader.GetOrdinal("allowance")) ? 0m : reader.GetDecimal(reader.GetOrdinal("allowance"));
-                    record.Passport = reader.IsDBNull(reader.GetOrdinal("passport")) ? string.Empty : reader.GetString(reader.GetOrdinal("passport"));
-                    record.Designation = reader.IsDBNull(reader.GetOrdinal("designation_status")) ? string.Empty : reader.GetString(reader.GetOrdinal("designation_status"));
+                   // record.Passport = reader.IsDBNull(reader.GetOrdinal("passport")) ? string.Empty : reader.GetString(reader.GetOrdinal("passport"));
+                   // record.Designation = reader.IsDBNull(reader.GetOrdinal("designation_status")) ? string.Empty : reader.GetString(reader.GetOrdinal("designation_status"));
 
                     // ---------- SOCSO Category ----------
                     var socsoCatStr = reader.IsDBNull(reader.GetOrdinal("socso_status"))

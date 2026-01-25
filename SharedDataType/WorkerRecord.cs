@@ -142,6 +142,7 @@ namespace WorkerRecord
         }
 
         public EWorkerStatus WorkerStatus { get; set; }
+        public bool bSelected { get; set; }
 
         private void UpdateEPFStatus()
         {
@@ -447,6 +448,7 @@ namespace WorkerRecord
         }
 
         public decimal Total_wages { get; set; }
+        public bool bSelected { get; set; } = false;
 
         private void BroadcastRecalculateEvent()
         {
