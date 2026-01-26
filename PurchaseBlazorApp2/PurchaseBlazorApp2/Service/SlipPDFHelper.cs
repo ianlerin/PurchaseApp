@@ -26,7 +26,7 @@ namespace PurchaseBlazorApp2
                             // Header
                             col.Item().Padding(5).Row(row =>
                             {
-                                row.RelativeItem().Text("DEMO COMPANY SDN BHD").Bold().FontSize(14);
+                                row.RelativeItem().Text("LCDA MSB PINEAPPLE SDN.BHD.").Bold().FontSize(14);
                                 row.RelativeItem().AlignRight().Text("END PAYMENT – JANUARY 2019").Bold();
                                 col.Item().LineHorizontal(1).LineColor(Colors.Black);
                             });
