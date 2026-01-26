@@ -208,6 +208,9 @@ else
         <button type="button" @onclick="PrintWages" class="btn btn-secondary">
             Print 
         </button>
+        <button type="button" @onclick="PrintSelectedSlip" class="btn btn-secondary">
+            Print Slip
+        </button>
 
           
     </div>
@@ -570,6 +573,33 @@ else
         }
     }
 
+    private async Task PrintSelectedSlip()
+    {
+        var selectedWorkers = FilteredWageRecords.Where(w => w.bSelected).ToList();
+        if (!selectedWorkers.Any())
+        {
+            await JS.InvokeVoidAsync("alert", "No worker selected");
+            return;
+        }
+
+        var base64 = new List<string>();
+
+        foreach (var worker in selectedWorkers)
+        {
+            var response = await Http.PostAsJsonAsync("api/pdf/slip", worker);
+            if (!response.IsSuccessStatusCode)
+            {
+                await JS.InvokeVoidAsync("alert", $"Failed to generate PDF for {worker.Name}");
+                continue;
+            }
+
+            var pdfBytes = await response.Content.ReadAsByteArrayAsync();
+            base64.Add(Convert.ToBase64String(pdfBytes));
+        }
+
+        if (base64.Count > 0)
+            await JS.InvokeVoidAsync("Print", base64);
+    }
 
 
     private bool CheckAllSelected()
