@@ -211,6 +211,9 @@ else
         <button type="button" @onclick="PrintSelectedSlip" class="btn btn-secondary">
             Print Slip
         </button>
+        <button type="button" @onclick="DownloadSlips" class="btn btn-primary">
+            Download Slips
+        </button>
 
           
     </div>
@@ -419,7 +422,6 @@ else
 
         try
         {
-        
             var workerInfo = await Http.GetFromJsonAsync<WorkerRecord>(
                 $"api/HR/GetWorkerById?id={worker.ID}");
 
@@ -427,6 +429,7 @@ else
             {
                 worker.Passport = workerInfo.Passport ?? string.Empty;
                 worker.Designation = workerInfo.Designation ?? string.Empty;
+                worker.Status = workerInfo.Status ?? string.Empty;
             }
 
             var response = await Http.PostAsJsonAsync("api/pdf/slip", worker);
@@ -586,6 +589,16 @@ else
 
         foreach (var worker in selectedWorkers)
         {
+            var workerInfo = await Http.GetFromJsonAsync<WorkerRecord>(
+                $"api/HR/GetWorkerById?id={worker.ID}");
+
+            if (workerInfo != null)
+            {
+                worker.Passport = workerInfo.Passport ?? string.Empty;
+                worker.Designation = workerInfo.Designation ?? string.Empty;
+                worker.Status = workerInfo.Status ?? string.Empty;
+            }
+
             var response = await Http.PostAsJsonAsync("api/pdf/slip", worker);
             if (!response.IsSuccessStatusCode)
             {
@@ -601,6 +614,39 @@ else
             await JS.InvokeVoidAsync("Print", base64);
     }
 
+    private async Task DownloadSlips()
+    {
+        var selectedWorkers = FilteredWageRecords.Where(w => w.bSelected).ToList();
+        if (!selectedWorkers.Any())
+        {
+            await JS.InvokeVoidAsync("alert", "No worker selected");
+            return;
+        }
+
+        foreach (var worker in selectedWorkers)
+        {
+            var workerInfo = await Http.GetFromJsonAsync<WorkerRecord>(
+                $"api/HR/GetWorkerById?id={worker.ID}");
+
+            if (workerInfo != null)
+            {
+                worker.Passport = workerInfo.Passport ?? string.Empty;
+                worker.Designation = workerInfo.Designation ?? string.Empty;
+                worker.Status = workerInfo.Status ?? string.Empty;
+            }
+
+            var response = await Http.PostAsJsonAsync("api/pdf/slip", worker);
+            if (!response.IsSuccessStatusCode)
+            {
+                await JS.InvokeVoidAsync("alert", $"Failed to generate PDF for {worker.Name}");
+                continue;
+            }
+
+            var pdfBytes = await response.Content.ReadAsByteArrayAsync();
+            var base64 = Convert.ToBase64String(pdfBytes);
+            await JS.InvokeVoidAsync("downloadFileFromBase64", $"PaymentSlip-{worker.Name}.pdf", base64);
+        }
+    }
 
     private bool CheckAllSelected()
     {

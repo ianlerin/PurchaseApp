@@ -49,7 +49,7 @@ namespace PurchaseBlazorApp2
                                 row.RelativeItem().Column(c =>
                                 {
                                     c.Spacing(5);
-                                    c.Item().Text($"POSITION: {0}");
+                                    c.Item().Text($"POSITION: {r.Status}");
                                     c.Item().Text($"EPF NO: {r.EPFCategory}");
                                     c.Item().Text($"SOCSO NO: {r.SocsoCategory}");
                                     c.Item().Text($"TAX NO: {0}");
