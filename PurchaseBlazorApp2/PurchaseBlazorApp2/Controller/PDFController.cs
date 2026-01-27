@@ -86,5 +86,11 @@ namespace PurchaseBlazorApp2.Controller
             var pdfBytes = new SlipPDFHelper().GeneratePaymentSlip(record);
             return File(pdfBytes, "application/pdf", $"PaymentSlip-{record.Name}.pdf");
         }
+        [HttpPost("Combineslip")]
+        public async Task<string> CombineSlip([FromBody] List<string> Slips)
+        {
+            var SingleBase64 = new SlipPDFHelper().CombinePdfBase64(Slips);
+            return SingleBase64;
+        }
     }
 }

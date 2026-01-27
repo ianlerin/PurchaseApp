@@ -208,6 +208,12 @@ else
         <button type="button" @onclick="PrintWages" class="btn btn-secondary">
             Print 
         </button>
+        <button type="button" @onclick="PrintSelectedSlip" class="btn btn-secondary">
+            Print Slip
+        </button>
+        <button type="button" @onclick="DownloadSlips" class="btn btn-primary">
+            Download Slips
+        </button>
 
           
     </div>
@@ -416,7 +422,6 @@ else
 
         try
         {
-        
             var workerInfo = await Http.GetFromJsonAsync<WorkerRecord>(
                 $"api/HR/GetWorkerById?id={worker.ID}");
 
@@ -424,6 +429,7 @@ else
             {
                 worker.Passport = workerInfo.Passport ?? string.Empty;
                 worker.Designation = workerInfo.Designation ?? string.Empty;
+                worker.Status = workerInfo.Status ?? string.Empty;
             }
 
             var response = await Http.PostAsJsonAsync("api/pdf/slip", worker);
@@ -447,7 +453,7 @@ else
 
 
 
-    
+
     private async Task DownloadExcel()
     {
         await excelWriter.write(
@@ -570,7 +576,84 @@ else
         }
     }
 
+    private async Task PrintSelectedSlip()
+    {
+        var selectedWorkers = FilteredWageRecords.Where(w => w.bSelected).ToList();
+        if (!selectedWorkers.Any())
+        {
+            await JS.InvokeVoidAsync("alert", "No worker selected");
+            return;
+        }
 
+        var base64 = new List<string>();
+
+        foreach (var worker in selectedWorkers)
+        {
+            var workerInfo = await Http.GetFromJsonAsync<WorkerRecord>(
+                $"api/HR/GetWorkerById?id={worker.ID}");
+
+            if (workerInfo != null)
+            {
+                worker.Passport = workerInfo.Passport ?? string.Empty;
+                worker.Designation = workerInfo.Designation ?? string.Empty;
+                worker.Status = workerInfo.Status ?? string.Empty;
+            }
+
+            var response = await Http.PostAsJsonAsync("api/pdf/slip", worker);
+            if (!response.IsSuccessStatusCode)
+            {
+                await JS.InvokeVoidAsync("alert", $"Failed to generate PDF for {worker.Name}");
+                continue;
+            }
+
+            var pdfBytes = await response.Content.ReadAsByteArrayAsync();
+            base64.Add(Convert.ToBase64String(pdfBytes));
+        }
+        var CombineResponse = await Http.PostAsJsonAsync("api/pdf/Combineslip", base64);
+        if (!CombineResponse.IsSuccessStatusCode)
+        {
+            await JS.InvokeVoidAsync("alert", $"Failed to combine pdf");
+            return;
+        }
+        var SinglePDF = await CombineResponse.Content.ReadAsStringAsync();
+
+        if (base64.Count > 0)
+            await JS.InvokeVoidAsync("Print", SinglePDF);
+    }
+
+    private async Task DownloadSlips()
+    {
+        var selectedWorkers = FilteredWageRecords.Where(w => w.bSelected).ToList();
+        if (!selectedWorkers.Any())
+        {
+            await JS.InvokeVoidAsync("alert", "No worker selected");
+            return;
+        }
+
+        foreach (var worker in selectedWorkers)
+        {
+            var workerInfo = await Http.GetFromJsonAsync<WorkerRecord>(
+                $"api/HR/GetWorkerById?id={worker.ID}");
+
+            if (workerInfo != null)
+            {
+                worker.Passport = workerInfo.Passport ?? string.Empty;
+                worker.Designation = workerInfo.Designation ?? string.Empty;
+                worker.Status = workerInfo.Status ?? string.Empty;
+            }
+
+            var response = await Http.PostAsJsonAsync("api/pdf/slip", worker);
+            if (!response.IsSuccessStatusCode)
+            {
+                await JS.InvokeVoidAsync("alert", $"Failed to generate PDF for {worker.Name}");
+                continue;
+            }
+
+            var pdfBytes = await response.Content.ReadAsByteArrayAsync();
+            var base64 = Convert.ToBase64String(pdfBytes);
+            await JS.InvokeVoidAsync("downloadFileFromBase64", $"PaymentSlip-{worker.Name}.pdf", base64);
+        }
+    }
 
     private bool CheckAllSelected()
     {

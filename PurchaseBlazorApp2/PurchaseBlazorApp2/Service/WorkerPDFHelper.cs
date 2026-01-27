@@ -1,15 +1,21 @@
-﻿using QuestPDF.Fluent;
+﻿using iText.Kernel.Pdf;
+using iText.Kernel.Utils;
+using Npgsql.Internal;
+using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
-using WorkerRecord;
 using System;
 using System.Collections.Generic;
+using WorkerRecord;
 
 
 namespace PurchaseBlazorApp2.Service
 {
     public class WorkerPDFHelper
     {
+
+      
+
         public byte[] GenerateWorkerPdf(List<WorkerRecord.WorkerRecord> workers, EWorkerStatus filterStatus)
 
         {

@@ -227,6 +227,7 @@ namespace WorkerRecord
                     Name = worker.Name,
                     Passport = worker.Passport,
                     Designation = worker.Designation,
+                    Status = worker.Status,
                     // Initialize hours to 0
                     DailyHours = 0,
                     OTHours = 0,
@@ -275,6 +276,7 @@ namespace WorkerRecord
         public string? Name { get; set; }
         public string? Passport { get; set; }
         public string? Designation { get; set; }
+        public string? Status { get; set; }
         public string? Deduction_Reason { get; set; }
         private EEPFCategory _EPFCategory;
         public EEPFCategory EPFCategory

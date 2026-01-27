@@ -1,4 +1,6 @@
-﻿using PurchaseBlazorApp2.Client.Pages.HR;
+﻿using iText.Kernel.Pdf;
+using iText.Kernel.Utils;
+using PurchaseBlazorApp2.Client.Pages.HR;
 using PurchaseBlazorApp2.Components.Data;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
@@ -9,6 +11,28 @@ namespace PurchaseBlazorApp2
 {
     public class SlipPDFHelper
     {
+        public string CombinePdfBase64(List<string> pdfBase64List)
+        {
+            using (var ms = new MemoryStream())
+            {
+                PdfDocument pdf = new PdfDocument(new PdfWriter(ms));
+                PdfMerger merger = new PdfMerger(pdf);
+
+                foreach (var base64 in pdfBase64List)
+                {
+                    byte[] pdfBytes = Convert.FromBase64String(base64);
+                    using (var pageStream = new MemoryStream(pdfBytes))
+                    {
+                        PdfDocument tempDoc = new PdfDocument(new PdfReader(pageStream));
+                        merger.Merge(tempDoc, 1, tempDoc.GetNumberOfPages());
+                        tempDoc.Close();
+                    }
+                }
+
+                pdf.Close();
+                return Convert.ToBase64String(ms.ToArray());
+            }
+        }
         public byte[] GeneratePaymentSlip(SingleWageRecord r )
         {
             var document = Document.Create(container =>
@@ -26,7 +50,7 @@ namespace PurchaseBlazorApp2
                             // Header
                             col.Item().Padding(5).Row(row =>
                             {
-                                row.RelativeItem().Text("DEMO COMPANY SDN BHD").Bold().FontSize(14);
+                                row.RelativeItem().Text("LCDA MSB PINEAPPLE SDN.BHD.").Bold().FontSize(14);
                                 row.RelativeItem().AlignRight().Text("END PAYMENT – JANUARY 2019").Bold();
                                 col.Item().LineHorizontal(1).LineColor(Colors.Black);
                             });
@@ -49,7 +73,7 @@ namespace PurchaseBlazorApp2
                                 row.RelativeItem().Column(c =>
                                 {
                                     c.Spacing(5);
-                                    c.Item().Text($"POSITION: {0}");
+                                    c.Item().Text($"POSITION: {r.Status}");
                                     c.Item().Text($"EPF NO: {r.EPFCategory}");
                                     c.Item().Text($"SOCSO NO: {r.SocsoCategory}");
                                     c.Item().Text($"TAX NO: {0}");
