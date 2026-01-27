@@ -453,7 +453,7 @@ else
 
 
 
-    
+
     private async Task DownloadExcel()
     {
         await excelWriter.write(
@@ -609,9 +609,16 @@ else
             var pdfBytes = await response.Content.ReadAsByteArrayAsync();
             base64.Add(Convert.ToBase64String(pdfBytes));
         }
+        var CombineResponse = await Http.PostAsJsonAsync("api/pdf/Combineslip", base64);
+        if (!CombineResponse.IsSuccessStatusCode)
+        {
+            await JS.InvokeVoidAsync("alert", $"Failed to combine pdf");
+            return;
+        }
+        var SinglePDF = await CombineResponse.Content.ReadAsStringAsync();
 
         if (base64.Count > 0)
-            await JS.InvokeVoidAsync("Print", base64);
+            await JS.InvokeVoidAsync("Print", SinglePDF);
     }
 
     private async Task DownloadSlips()

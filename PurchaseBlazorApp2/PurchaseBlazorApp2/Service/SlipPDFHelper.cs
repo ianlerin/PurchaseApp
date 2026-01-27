@@ -1,4 +1,6 @@
-﻿using PurchaseBlazorApp2.Client.Pages.HR;
+﻿using iText.Kernel.Pdf;
+using iText.Kernel.Utils;
+using PurchaseBlazorApp2.Client.Pages.HR;
 using PurchaseBlazorApp2.Components.Data;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
@@ -9,6 +11,28 @@ namespace PurchaseBlazorApp2
 {
     public class SlipPDFHelper
     {
+        public string CombinePdfBase64(List<string> pdfBase64List)
+        {
+            using (var ms = new MemoryStream())
+            {
+                PdfDocument pdf = new PdfDocument(new PdfWriter(ms));
+                PdfMerger merger = new PdfMerger(pdf);
+
+                foreach (var base64 in pdfBase64List)
+                {
+                    byte[] pdfBytes = Convert.FromBase64String(base64);
+                    using (var pageStream = new MemoryStream(pdfBytes))
+                    {
+                        PdfDocument tempDoc = new PdfDocument(new PdfReader(pageStream));
+                        merger.Merge(tempDoc, 1, tempDoc.GetNumberOfPages());
+                        tempDoc.Close();
+                    }
+                }
+
+                pdf.Close();
+                return Convert.ToBase64String(ms.ToArray());
+            }
+        }
         public byte[] GeneratePaymentSlip(SingleWageRecord r )
         {
             var document = Document.Create(container =>
