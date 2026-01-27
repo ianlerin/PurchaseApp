@@ -285,7 +285,7 @@ namespace PurchaseBlazorApp2.Resource
                 case (EEPFCategory.F):
                     return EPFCategoryFCalculation(Record);
             }
-            return GetContributions(Range, Record.Total_wages);
+            return GetContributions(Range, Record.EPF);
         
         }
         private (decimal Employer, decimal Employee) EPFCategoryFCalculation(SingleWageRecord Record)
