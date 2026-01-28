@@ -81,10 +81,10 @@ namespace PurchaseBlazorApp2.Controller
         }
 
         [HttpPost("slip")]
-        public async Task<IActionResult> GenerateSlip([FromBody] GenerateSlipRequest request)
+        public async Task<IActionResult> GenerateSlip([FromBody] SingleWageRecord record)
         {
-            var pdfBytes = new SlipPDFHelper().GeneratePaymentSlip(request.Worker, request.MyUser);
-            return File(pdfBytes, "application/pdf", $"PaymentSlip-{request.Worker.Name}.pdf");
+            var pdfBytes = new SlipPDFHelper().GeneratePaymentSlip(record);
+            return File(pdfBytes, "application/pdf", $"PaymentSlip-{record.Name}.pdf");
         }
         [HttpPost("Combineslip")]
         public async Task<string> CombineSlip([FromBody] List<string> Slips)

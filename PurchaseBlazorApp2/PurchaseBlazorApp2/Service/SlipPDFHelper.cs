@@ -33,7 +33,7 @@ namespace PurchaseBlazorApp2
                 return Convert.ToBase64String(ms.ToArray());
             }
         }
-        public byte[] GeneratePaymentSlip(SingleWageRecord r,UserName MyUser)
+        public byte[] GeneratePaymentSlip(SingleWageRecord r)
         {
             var document = Document.Create(container =>
             {
@@ -181,7 +181,7 @@ namespace PurchaseBlazorApp2
                                {
                                    c.Item().Text("Prepared By").Bold();
                                    c.Item().PaddingTop(30).Text("____________________________");
-                                   c.Item().PaddingTop(5).Text($"Name:{MyUser.Name}");
+                                   c.Item().PaddingTop(5).Text($"Name:{r.Approvedby}");
                                  
                                });
 

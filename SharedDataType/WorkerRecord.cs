@@ -50,14 +50,6 @@ namespace WorkerRecord
         public UserName MyUser { get; set; }
     }
 
-
-    public class GenerateSlipRequest
-    {
-        public SingleWageRecord Worker { get; set; }
-        public UserName MyUser { get; set; }
-    }
-
-
     public class WorkerPdfRequest
     {
         public string FilterStatus { get; set; }
@@ -285,6 +277,15 @@ namespace WorkerRecord
         public string? Passport { get; set; }
         public string? Designation { get; set; }
         public string? Status { get; set; }
+
+        private string _Approvedby;
+        public string Approvedby
+        {
+            get => _Approvedby;
+            set => _Approvedby = value;
+        }
+
+
         public string? Deduction_Reason { get; set; }
         private EEPFCategory _EPFCategory;
         public EEPFCategory EPFCategory

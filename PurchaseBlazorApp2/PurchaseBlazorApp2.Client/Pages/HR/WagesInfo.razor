@@ -176,6 +176,12 @@ else
                 </RadzenDataGridColumn>
               
                 <RadzenDataGridColumn TItem="SingleWageRecord" Property="Total_wages" Title="Total Wages" Width="140px" />
+                <RadzenDataGridColumn TItem="SingleWageRecord" Property="ApprovedBy" Title="Approved By" Width="160px">
+                    <Template Context="record">
+                        <RadzenTextBox @bind-Value="record.Approvedby" ReadOnly="true" Style="width:100%; background:#F0F0F0;" />
+                    </Template>
+                </RadzenDataGridColumn>
+
                 <RadzenDataGridColumn TItem="SingleWageRecord" Title="Slip PDF" Width="140px">
                     <Template Context="record">
                         <button class="btn btn-secondary btn-sm"
@@ -345,7 +351,17 @@ else
     }
 
     private async Task InsertWageInfo()
-    {
+    { 
+        var json = await JS.InvokeAsync<string>("getCookie", "userKey");
+        if (!string.IsNullOrWhiteSpace(json))
+        {
+            var currentUser = System.Text.Json.JsonSerializer.Deserialize<UserName>(json);
+            foreach (var record in MyWageInfo.WageRecords)
+            {
+                record.Approvedby = currentUser?.Name ?? "";
+            }
+        }
+
         try
         {
             var response = await Http.PostAsJsonAsync(
@@ -425,18 +441,6 @@ else
     private async Task SlipPdf (SingleWageRecord worker)
     {
         if (worker == null) return;
-        var json = await JS.InvokeAsync<string>("getCookie", "userKey");
-        UserName restoredUser = null;
-        if (!string.IsNullOrWhiteSpace(json))
-        {
-            restoredUser = System.Text.Json.JsonSerializer.Deserialize<UserName>(json);
-        }
-
-        var request = new GenerateSlipRequest
-        {
-            Worker = worker,
-            MyUser = restoredUser
-        };
         try
         {
             var workerInfo = await Http.GetFromJsonAsync<WorkerRecord>(
@@ -449,7 +453,7 @@ else
                 worker.Status = workerInfo.Status ?? string.Empty;
             }
 
-            var response = await Http.PostAsJsonAsync("api/pdf/slip",request);
+            var response = await Http.PostAsJsonAsync("api/pdf/slip",worker);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -510,6 +514,7 @@ else
                             nameof(SingleWageRecord.Socso_Employee),
                             nameof(SingleWageRecord.Deduction),
                             nameof(SingleWageRecord.Deduction_Reason),
+                            nameof(SingleWageRecord.Approvedby),
                             nameof(SingleWageRecord.Total_wages)
                         }
                     }
@@ -542,6 +547,7 @@ else
                     new ExcelColConfig(nameof(SingleWageRecord.Socso_Employee)),
                     new ExcelColConfig(nameof(SingleWageRecord.Deduction)),
                     new ExcelColConfig(nameof(SingleWageRecord.Deduction_Reason)),
+                    new ExcelColConfig(nameof(SingleWageRecord.Approvedby)),
                     new ExcelColConfig(nameof(SingleWageRecord.Total_wages))
                 }
             }
@@ -602,11 +608,6 @@ else
             return;
         }
 
-        var json = await JS.InvokeAsync<string>("getCookie", "userKey");
-        UserName restoredUser = null;
-        if (!string.IsNullOrWhiteSpace(json))
-            restoredUser = System.Text.Json.JsonSerializer.Deserialize<UserName>(json);
-
         var base64 = new List<string>();
     
         foreach (var worker in selectedWorkers)
@@ -621,13 +622,7 @@ else
                 worker.Status = workerInfo.Status ?? string.Empty;
             }
 
-            var request = new GenerateSlipRequest
-            {
-                Worker = worker,
-                MyUser = restoredUser
-            };
-
-            var response = await Http.PostAsJsonAsync("api/pdf/slip", request);
+            var response = await Http.PostAsJsonAsync("api/pdf/slip", worker);
             if (!response.IsSuccessStatusCode)
             {
                 await JS.InvokeVoidAsync("alert", $"Failed to generate PDF for {worker.Name}");
@@ -658,11 +653,6 @@ else
             return;
         }
 
-        var json = await JS.InvokeAsync<string>("getCookie", "userKey");
-        UserName restoredUser = null;
-        if (!string.IsNullOrWhiteSpace(json))
-            restoredUser = System.Text.Json.JsonSerializer.Deserialize<UserName>(json);
-
         foreach (var worker in selectedWorkers)
         {
             var workerInfo = await Http.GetFromJsonAsync<WorkerRecord>(
@@ -675,13 +665,7 @@ else
                 worker.Status = workerInfo.Status ?? string.Empty;
             }
 
-            var request = new GenerateSlipRequest
-            {
-                Worker = worker,
-                MyUser = restoredUser
-            };
-
-            var response = await Http.PostAsJsonAsync("api/pdf/slip", request);
+            var response = await Http.PostAsJsonAsync("api/pdf/slip", worker);
             if (!response.IsSuccessStatusCode)
             {
                 await JS.InvokeVoidAsync("alert", $"Failed to generate PDF for {worker.Name}");

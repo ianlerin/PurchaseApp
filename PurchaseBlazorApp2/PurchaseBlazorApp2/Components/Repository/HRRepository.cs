@@ -279,6 +279,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                 deduction,
                 deduction_reason,
                 allowance,
+                approvedby,
                 total_wages
             ) VALUES (
                 @year, @month,
@@ -295,6 +296,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                 @Deduction,
                 @DeductionReason,
                 @Allowance,
+                @Approvedby,
                 @total_wages
             )", conn);
 
@@ -338,8 +340,8 @@ namespace PurchaseBlazorApp2.Components.Repository
                     insertCmd.Parameters.AddWithValue("@DeductionReason",
                     string.IsNullOrWhiteSpace(record.Deduction_Reason) ? (object)DBNull.Value : record.Deduction_Reason);
                     insertCmd.Parameters.AddWithValue("@Allowance", record.Allowance);
-
-
+                    insertCmd.Parameters.AddWithValue("@Approvedby",record.Approvedby);
+                    
 
                     insertCmd.ExecuteNonQuery();
                 }
@@ -384,6 +386,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                 deduction,
                 deduction_reason,
                 allowance,
+                approvedby,
                 total_wages
             FROM hr.wagesinfo
             WHERE year = @year AND month = @month
@@ -410,6 +413,10 @@ namespace PurchaseBlazorApp2.Components.Repository
                     record.Name = reader.IsDBNull(reader.GetOrdinal("workername"))
                         ? string.Empty
                         : reader.GetString(reader.GetOrdinal("workername"));
+
+                    record.Approvedby = reader.IsDBNull(reader.GetOrdinal("approvedby"))
+                        ? string.Empty
+                        : reader.GetString(reader.GetOrdinal("approvedby"));
 
                     // ---------- EPF Category ----------
                     var epfCatStr = reader.IsDBNull(reader.GetOrdinal("epf_status"))
