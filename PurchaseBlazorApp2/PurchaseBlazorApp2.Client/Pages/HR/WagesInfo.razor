@@ -574,7 +574,7 @@ else
 
             byte[] pdfBytes = await response.Content.ReadAsByteArrayAsync();
             var base64 = Convert.ToBase64String(pdfBytes);
-            await JS.InvokeVoidAsync("Print", base64);
+            await JS.InvokeVoidAsync("pdfprint", base64);
         }
         catch (Exception ex)
         {
@@ -624,7 +624,7 @@ else
         var SinglePDF = await CombineResponse.Content.ReadAsStringAsync();
 
         if (base64.Count > 0)
-            await JS.InvokeVoidAsync("Print", SinglePDF);
+            await JS.InvokeVoidAsync("pdfprint", SinglePDF);
     }
 
     private async Task DownloadSlips()

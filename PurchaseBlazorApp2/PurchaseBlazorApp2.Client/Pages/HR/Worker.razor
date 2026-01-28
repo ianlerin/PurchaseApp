@@ -323,7 +323,7 @@ else
 
         var base64 = Convert.ToBase64String(pdfBytes);
 
-        await JS.InvokeVoidAsync("Print", base64);
+        await JS.InvokeVoidAsync("pdfprint", base64);
     }
 
 

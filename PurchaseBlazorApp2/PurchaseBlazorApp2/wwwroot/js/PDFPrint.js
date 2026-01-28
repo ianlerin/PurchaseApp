@@ -1,4 +1,4 @@
-﻿window.Print = base64Input => {
+﻿window.pdfprint = base64Input => {
     const base64List = Array.isArray(base64Input) ? base64Input : [base64Input];
     base64List.forEach((base64Pdf, index) => {
         const bytes = Uint8Array.from(atob(base64Pdf), c => c.charCodeAt(0));
