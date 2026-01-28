@@ -285,12 +285,12 @@ namespace PurchaseBlazorApp2.Resource
                 case (EEPFCategory.F):
                     return EPFCategoryFCalculation(Record);
             }
-            return GetContributions(Range, Record.Total_wages);
+            return GetContributions(Range, Record.EPF);
         
         }
         private (decimal Employer, decimal Employee) EPFCategoryFCalculation(SingleWageRecord Record)
         {
-            decimal contribution = Math.Ceiling(Record.Gross_wages * 0.02m);
+            decimal contribution = Math.Ceiling(Record.EPF * 0.02m);
             return (contribution, contribution);
         }
         private decimal ParseDecimalOrZero(string value)

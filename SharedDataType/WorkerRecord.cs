@@ -10,7 +10,7 @@ namespace WorkerRecord
 {
     public enum EWorkerStatus
     {
-        Active,Inactive, All
+        Active, Inactive, All
     }
     public enum EEPFCategory
     {
@@ -23,7 +23,7 @@ namespace WorkerRecord
     }
     public enum ENationalityStatus
     {
-        Foreign,Local,PR
+        Foreign, Local, PR
     }
     public class ContributeResult
     {
@@ -39,7 +39,7 @@ namespace WorkerRecord
         public decimal EmployerContribute { get; set; }
         public decimal EmployeeContribute { get; set; }
 
-     
+
     }
 
 
@@ -125,7 +125,7 @@ namespace WorkerRecord
         public decimal DailyRate { get; set; }
         public decimal OTRate { get; set; }
         public decimal SundayRate { get; set; }
-     
+
         private decimal _HourlyRate;
         public decimal HourlyRate
         {
@@ -146,7 +146,7 @@ namespace WorkerRecord
 
         private void UpdateEPFStatus()
         {
-            if(IsLoading)
+            if (IsLoading)
             {
                 return;
             }
@@ -166,11 +166,11 @@ namespace WorkerRecord
                 return EEPFCategory.C;
 
             return EEPFCategory.F;
-        }   
+        }
 
         private ESocsoCategory AutoDetectSocsoStatus()
         {
-            if(NationalityStatus==ENationalityStatus.Local)
+            if (NationalityStatus == ENationalityStatus.Local)
             {
                 return ESocsoCategory.Act800;
             }
@@ -192,7 +192,7 @@ namespace WorkerRecord
             if (IsLoading || HourlyRate <= 0)
                 return;
 
-         
+
 
             DailyRate = Math.Round(HourlyRate * 8m, 2);
             OTRate = Math.Round(HourlyRate * 1.5m, 2);
@@ -203,11 +203,11 @@ namespace WorkerRecord
     public class WageRecord
     {
         //public EventHandler EPFRecalculateHandler;
-      
-        public int Year { get; set; }
-            public int Month { get; set; }
 
-            public List<SingleWageRecord>  WageRecords{get;set;}
+        public int Year { get; set; }
+        public int Month { get; set; }
+
+        public List<SingleWageRecord> WageRecords { get; set; }
         public void FormWageRecordFromWorkerRecords(List<WorkerRecord> records)
         {
             if (records == null || records.Count == 0)
@@ -262,8 +262,8 @@ namespace WorkerRecord
         public WageRecord()
         {
             WageRecords = new List<SingleWageRecord>();
-            Year =DateTime.Now.Year;
-                Month=DateTime.Now.Month;
+            Year = DateTime.Now.Year;
+            Month = DateTime.Now.Month;
         }
     }
 
@@ -444,7 +444,9 @@ namespace WorkerRecord
         public decimal Allowance
         {
             get => _Allowance;
-            set { _Allowance = value; OnRecalculateWages(); OnRecalculateTotalPrice();
+            set
+            {
+                _Allowance = value; OnRecalculateWages(); OnRecalculateTotalPrice();
 
             }
         }
@@ -493,8 +495,8 @@ namespace WorkerRecord
                 return;
             }
 
-           // Gross_wages = Daily_wages + OT_wages + Sunday_wages + Monthly_wages + Hourly_wages;
-               Gross_wages = BasicPay + Allowance;
+            // Gross_wages = Daily_wages + OT_wages + Sunday_wages + Monthly_wages + Hourly_wages;
+            Gross_wages = BasicPay + Allowance;
 
         }
         public decimal BasicPay
@@ -505,7 +507,14 @@ namespace WorkerRecord
             }
         }
 
+        public decimal EPF
+        {
+            get
+            {
+                return Daily_wages + Monthly_wages + Hourly_wages;
+            }
+        }
+
+
     }
-
-
 }
