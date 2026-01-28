@@ -425,7 +425,18 @@ else
     private async Task SlipPdf (SingleWageRecord worker)
     {
         if (worker == null) return;
+        var json = await JS.InvokeAsync<string>("getCookie", "userKey");
+        UserName restoredUser = null;
+        if (!string.IsNullOrWhiteSpace(json))
+        {
+            restoredUser = System.Text.Json.JsonSerializer.Deserialize<UserName>(json);
+        }
 
+        var request = new GenerateSlipRequest
+        {
+            Worker = worker,
+            MyUser = restoredUser
+        };
         try
         {
             var workerInfo = await Http.GetFromJsonAsync<WorkerRecord>(
@@ -438,7 +449,7 @@ else
                 worker.Status = workerInfo.Status ?? string.Empty;
             }
 
-            var response = await Http.PostAsJsonAsync("api/pdf/slip", worker);
+            var response = await Http.PostAsJsonAsync("api/pdf/slip",request);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -591,8 +602,13 @@ else
             return;
         }
 
-        var base64 = new List<string>();
+        var json = await JS.InvokeAsync<string>("getCookie", "userKey");
+        UserName restoredUser = null;
+        if (!string.IsNullOrWhiteSpace(json))
+            restoredUser = System.Text.Json.JsonSerializer.Deserialize<UserName>(json);
 
+        var base64 = new List<string>();
+    
         foreach (var worker in selectedWorkers)
         {
             var workerInfo = await Http.GetFromJsonAsync<WorkerRecord>(
@@ -605,7 +621,13 @@ else
                 worker.Status = workerInfo.Status ?? string.Empty;
             }
 
-            var response = await Http.PostAsJsonAsync("api/pdf/slip", worker);
+            var request = new GenerateSlipRequest
+            {
+                Worker = worker,
+                MyUser = restoredUser
+            };
+
+            var response = await Http.PostAsJsonAsync("api/pdf/slip", request);
             if (!response.IsSuccessStatusCode)
             {
                 await JS.InvokeVoidAsync("alert", $"Failed to generate PDF for {worker.Name}");
@@ -636,6 +658,11 @@ else
             return;
         }
 
+        var json = await JS.InvokeAsync<string>("getCookie", "userKey");
+        UserName restoredUser = null;
+        if (!string.IsNullOrWhiteSpace(json))
+            restoredUser = System.Text.Json.JsonSerializer.Deserialize<UserName>(json);
+
         foreach (var worker in selectedWorkers)
         {
             var workerInfo = await Http.GetFromJsonAsync<WorkerRecord>(
@@ -648,7 +675,13 @@ else
                 worker.Status = workerInfo.Status ?? string.Empty;
             }
 
-            var response = await Http.PostAsJsonAsync("api/pdf/slip", worker);
+            var request = new GenerateSlipRequest
+            {
+                Worker = worker,
+                MyUser = restoredUser
+            };
+
+            var response = await Http.PostAsJsonAsync("api/pdf/slip", request);
             if (!response.IsSuccessStatusCode)
             {
                 await JS.InvokeVoidAsync("alert", $"Failed to generate PDF for {worker.Name}");

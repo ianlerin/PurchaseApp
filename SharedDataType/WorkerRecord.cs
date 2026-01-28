@@ -50,6 +50,14 @@ namespace WorkerRecord
         public UserName MyUser { get; set; }
     }
 
+
+    public class GenerateSlipRequest
+    {
+        public SingleWageRecord Worker { get; set; }
+        public UserName MyUser { get; set; }
+    }
+
+
     public class WorkerPdfRequest
     {
         public string FilterStatus { get; set; }

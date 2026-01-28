@@ -33,7 +33,7 @@ namespace PurchaseBlazorApp2
                 return Convert.ToBase64String(ms.ToArray());
             }
         }
-        public byte[] GeneratePaymentSlip(SingleWageRecord r )
+        public byte[] GeneratePaymentSlip(SingleWageRecord r,UserName MyUser)
         {
             var document = Document.Create(container =>
             {
@@ -147,6 +147,8 @@ namespace PurchaseBlazorApp2
                             {
                                 row.ConstantItem(200).PaddingLeft(20).PaddingTop(10).Column(c =>
                                 {
+                                    c.Item().PaddingBottom(5).AlignCenter().Text("EMPLOYER CONTRIBUTION").Bold();
+
                                     c.Item()
                                      .Border(1)     
                                      .Padding(3)
@@ -173,11 +175,25 @@ namespace PurchaseBlazorApp2
                             });
 
                             // Sign
-                            col.Item().PaddingTop(50).Padding(5).Row(row =>
-                            {   
-                                row.RelativeItem().Text("APPROVED BY:_____________________");
-                                row.RelativeItem().Text("RECEIVED BY:_____________________");
+                            col.Item().PaddingTop(20).Padding(10).Row(row =>
+                            {
+                               row.RelativeItem().Column(c =>
+                               {
+                                   c.Item().Text("Prepared By").Bold();
+                                   c.Item().PaddingTop(30).Text("____________________________");
+                                   c.Item().PaddingTop(5).Text($"Name:{MyUser.Name}");
+                                 
+                               });
+
+                               row.RelativeItem().Column(c =>
+                               {
+                                   c.Item().Text("Approved By").Bold();
+                                   c.Item().PaddingTop(30).Text("____________________________");
+                                   c.Item().PaddingTop(5).Text("Name:");
+                                
+                               });
                             });
+
                         });
                 });
             });
