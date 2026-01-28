@@ -290,7 +290,7 @@ namespace PurchaseBlazorApp2.Resource
         }
         private (decimal Employer, decimal Employee) EPFCategoryFCalculation(SingleWageRecord Record)
         {
-            decimal contribution = Math.Ceiling(Record.Gross_wages * 0.02m);
+            decimal contribution = Math.Ceiling(Record.EPF * 0.02m);
             return (contribution, contribution);
         }
         private decimal ParseDecimalOrZero(string value)
