@@ -192,32 +192,38 @@ else
 
 
     <div class="mt-3">
-       <button type="button" @onclick="InsertWageInfo" class="btn btn-success">
-           Submit
-       </button>
 
-        <button type="button" @onclick="DownloadPdf" class="btn btn-primary">
-           Download PDF
-       </button>
-
-
-        <button type="button" @onclick="DownloadExcel" class="btn btn-primary">
-            Download Excel
+      
+        <button type="button" @onclick="InsertWageInfo" class="btn btn-success">
+            <i class="bi bi-check-circle me-2"></i> Submit
         </button>
 
-        <button type="button" @onclick="PrintWages" class="btn btn-secondary">
-            Print 
-        </button>
-        <button type="button" @onclick="PrintSelectedSlip" class="btn btn-secondary">
-            Print Slip
-        </button>
-        <button type="button" @onclick="DownloadSlips" class="btn btn-primary">
-            Download Slips
-        </button>
+       <!--download -->
+        <div class="btn-group">
+            <button type="button" @onclick="DownloadPdf" class="btn btn-primary ">
+                <i class="bi bi-file-earmark-pdf me-2"></i> PDF
+            </button>
+             <button type="button" @onclick="DownloadExcel" class="btn btn-primary">
+                <i class="bi bi-file-earmark-excel me-2"></i>Excel
+             </button>
+            <button type="button" @onclick="DownloadSlips" class="btn btn-primary">
+                <i class="bi bi-receipt me-2"></i> Slips
+            </button>
+        </div>
 
-          
+        <!--print-->
+        <div class="btn-group">
+            <button type="button" @onclick="PrintWages" class="btn btn-secondary">
+                <i class="bi bi-printer me-2"></i> Print All
+            </button>
+            <button type="button" @onclick="PrintSelectedSlip" class="btn btn-secondary">
+                <i class="bi bi-printer me-2"></i> Print Selected
+            </button>
+        </div>
+
     </div>
-    
+
+
 }
 
 @code {
