@@ -231,7 +231,9 @@
             }
 
             Records = response != null
-                ? await ExtractPRListAsync(response)
+                ? (await ExtractPRListAsync(response))
+                .OrderByDescending(r => r.RequestDate)
+                .ToList()
                 : new List<PurchaseRequisitionRecord>();
         }
         catch (HttpRequestException ex)
