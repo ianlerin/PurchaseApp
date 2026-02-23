@@ -1,0 +1,38 @@
+﻿@using InventoryRecord
+@page "/add-supplier"
+<h3>Add Supplier</h3>
+<div>
+    <label class="form-label fw-bold">ID</label>
+    <InputText class="form-control"
+               @bind-Value="SupplierData.ID" readonly />
+</div>
+
+<div>
+    <label class="form-label fw-bold">Name</label>
+    <InputText class="form-control"
+               @bind-Value="SupplierData.Name" />
+</div>
+<div>
+    <label class="form-label fw-bold">Address</label>
+    <InputText class="form-control"
+               @bind-Value="SupplierData.Address" />
+</div>
+<div>
+    <label class="form-label fw-bold">Contact</label>
+    <InputText class="form-control"
+               @bind-Value="SupplierData.Contact" />
+</div>
+<button type="submit"
+        class="btn btn-primary btn-lg px-5"
+        @onclick="OnSubmitSupplier">
+    Edit
+</button>
+
+@code {
+    public InventorySupplierData? SupplierData { get; set; } = new InventorySupplierData();
+
+    private async Task OnSubmitSupplier()
+    {
+
+    }
+}

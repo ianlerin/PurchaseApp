@@ -1,0 +1,29 @@
+﻿@using InventoryRecord
+@page "/add-product"
+<h3>AddInventoryProductPage</h3>
+
+<div>
+    <label class="form-label fw-bold">ID</label>
+    <InputText class="form-control"
+               @bind-Value="ItemData.ID" readonly />
+</div>
+
+<div>
+    <label class="form-label fw-bold">Name</label>
+    <InputText class="form-control"
+               @bind-Value="ItemData.Name" />
+</div>
+<button type="submit"
+        class="btn btn-primary btn-lg px-5"
+        @onclick="OnSubmitProduct">
+    Edit
+</button>
+
+@code {
+    public InventoryItemData? ItemData { get; set; } = new InventoryItemData();
+
+    private async Task OnSubmitProduct()
+    {
+        
+    }
+}

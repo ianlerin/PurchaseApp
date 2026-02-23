@@ -1,0 +1,99 @@
+﻿@page "/add-record"
+@using InventoryRecord
+@using PurchaseBlazorApp2.Components.Data
+
+<h3>Inventory Record</h3>
+
+<EditForm Model="Record" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label class="form-label">Record ID</label>
+        <InputText class="form-control" @bind-Value="Record.ID" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Item</label>
+        <InputSelect class="form-control" @bind-Value="SelectedItemId" @onchange="OnItemChanged">
+            <option value="">-- Select Item --</option>
+            @foreach (var item in ItemList)
+            {
+                <option value="@item.ID">@item.Name</option>
+            }
+        </InputSelect>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Supplier</label>
+        <InputSelect class="form-control" @bind-Value="SelectedSupplierId" @onchange="OnSupplierChanged">
+            <option value="">-- Select Supplier --</option>
+            @foreach (var supplier in SupplierList)
+            {
+                <option value="@supplier.ID">@supplier.Name</option>
+            }
+        </InputSelect>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Quantity</label>
+        <InputNumber class="form-control" @bind-Value="Record.Quantity" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Created By</label>
+        <InputText class="form-control" @bind-Value="Record.CreatedBy" readonly />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save</button>
+</EditForm>
+
+@code {
+    [Inject] IJSRuntime JS { get; set; }
+    private List<InventoryItemData> ItemList = new()
+    {
+        new InventoryItemData { ID = "I001", Name = "Keyboard" },
+        new InventoryItemData { ID = "I002", Name = "Mouse" },
+        new InventoryItemData { ID = "I003", Name = "Monitor" }
+    };
+
+    private List<InventorySupplierData> SupplierList = new()
+    {
+        new InventorySupplierData { ID = "S001", Name = "Tech Supply Sdn Bhd", Address="KL", Contact="012-1234567" },
+        new InventorySupplierData { ID = "S002", Name = "Hardware Global", Address="Penang", Contact="012-9876543" }
+    };
+
+    private InventoryRecordData Record = new();
+
+    private string? SelectedItemId;
+    private string? SelectedSupplierId;
+
+    protected async override void OnInitialized()
+    {
+        if(string.IsNullOrEmpty(Record.CreatedBy))
+        {
+            UserName username = await GeneralLibrary.GetCurrentUser(JS);
+            Record.CreatedBy = username.Name;
+        }
+        
+    }
+        
+
+    private void OnItemChanged(ChangeEventArgs e)
+    {
+        SelectedItemId = e.Value?.ToString();
+        Record.ItemData = ItemList.FirstOrDefault(x => x.ID == SelectedItemId) ?? new InventoryItemData();
+    }
+
+    private void OnSupplierChanged(ChangeEventArgs e)
+    {
+        SelectedSupplierId = e.Value?.ToString();
+        Record.SupplierData = SupplierList.FirstOrDefault(x => x.ID == SelectedSupplierId) ?? new InventorySupplierData();
+    }
+
+    private void HandleValidSubmit()
+    {
+      
+       
+    }
+}

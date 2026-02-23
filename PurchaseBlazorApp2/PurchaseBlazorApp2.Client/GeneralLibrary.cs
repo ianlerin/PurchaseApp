@@ -48,6 +48,27 @@ namespace PurchaseBlazorApp2.Client
             }
             return role;
         }
+
+        static public async Task<UserName?> GetCurrentUser(IJSRuntime JS)
+        {
+            UserName restoredUser = new UserName();
+            var json = await JS.InvokeAsync<string>("getCookie", "userKey");
+            if (!string.IsNullOrWhiteSpace(json))
+            {
+                try
+                {
+                    restoredUser = System.Text.Json.JsonSerializer.Deserialize<UserName>(json);
+
+                }
+                catch (Exception Ex)
+                {
+
+                }
+            }
+            return restoredUser;
+        }
+
+
         static public Task<string> GetAccessTokenAsync(string accessToken,Uri uri, Dictionary<string, object>? context = null, CancellationToken token = default)
         {
             return Task.FromResult(accessToken);
