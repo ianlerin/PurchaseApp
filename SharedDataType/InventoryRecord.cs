@@ -21,7 +21,6 @@ namespace InventoryRecord
 
     public class InventoryRecordData
     {
-        public string ID = "";
         public InventoryItemData ItemData = new InventoryItemData();
         public InventorySupplierData SupplierData = new InventorySupplierData();
         public int Quantity = 0;
