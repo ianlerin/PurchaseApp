@@ -20,10 +20,43 @@
 </button>
 
 @code {
+    [Inject]
+    private HttpClient Http { get; set; }
+    [Inject]
+    private IJSRuntime JS { get; set; }
     public InventoryItemData? ItemData { get; set; } = new InventoryItemData();
 
     private async Task OnSubmitProduct()
     {
-        
+        if (string.IsNullOrWhiteSpace(ItemData.Name))
+        {
+            await JS.InvokeVoidAsync("alert", "Please enter a product name!");
+            return;
+        }
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/inventory/add-product", ItemData);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var msg = await response.Content.ReadAsStringAsync();
+                await JS.InvokeVoidAsync("alert", $"Submit failed! Reason: {msg}");
+                return;
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<IdResponse>();
+            if (result != null) ItemData.ID = result.Id;
+
+            await JS.InvokeVoidAsync("alert", $"SubmitSuccess! Product ID: {ItemData.ID}");
+
+      
+            ItemData.Name = "";
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Submit failed! Exception: {ex.Message}");
+        }
     }
+    
 }

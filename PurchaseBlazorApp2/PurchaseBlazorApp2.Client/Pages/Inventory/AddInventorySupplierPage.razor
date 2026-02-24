@@ -29,10 +29,38 @@
 </button>
 
 @code {
-    public InventorySupplierData? SupplierData { get; set; } = new InventorySupplierData();
+    [Inject]
+    private HttpClient Http { get; set; }
+    [Inject]
+    private IJSRuntime JS { get; set; }
+    public InventorySupplierData SupplierData { get; set; } = new InventorySupplierData();
 
     private async Task OnSubmitSupplier()
     {
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/inventory/add-supplier", SupplierData);
 
+            if (!response.IsSuccessStatusCode)
+            {
+                var msg = await response.Content.ReadAsStringAsync();
+                await JS.InvokeVoidAsync("alert", $"Submit failed! Reason: {msg}");
+                return;
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<IdResponse>();
+            if (result != null) SupplierData.ID = result.Id;
+
+            await JS.InvokeVoidAsync("alert", $"SubmitSuccess! Supplier ID: {SupplierData.ID}");
+
+          
+            SupplierData.Name = "";
+            SupplierData.Address = "";
+            SupplierData.Contact = "";
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Submit failed! Exception: {ex.Message}");
+        }
     }
 }

@@ -8,15 +8,15 @@ namespace InventoryRecord
 {
     public class InventoryItemData
     {
-        public string ID = "";
-        public string Name = "";
+        public string ID { get; set; } = "";
+        public string Name { get; set; } = "";
     }
     public class InventorySupplierData
     {
-        public string ID = "";
-        public string Name = "";
-        public string? Address;
-        public string? Contact;
+        public string ID { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string? Address { get; set; }
+        public string? Contact { get; set; }
     }
 
     public class InventoryRecordData
@@ -25,6 +25,10 @@ namespace InventoryRecord
         public InventorySupplierData SupplierData = new InventorySupplierData();
         public int Quantity = 0;
         public string CreatedBy = "";
+    }
+    public class IdResponse
+    {
+        public string Id { get; set; } = "";
     }
     internal class InventoryRecord
     {
