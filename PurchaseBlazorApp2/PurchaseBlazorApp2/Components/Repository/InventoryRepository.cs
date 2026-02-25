@@ -104,5 +104,57 @@ namespace PurchaseBlazorApp2.Components.Repository
                 await Connection.CloseAsync();
             }
         }
+
+        public async Task<List<InventorySupplierData>> GetSuppliersAsync()
+        {
+            await Connection.OpenAsync();
+            try
+            {
+                var cmd = new NpgsqlCommand("SELECT id, name, address, contact FROM addsupplier ORDER BY id", Connection);
+                var list = new List<InventorySupplierData>();
+
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    list.Add(new InventorySupplierData
+                    {
+                        ID = reader.GetString(0),
+                        Name = reader.GetString(1),
+                        Address = reader.GetString(2),
+                        Contact = reader.GetString(3)
+                    });
+                }
+                return list;
+            }
+            finally
+            {
+                await Connection.CloseAsync();
+            }
+        }
+
+        public async Task<List<InventoryItemData>> GetProductsAsync()
+        {
+            await Connection.OpenAsync();
+            try
+            {
+                var cmd = new NpgsqlCommand("SELECT id, name FROM addproduct ORDER BY id", Connection);
+                var list = new List<InventoryItemData>();
+
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    list.Add(new InventoryItemData
+                    {
+                        ID = reader.GetString(0),
+                        Name = reader.GetString(1)
+                    });
+                }
+                return list;
+            }
+            finally
+            {
+                await Connection.CloseAsync();
+            }
+        }
     }
 }

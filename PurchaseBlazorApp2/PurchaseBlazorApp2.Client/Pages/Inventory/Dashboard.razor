@@ -1,0 +1,137 @@
+﻿@page "/inventory-dashboard"
+@using InventoryRecord
+@using Radzen.Blazor
+@inject HttpClient Http
+
+<h3>Inventory Dashboard</h3>
+
+<div class="tabs mb-3">
+    <button class="tab-button @(activeTab == "Product" ? "active" : "")"
+            @onclick="@(() => activeTab = "Product")">
+        Product
+    </button>
+
+    <button class="tab-button @(activeTab == "Supplier" ? "active" : "")"
+            @onclick="@(() => activeTab = "Supplier")">
+        Supplier
+    </button>
+</div>
+
+@if (IsLoading)
+{
+    <div class="d-flex justify-content-center align-items-center p-5">
+        <div class="spinner-border text-primary"></div>
+        <span class="ms-2">Loading Records...</span>
+    </div>
+}
+else
+{
+    @if (activeTab == "Product")
+    {
+        <RadzenDataGrid Data="@Product"
+                        TItem="InventoryItemData"
+                        AllowSorting="true"
+                        Class="shadow-sm border rounded p-3"
+                        Style="min-width:800px;">
+            <Columns>
+                <RadzenDataGridColumn TItem="InventoryItemData"
+                                      Property="ID"
+                                      Title="Product ID"
+                                      Width="150px" />
+
+                <RadzenDataGridColumn TItem="InventoryItemData"
+                                      Property="Name"
+                                      Title="Product Name"
+                                      Width="300px" />
+            </Columns>
+        </RadzenDataGrid>
+    }
+
+    @if (activeTab == "Supplier")
+    {
+        <RadzenDataGrid Data="@Supplier"
+                        TItem="InventorySupplierData"
+                        AllowSorting="true"
+                        Class="shadow-sm border rounded p-3"
+                        Style="min-width:1000px;">
+            <Columns>
+                <RadzenDataGridColumn TItem="InventorySupplierData"
+                                      Property="ID"
+                                      Title="Supplier ID"
+                                      Width="150px" />
+
+                <RadzenDataGridColumn TItem="InventorySupplierData"
+                                      Property="Name"
+                                      Title="Name"
+                                      Width="200px" />
+
+                <RadzenDataGridColumn TItem="InventorySupplierData"
+                                      Property="Address"
+                                      Title="Address"
+                                      Width="300px" />
+
+                <RadzenDataGridColumn TItem="InventorySupplierData"
+                                      Property="Contact"
+                                      Title="Contact"
+                                      Width="200px" />
+            </Columns>
+        </RadzenDataGrid>
+    }
+}
+
+<style>
+    .tabs {
+        display: flex;
+        gap: 1rem;
+        border-bottom: 1px solid #ccc;
+    }
+
+    .tab-button {
+        background: none;
+        border: none;
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    .tab-button.active {
+        border-bottom: 2px solid blue;
+        color: blue;
+     }
+</style>
+
+@code {
+    private string activeTab = "Product";
+    private bool IsLoading = true;
+
+    private List<InventoryItemData> Product = new();
+    private List<InventorySupplierData> Supplier = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ReloadData();
+    }
+
+    private async Task ReloadData()
+    {
+        IsLoading = true;
+
+        try
+        {
+            Product =
+                await Http.GetFromJsonAsync<List<InventoryItemData>>("api/inventory/get-products")
+                ?? new();
+
+            Supplier =
+                await Http.GetFromJsonAsync<List<InventorySupplierData>>("api/inventory/get-suppliers")
+                ?? new();
+        }
+        catch
+        {
+            Product = new();
+            Supplier= new();
+        }
+
+        IsLoading = false;
+    }
+}

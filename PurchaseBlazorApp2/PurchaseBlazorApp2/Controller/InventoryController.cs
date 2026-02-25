@@ -52,5 +52,17 @@ namespace PurchaseBlazorApp2.Controller
                 return StatusCode(500, $"Error adding product: {ex.Message}");
             }
         }
+
+        [HttpGet("get-suppliers")]
+        public async Task<List<InventorySupplierData>> GetSuppliers()
+        {
+            return await _repo.GetSuppliersAsync();
+        }
+
+        [HttpGet("get-products")]
+        public async Task<List<InventoryItemData>> GetProducts()
+        {
+            return await _repo.GetProductsAsync();
+        }
     }
 }
