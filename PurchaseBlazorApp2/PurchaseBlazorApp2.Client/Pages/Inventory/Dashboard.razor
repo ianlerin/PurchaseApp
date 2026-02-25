@@ -1,6 +1,7 @@
 ﻿@page "/inventory-dashboard"
 @using InventoryRecord
 @using Radzen.Blazor
+@inject NavigationManager NavigationManager
 @inject HttpClient Http
 
 <h3>Inventory Dashboard</h3>
@@ -42,7 +43,18 @@ else
                 <RadzenDataGridColumn TItem="InventoryItemData"
                                       Property="Name"
                                       Title="Product Name"
-                                      Width="300px" />
+                                      Width="180px" />
+
+                <RadzenDataGridColumn TItem="InventoryItemData" Title="Actions" Width="120px">
+                    <Template Context="data">
+                        <div style="display:flex; gap:6px;">
+                            <RadzenButton Text="View"
+                                          Icon="visibility"
+                                          Click="@(() => OnViewProductClicked(data))"
+                                          Style="min-width:70px;" />
+                        </div>
+                    </Template>
+                </RadzenDataGridColumn>
             </Columns>
         </RadzenDataGrid>
     }
@@ -74,6 +86,17 @@ else
                                       Property="Contact"
                                       Title="Contact"
                                       Width="200px" />
+
+                <RadzenDataGridColumn TItem="InventorySupplierData" Title="Actions" Width="120px">
+                    <Template Context="data">
+                        <div style="display:flex; gap:6px;">
+                            <RadzenButton Text="View"
+                                          Icon="visibility"
+                                          Click="@(() => OnViewProductClicked(data))"
+                                          Style="min-width:70px;" />
+                        </div>
+                    </Template>
+                </RadzenDataGridColumn>
             </Columns>
         </RadzenDataGrid>
     }
@@ -133,5 +156,14 @@ else
         }
 
         IsLoading = false;
+    }
+    private void OnViewProductClicked(InventoryItemData product)
+    {
+        NavigationManager.NavigateTo($"/add-product/{product.ID}");
+    }
+
+    private void OnViewProductClicked(InventorySupplierData product)
+    {
+        NavigationManager.NavigateTo($"/add-supplier/{product.ID}");
     }
 }

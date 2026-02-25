@@ -1,5 +1,5 @@
 ﻿@using InventoryRecord
-@page "/add-supplier"
+@page "/add-supplier/{ID}"
 <h3>Add Supplier</h3>
 <div>
     <label class="form-label fw-bold">ID</label>
@@ -33,7 +33,23 @@
     private HttpClient Http { get; set; }
     [Inject]
     private IJSRuntime JS { get; set; }
+    [Parameter]
+    public string ID { get; set; }
     public InventorySupplierData SupplierData { get; set; } = new InventorySupplierData();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        SupplierData.ID = ID;
+
+        var suppliers = await Http.GetFromJsonAsync<List<InventorySupplierData>>("api/inventory/get-suppliers");
+        var supplier = suppliers?.FirstOrDefault(s => s.ID == ID);
+        if (supplier != null)
+        {
+            SupplierData.Name = supplier.Name;
+            SupplierData.Address = supplier.Address;
+            SupplierData.Contact = supplier.Contact;
+        }
+    }
 
     private async Task OnSubmitSupplier()
     {
