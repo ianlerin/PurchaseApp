@@ -1,5 +1,6 @@
 ﻿@using InventoryRecord
 @page "/add-product/{ID}"
+@page "/add-product"
 <h3>AddInventoryProductPage</h3>
 
 <div>
@@ -30,8 +31,12 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        ItemData.ID = ID;
+        if (string.IsNullOrEmpty(ID))
+        {
+            return;
+        }
 
+        ItemData.ID = ID;
         var products = await Http.GetFromJsonAsync<List<InventoryItemData>>("api/inventory/get-products");
         var product = products?.FirstOrDefault(p => p.ID == ID);
         if (product != null)

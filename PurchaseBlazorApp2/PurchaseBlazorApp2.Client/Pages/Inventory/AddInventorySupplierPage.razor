@@ -1,5 +1,6 @@
 ﻿@using InventoryRecord
 @page "/add-supplier/{ID}"
+@page "/add-supplier"
 <h3>Add Supplier</h3>
 <div>
     <label class="form-label fw-bold">ID</label>
@@ -39,6 +40,10 @@
 
     protected override async Task OnParametersSetAsync()
     {
+        if (string.IsNullOrEmpty(ID))
+        {
+            return;
+        }
         SupplierData.ID = ID;
 
         var suppliers = await Http.GetFromJsonAsync<List<InventorySupplierData>>("api/inventory/get-suppliers");

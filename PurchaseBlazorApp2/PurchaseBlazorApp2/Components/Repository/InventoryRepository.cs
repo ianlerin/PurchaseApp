@@ -1,4 +1,5 @@
 ﻿using DocumentFormat.OpenXml.EMMA;
+using DocumentFormat.OpenXml.Wordprocessing;
 using InventoryRecord;
 using Npgsql;
 using PurchaseBlazorApp2.Components.Data;
@@ -54,23 +55,45 @@ namespace PurchaseBlazorApp2.Components.Repository
             await Connection.OpenAsync();
             try
             {
-                await EnsureSequenceAsync("addsupplier_seq","addsupplier", "id");
+                var checkCmd = new NpgsqlCommand("SELECT COUNT(*) FROM addsupplier WHERE id=@id", Connection);
+                checkCmd.Parameters.AddWithValue("id", supplier.ID ?? "");
+                var exists = (long)await checkCmd.ExecuteScalarAsync() > 0;
 
-                var seqCmd = new NpgsqlCommand("SELECT nextval('addsupplier_seq')", Connection);
-                var seq = (long)await seqCmd.ExecuteScalarAsync();
-                supplier.ID = $"Supplier_{seq}";
+                if (exists)
+                {
+                    // update
+                    var updateCmd = new NpgsqlCommand(
+                        "UPDATE addsupplier SET name=@name, address=@address, contact=@contact WHERE id=@id",
+                        Connection);
+                    updateCmd.Parameters.AddWithValue("id", supplier.ID);
+                    updateCmd.Parameters.AddWithValue("name", supplier.Name ?? "");
+                    updateCmd.Parameters.AddWithValue("address", supplier.Address ?? "");
+                    updateCmd.Parameters.AddWithValue("contact", supplier.Contact ?? "");
+                    await updateCmd.ExecuteNonQueryAsync();
+
+                    return supplier.ID;
+                }
+                else
+                {
+                    //insert
+                    await EnsureSequenceAsync("addsupplier_seq", "addsupplier", "id");
+
+                    var seqCmd = new NpgsqlCommand("SELECT nextval('addsupplier_seq')", Connection);
+                    var seq = (long)await seqCmd.ExecuteScalarAsync();
+                    supplier.ID = $"Supplier_{seq}";
 
 
-                var insertCmd = new NpgsqlCommand(
-                    "INSERT INTO addsupplier (id, name, address, contact) VALUES (@id, @name, @address, @contact)",
-                    Connection);
-                insertCmd.Parameters.AddWithValue("id", supplier.ID);
-                insertCmd.Parameters.AddWithValue("name", supplier.Name ?? "");
-                insertCmd.Parameters.AddWithValue("address", supplier.Address ?? "");
-                insertCmd.Parameters.AddWithValue("contact", supplier.Contact ?? "");
-                await insertCmd.ExecuteNonQueryAsync();
+                    var insertCmd = new NpgsqlCommand(
+                        "INSERT INTO addsupplier (id, name, address, contact) VALUES (@id, @name, @address, @contact)",
+                        Connection);
+                    insertCmd.Parameters.AddWithValue("id", supplier.ID);
+                    insertCmd.Parameters.AddWithValue("name", supplier.Name ?? "");
+                    insertCmd.Parameters.AddWithValue("address", supplier.Address ?? "");
+                    insertCmd.Parameters.AddWithValue("contact", supplier.Contact ?? "");
+                    await insertCmd.ExecuteNonQueryAsync();
 
-                return supplier.ID;
+                    return supplier.ID;
+                }
             }
             finally
             {
@@ -83,11 +106,30 @@ namespace PurchaseBlazorApp2.Components.Repository
             await Connection.OpenAsync();
             try
             {
-                await EnsureSequenceAsync("addproduct_seq", "addproduct", "id");
+                var checkCmd = new NpgsqlCommand("SELECT COUNT(*) FROM addproduct WHERE id=@id", Connection);
+                checkCmd.Parameters.AddWithValue("id", product.ID ?? "");
+                var exists = (long)await checkCmd.ExecuteScalarAsync() > 0;
 
-                var seqCmd = new NpgsqlCommand("SELECT nextval('addproduct_seq')", Connection);
-                var seq = (long)await seqCmd.ExecuteScalarAsync();
-                product.ID = $"Product_{seq}";
+                if (exists)
+                {
+                    // update
+                    var updateCmd = new NpgsqlCommand(
+                        "UPDATE addproduct SET name=@name WHERE id=@id",
+                        Connection);
+                    updateCmd.Parameters.AddWithValue("id", product.ID);
+                    updateCmd.Parameters.AddWithValue("name", product.Name ?? "");
+                    await updateCmd.ExecuteNonQueryAsync();
+
+                    return product.ID; 
+                }
+                else
+                { 
+                    //insert
+                    await EnsureSequenceAsync("addproduct_seq", "addproduct", "id");
+
+                    var seqCmd = new NpgsqlCommand("SELECT nextval('addproduct_seq')", Connection);
+                    var seq = (long)await seqCmd.ExecuteScalarAsync();
+                    product.ID = $"Product_{seq}";
 
 
                 var insertCmd = new NpgsqlCommand(
@@ -97,7 +139,9 @@ namespace PurchaseBlazorApp2.Components.Repository
                 insertCmd.Parameters.AddWithValue("name", product.Name ?? "");
                 await insertCmd.ExecuteNonQueryAsync();
 
-                return product.ID;
+                  return product.ID;
+
+                }
             }
             finally
             {
