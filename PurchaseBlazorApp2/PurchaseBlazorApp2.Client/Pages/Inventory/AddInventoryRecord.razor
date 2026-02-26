@@ -3,39 +3,42 @@
 @using PurchaseBlazorApp2.Components.Data
 
 <h3>Inventory Record</h3>
-
+@inject HttpClient Http
 <EditForm Model="Record" OnValidSubmit="HandleValidSubmit">
     <DataAnnotationsValidator />
     <ValidationSummary />
 
-
+    <!-- Item -->
     <div class="mb-3">
         <label class="form-label">Item</label>
-        <InputSelect class="form-control" @bind-Value="SelectedItemId" @onchange="OnItemChanged">
+        <InputSelect class="form-control" @bind-Value="SelectedItemId">
             <option value="">-- Select Item --</option>
             @foreach (var item in ItemList)
             {
-                <option value="@item.ID">@item.Name</option>
+                <option value="@item.ID">@($"{item.Name}")</option>
             }
         </InputSelect>
     </div>
 
+    <!-- Supplier -->
     <div class="mb-3">
         <label class="form-label">Supplier</label>
-        <InputSelect class="form-control" @bind-Value="SelectedSupplierId" @onchange="OnSupplierChanged">
+        <InputSelect class="form-control" @bind-Value="SelectedSupplierId">
             <option value="">-- Select Supplier --</option>
             @foreach (var supplier in SupplierList)
             {
-                <option value="@supplier.ID">@supplier.Name</option>
+                <option value="@supplier.ID">@($"{supplier.ID}_{supplier.Name}")</option>
             }
         </InputSelect>
     </div>
 
+    <!-- Quantity -->
     <div class="mb-3">
         <label class="form-label">Quantity</label>
         <InputNumber class="form-control" @bind-Value="Record.Quantity" />
     </div>
 
+    <!-- Created -->
     <div class="mb-3">
         <label class="form-label">Created By</label>
         <InputText class="form-control" @bind-Value="Record.CreatedBy" readonly />
@@ -46,23 +49,64 @@
 
 @code {
     [Inject] IJSRuntime JS { get; set; }
-    private List<InventoryItemData> ItemList = new()
+
+    private string? _selectedItemId;
+    private string? SelectedItemId
     {
-        new InventoryItemData { ID = "I001", Name = "Keyboard" },
-        new InventoryItemData { ID = "I002", Name = "Mouse" },
-        new InventoryItemData { ID = "I003", Name = "Monitor" }
-    };
+        get => _selectedItemId;
+        set
+        {
+            _selectedItemId = value;
 
-    private List<InventorySupplierData> SupplierList = new()
+            if (!string.IsNullOrEmpty(value))
+            {
+                Record.ItemData.ID = value;
+            }
+        }
+    }
+
+    private string? _selectedSupplierId;
+    private string? SelectedSupplierId
     {
-        new InventorySupplierData { ID = "S001", Name = "Tech Supply Sdn Bhd", Address="KL", Contact="012-1234567" },
-        new InventorySupplierData { ID = "S002", Name = "Hardware Global", Address="Penang", Contact="012-9876543" }
-    };
+        get => _selectedSupplierId;
+        set
+        {
+            _selectedSupplierId = value;
 
-    private InventoryRecordData Record = new();
+            if (!string.IsNullOrEmpty(value))
+            {
+                Record.SupplierData.ID = value;
+            }
+        }
+    }
 
-    private string? SelectedItemId;
-    private string? SelectedSupplierId;
+    private List<InventoryItemData> ItemList = new List<InventoryItemData>();
+
+    private List<InventorySupplierData> SupplierList = new List<InventorySupplierData>();
+
+
+    private InventoryRecordData Record = new InventoryRecordData();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            ItemList =
+                await Http.GetFromJsonAsync<List<InventoryItemData>>("api/inventory/get-products")
+                ?? new();
+
+            SupplierList =
+                await Http.GetFromJsonAsync<List<InventorySupplierData>>("api/inventory/get-suppliers")
+                ?? new();
+        }
+        catch
+        {
+            ItemList = new();
+            SupplierList = new();
+        }
+    }
+
+
 
     protected async override void OnInitialized()
     {
