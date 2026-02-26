@@ -21,10 +21,10 @@ namespace InventoryRecord
 
     public class InventoryRecordData
     {
-        public InventoryItemData ItemData = new InventoryItemData();
-        public InventorySupplierData SupplierData = new InventorySupplierData();
-        public int Quantity = 0;
-        public string CreatedBy = "";
+        public InventoryItemData ItemData { get; set; } = new();
+        public InventorySupplierData SupplierData { get; set; } = new();
+        public int Quantity { get; set; }
+        public string? CreatedBy { get; set; }
     }
     public class IdResponse
     {

@@ -120,10 +120,10 @@ namespace PurchaseBlazorApp2.Components.Repository
                     updateCmd.Parameters.AddWithValue("name", product.Name ?? "");
                     await updateCmd.ExecuteNonQueryAsync();
 
-                    return product.ID; 
+                    return product.ID;
                 }
                 else
-                { 
+                {
                     //insert
                     await EnsureSequenceAsync("addproduct_seq", "addproduct", "id");
 
@@ -132,14 +132,14 @@ namespace PurchaseBlazorApp2.Components.Repository
                     product.ID = $"Product_{seq}";
 
 
-                var insertCmd = new NpgsqlCommand(
-                    "INSERT INTO addproduct (id, name) VALUES (@id, @name)",
-                    Connection);
-                insertCmd.Parameters.AddWithValue("id", product.ID);
-                insertCmd.Parameters.AddWithValue("name", product.Name ?? "");
-                await insertCmd.ExecuteNonQueryAsync();
+                    var insertCmd = new NpgsqlCommand(
+                        "INSERT INTO addproduct (id, name) VALUES (@id, @name)",
+                        Connection);
+                    insertCmd.Parameters.AddWithValue("id", product.ID);
+                    insertCmd.Parameters.AddWithValue("name", product.Name ?? "");
+                    await insertCmd.ExecuteNonQueryAsync();
 
-                  return product.ID;
+                    return product.ID;
 
                 }
             }
@@ -194,6 +194,31 @@ namespace PurchaseBlazorApp2.Components.Repository
                     });
                 }
                 return list;
+            }
+            finally
+            {
+                await Connection.CloseAsync();
+            }
+        }
+
+        public async Task AddRecordAsync(InventoryRecordData record)
+        {
+            await Connection.OpenAsync();
+            try
+            {
+                var cmd = new NpgsqlCommand(@"
+              INSERT INTO addrecord (product_id, supplier_id, quantity, created_by)
+              VALUES (@product_id, @supplier_id, @quantity, @created_by)
+              ON CONFLICT (product_id, supplier_id)
+               DO UPDATE SET quantity = @quantity, created_by = @created_by
+            ", Connection);
+
+                cmd.Parameters.AddWithValue("product_id", record.ItemData.ID);
+                cmd.Parameters.AddWithValue("supplier_id", record.SupplierData.ID);
+                cmd.Parameters.AddWithValue("quantity", record.Quantity);
+                cmd.Parameters.AddWithValue("created_by", record.CreatedBy ?? "");
+
+                await cmd.ExecuteNonQueryAsync();
             }
             finally
             {

@@ -64,5 +64,15 @@ namespace PurchaseBlazorApp2.Controller
         {
             return await _repo.GetProductsAsync();
         }
+
+        [HttpPost("add-record")]
+        public async Task<IActionResult> AddRecord([FromBody] InventoryRecordData record)
+        {
+            if (record == null)
+                return BadRequest("Invalid record");
+
+            await _repo.AddRecordAsync(record);
+            return Ok(new { message = "Record saved successfully!" });
+        }
     }
 }
