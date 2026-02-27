@@ -1,4 +1,5 @@
 ﻿@using InventoryRecord
+@inject NavigationManager NavigationManager
 @page "/add-product/{ID}"
 @page "/add-product"
 <h3>AddInventoryProductPage</h3>
@@ -15,16 +16,26 @@
                @bind-Value="ItemData.Name" />
 </div>
 
-<div class="mb-3">
+<div>
     <label class="form-label fw-bold">Quantity</label>
     <InputNumber class="form-control" @bind-Value="ItemData.Quantity" readonly />
 </div>
 
-<button type="submit"
-        class="btn btn-primary btn-lg px-5"
-        @onclick="OnSubmitProduct">
-    Edit
-</button>
+<div class="d-flex gap-2 mt-3">
+    <button type="submit"
+            class="btn btn-primary"
+            @onclick="OnSubmitProduct">
+        Edit
+    </button>
+
+    <button type="button"
+            class="btn btn-secondary"
+            @onclick="OnRecord">
+        Add Record
+    </button>
+</div>
+
+
 
 @code {
     [Inject]
@@ -49,7 +60,7 @@
         {
            ItemData.Name = product.Name;
         }
-      
+
         ItemData.Quantity = await Http.GetFromJsonAsync<int>($"api/inventory/get-quantity?productId={ID}");
     }
 
@@ -78,7 +89,7 @@
 
             await JS.InvokeVoidAsync("alert", $"SubmitSuccess! Product ID: {ItemData.ID}");
 
-      
+
             ItemData.Name = "";
         }
         catch (Exception ex)
@@ -86,5 +97,9 @@
             await JS.InvokeVoidAsync("alert", $"Submit failed! Exception: {ex.Message}");
         }
     }
-    
+
+    private void OnRecord()
+    {
+        NavigationManager.NavigateTo($"/add-record?productId={ItemData.ID}");
+    }
 }

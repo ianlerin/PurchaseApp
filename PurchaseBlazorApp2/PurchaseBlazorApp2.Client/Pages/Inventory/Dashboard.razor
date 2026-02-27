@@ -45,6 +45,13 @@ else
                                       Title="Product Name"
                                       Width="180px" />
 
+
+                <RadzenDataGridColumn TItem="InventoryItemData"
+                                      Property="Quantity"
+                                      Title="Quantity"
+                                      Width="150px" />
+
+
                 <RadzenDataGridColumn TItem="InventoryItemData" Title="Actions" Width="120px">
                     <Template Context="data">
                         <div style="display:flex; gap:6px;">
@@ -85,6 +92,11 @@ else
                 <RadzenDataGridColumn TItem="InventorySupplierData"
                                       Property="Contact"
                                       Title="Contact"
+                                      Width="200px" />
+
+                <RadzenDataGridColumn TItem="InventorySupplierData"
+                                      Property="Quantity"
+                                      Title="Quantity"
                                       Width="200px" />
 
                 <RadzenDataGridColumn TItem="InventorySupplierData" Title="Actions" Width="120px">
@@ -148,6 +160,15 @@ else
             Supplier =
                 await Http.GetFromJsonAsync<List<InventorySupplierData>>("api/inventory/get-suppliers")
                 ?? new();
+            foreach (var p in Product)
+            {
+                p.Quantity = await Http.GetFromJsonAsync<int>($"api/inventory/get-quantity?productId={p.ID}");
+            }
+
+            foreach (var s in Supplier)
+            {
+                s.Quantity = await Http.GetFromJsonAsync<int>($"api/inventory/get-quantity?supplierId={s.ID}");
+            }
         }
         catch
         {

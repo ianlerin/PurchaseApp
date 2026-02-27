@@ -1,4 +1,5 @@
 ﻿@using InventoryRecord
+@inject NavigationManager NavigationManager
 @page "/add-supplier/{ID}"
 @page "/add-supplier"
 <h3>Add Supplier</h3>
@@ -29,11 +30,20 @@
     <InputNumber class="form-control" @bind-Value="SupplierData.Quantity" readonly />
 </div>
 
-<button type="submit"
-        class="btn btn-primary btn-lg px-5"
-        @onclick="OnSubmitSupplier">
-    Edit
-</button>
+<div class="d-flex gap-2 mt-3">
+    <button type="submit"
+            class="btn btn-primary"
+            @onclick="OnSubmitSupplier">
+        Edit
+    </button>
+
+    <button type="button"
+            class="btn btn-secondary"
+            @onclick="OnRecord">
+       Add Record
+    </button>
+</div>
+
 
 @code {
     [Inject]
@@ -81,7 +91,7 @@
 
             await JS.InvokeVoidAsync("alert", $"SubmitSuccess! Supplier ID: {SupplierData.ID}");
 
-          
+
             SupplierData.Name = "";
             SupplierData.Address = "";
             SupplierData.Contact = "";
@@ -90,5 +100,10 @@
         {
             await JS.InvokeVoidAsync("alert", $"Submit failed! Exception: {ex.Message}");
         }
+    }
+
+    private void OnRecord()
+    {
+        NavigationManager.NavigateTo($"/add-record?supplierId={SupplierData.ID}");
     }
 }
