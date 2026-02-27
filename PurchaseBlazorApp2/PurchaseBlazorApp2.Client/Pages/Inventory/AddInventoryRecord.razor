@@ -49,7 +49,13 @@
 
 @code {
     [Inject] IJSRuntime JS { get; set; }
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? supplierId { get; set; }
 
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? productId { get; set; }
     private string? _selectedItemId;
     private string? SelectedItemId
     {
@@ -87,10 +93,8 @@
 
     private InventoryRecordData Record = new InventoryRecordData();
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
     {
-        try
-        {
             ItemList =
                 await Http.GetFromJsonAsync<List<InventoryItemData>>("api/inventory/get-products")
                 ?? new();
@@ -98,14 +102,17 @@
             SupplierList =
                 await Http.GetFromJsonAsync<List<InventorySupplierData>>("api/inventory/get-suppliers")
                 ?? new();
-        }
-        catch
+
+        if (!string.IsNullOrEmpty(supplierId))
         {
-            ItemList = new();
-            SupplierList = new();
+            SelectedSupplierId = supplierId;
+        }
+
+        if (!string.IsNullOrEmpty(productId))
+        {
+            SelectedItemId = productId;
         }
     }
-
 
 
     protected async override void OnInitialized()
