@@ -23,6 +23,12 @@
     <InputText class="form-control"
                @bind-Value="SupplierData.Contact" />
 </div>
+
+<div>
+    <label class="form-label fw-bold">Quantity</label>
+    <InputNumber class="form-control" @bind-Value="SupplierData.Quantity" readonly />
+</div>
+
 <button type="submit"
         class="btn btn-primary btn-lg px-5"
         @onclick="OnSubmitSupplier">
@@ -54,6 +60,7 @@
             SupplierData.Address = supplier.Address;
             SupplierData.Contact = supplier.Contact;
         }
+        SupplierData.Quantity = await Http.GetFromJsonAsync<int>($"api/inventory/get-quantity?supplierId={ID}");
     }
 
     private async Task OnSubmitSupplier()

@@ -225,5 +225,45 @@ namespace PurchaseBlazorApp2.Components.Repository
                 await Connection.CloseAsync();
             }
         }
+
+        public async Task<int> GetSupplierQuantityAsync(string supplierId)
+        {
+            await Connection.OpenAsync();
+            try
+            {
+                var cmd = new NpgsqlCommand(
+                    @"SELECT COALESCE(SUM(quantity), 0)
+              FROM addrecord
+              WHERE supplier_id = @supplier_id",
+                    Connection);
+                cmd.Parameters.AddWithValue("supplier_id", supplierId);
+
+                return Convert.ToInt32(await cmd.ExecuteScalarAsync());
+            }
+            finally
+            {
+                await Connection.CloseAsync();
+            }
+        }
+
+        public async Task<int> GetProductQuantityAsync(string productId)
+        {
+            await Connection.OpenAsync();
+            try
+            {
+                var cmd = new NpgsqlCommand(
+                    @"SELECT COALESCE(SUM(quantity), 0)
+              FROM addrecord
+              WHERE product_id = @product_id",
+                    Connection);
+                cmd.Parameters.AddWithValue("product_id", productId);
+
+                return Convert.ToInt32(await cmd.ExecuteScalarAsync());
+            }
+            finally
+            {
+                await Connection.CloseAsync();
+            }
+        }
     }
 }

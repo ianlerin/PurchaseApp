@@ -10,6 +10,7 @@ namespace InventoryRecord
     {
         public string ID { get; set; } = "";
         public string Name { get; set; } = "";
+        public int Quantity { get; set; } = 0;
     }
     public class InventorySupplierData
     {
@@ -17,6 +18,7 @@ namespace InventoryRecord
         public string Name { get; set; } = "";
         public string? Address { get; set; }
         public string? Contact { get; set; }
+        public int Quantity { get; set; } = 0;
     }
 
     public class InventoryRecordData
@@ -32,6 +34,6 @@ namespace InventoryRecord
     }
     internal class InventoryRecord
     {
-        
+          
     }
 }

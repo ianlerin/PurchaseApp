@@ -74,5 +74,16 @@ namespace PurchaseBlazorApp2.Controller
             await _repo.AddRecordAsync(record);
             return Ok(new { message = "Record saved successfully!" });
         }
+        [HttpGet("get-quantity")]
+        public async Task<int> GetQuantity(string? productId, string? supplierId)
+        {
+            if (!string.IsNullOrEmpty(productId))
+                return await _repo.GetProductQuantityAsync(productId);
+
+            if (!string.IsNullOrEmpty(supplierId))
+                return await _repo.GetSupplierQuantityAsync(supplierId);
+
+            return 0;
+        }
     }
 }

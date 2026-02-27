@@ -14,6 +14,12 @@
     <InputText class="form-control"
                @bind-Value="ItemData.Name" />
 </div>
+
+<div class="mb-3">
+    <label class="form-label fw-bold">Quantity</label>
+    <InputNumber class="form-control" @bind-Value="ItemData.Quantity" readonly />
+</div>
+
 <button type="submit"
         class="btn btn-primary btn-lg px-5"
         @onclick="OnSubmitProduct">
@@ -44,6 +50,7 @@
            ItemData.Name = product.Name;
         }
       
+        ItemData.Quantity = await Http.GetFromJsonAsync<int>($"api/inventory/get-quantity?productId={ID}");
     }
 
 
