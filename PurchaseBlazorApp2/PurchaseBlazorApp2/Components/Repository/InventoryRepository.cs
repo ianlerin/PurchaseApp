@@ -209,9 +209,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                 var cmd = new NpgsqlCommand(@"
               INSERT INTO addrecord (product_id, supplier_id, quantity, created_by)
               VALUES (@product_id, @supplier_id, @quantity, @created_by)
-              ON CONFLICT (product_id, supplier_id)
-               DO UPDATE SET quantity = addrecord.quantity + EXCLUDED.quantity,
-               created_by = EXCLUDED.created_by
+             
             ", Connection);
 
                 cmd.Parameters.AddWithValue("product_id", record.ItemData.ID);
