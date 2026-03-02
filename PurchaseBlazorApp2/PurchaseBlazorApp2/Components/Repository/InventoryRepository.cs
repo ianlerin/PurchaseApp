@@ -266,5 +266,52 @@ namespace PurchaseBlazorApp2.Components.Repository
                 await Connection.CloseAsync();
             }
         }
+
+        public async Task<List<InventoryRecordData>> GetRecordsByProductAsync(string productId)
+        {
+            var records = new List<InventoryRecordData>();
+            await Connection.OpenAsync();
+
+            try
+            {
+                var cmd = new NpgsqlCommand(@"
+                    SELECT r.product_id, r.supplier_id, r.quantity, r.created_by,
+                           p.name as product_name,
+                           s.name as supplier_name
+                    FROM addrecord r
+                    INNER JOIN addproduct p ON p.id = r.product_id
+                    INNER JOIN addsupplier s ON s.id = r.supplier_id
+                    WHERE r.product_id = @productId
+                ", Connection);
+
+                cmd.Parameters.AddWithValue("productId", productId);
+
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    records.Add(new InventoryRecordData
+                    {
+                        ItemData = new InventoryItemData
+                        {
+                            ID = reader.GetString(0),
+                            Name = reader.GetString(4)
+                        },
+                        SupplierData = new InventorySupplierData
+                        {
+                            ID = reader.GetString(1),
+                            Name = reader.GetString(5)
+                        },
+                   
+                    });
+                }
+            }
+            finally
+            {
+                await Connection.CloseAsync();
+            }
+
+            return records;
+        }
+
     }
 }

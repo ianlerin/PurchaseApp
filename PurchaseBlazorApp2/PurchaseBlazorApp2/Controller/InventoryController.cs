@@ -85,5 +85,14 @@ namespace PurchaseBlazorApp2.Controller
 
             return 0;
         }
+
+        [HttpGet("get-records")]
+        public async Task<List<InventoryRecordData>> GetRecords(string productId)
+        {
+            if (string.IsNullOrEmpty(productId))
+                return new List<InventoryRecordData>();
+
+            return await _repo.GetRecordsByProductAsync(productId);
+        }
     }
 }

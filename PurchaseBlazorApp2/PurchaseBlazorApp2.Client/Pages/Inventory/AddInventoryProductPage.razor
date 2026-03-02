@@ -1,4 +1,5 @@
 ﻿@using InventoryRecord
+@using Radzen.Blazor
 @inject NavigationManager NavigationManager
 @page "/add-product/{ID}"
 @page "/add-product"
@@ -36,6 +37,68 @@
 </div>
 
 
+@if (!string.IsNullOrEmpty(ID))
+{
+    if (SupplierTabs == null)
+    {
+        <p>Loading suppliers...</p>
+    }
+    else if (!SupplierTabs.Any())
+    {
+        <p>No suppliers have this product yet.</p>
+    }
+    else
+    {
+        <div class="tabs mb-3">
+            @for (int i = 0; i < SupplierTabs.Count; i++)
+            {
+                var index = i;
+                <button class="tab-button @(ActiveSupplierTabIndex == index ? "active" : "")"
+                        @onclick="() => SelectSupplierTab(index)">
+                    @SupplierTabs[index].ID
+                </button>
+            }
+        </div>
+
+        <RadzenDataGrid Data="@SelectedSupplierRecords"
+                        TItem="InventoryRecordData"
+                        AllowSorting="true"
+                        Class="shadow-sm border rounded p-3"
+                        Style="min-width:600px;">
+            <Columns>
+                <RadzenDataGridColumn TItem="InventoryRecordData"
+                                      Property="SupplierData.Name"
+                                      Title="Supplier Name"
+                                      Width="200px" />
+                <RadzenDataGridColumn TItem="InventoryRecordData"
+                                      Property="ItemData.Name"
+                                      Title="Product Name"
+                                      Width="200px" />
+            </Columns>
+        </RadzenDataGrid>
+    }
+}
+
+<style>
+    .tabs {
+        display: flex;
+        gap: 1rem;
+        border-bottom: 1px solid #ccc;
+    }
+
+    .tab-button {
+        background: none;
+        border: none;
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    .tab-button.active {
+        border-bottom: 2px solid blue;
+        color: blue;
+    }
+</style>
 
 @code {
     [Inject]
@@ -45,6 +108,9 @@
     [Parameter]
     public string ID { get; set; }
     public InventoryItemData? ItemData { get; set; } = new InventoryItemData();
+    private List<InventorySupplierData> SupplierTabs;
+    private List<InventoryRecordData> SelectedSupplierRecords;
+    private int ActiveSupplierTabIndex = 0;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -62,9 +128,46 @@
         }
 
         ItemData.Quantity = await Http.GetFromJsonAsync<int>($"api/inventory/get-quantity?productId={ID}");
+        await LoadSuppliers();
+    }
+    private List<InventoryRecordData> AllRecords = new(); 
+
+    private async Task LoadSuppliers()
+    {
+ 
+        AllRecords = await Http.GetFromJsonAsync<List<InventoryRecordData>>($"api/inventory/get-records?productId={ID}");
+      
+        SupplierTabs = AllRecords
+                        .Select(r => r.SupplierData)
+                        .GroupBy(s => s.ID)
+                        .Select(g => g.First())
+                        .ToList();
+        ActiveSupplierTabIndex = 0;
+        FilterRecordsForActiveTab();
     }
 
+   
+    private void FilterRecordsForActiveTab()
+    {
+        if (SupplierTabs == null || !SupplierTabs.Any())
+        {
+            SelectedSupplierRecords = new List<InventoryRecordData>();
+            return;
+        }
 
+        var selectedSupplierId = SupplierTabs[ActiveSupplierTabIndex].ID;
+        SelectedSupplierRecords = AllRecords
+            .Where(r => r.SupplierData.ID == selectedSupplierId)
+            .ToList();
+    }
+
+    private void SelectSupplierTab(int index)
+    {
+        if (index < 0 || index >= SupplierTabs.Count) return;
+
+        ActiveSupplierTabIndex = index;
+        FilterRecordsForActiveTab(); 
+    }
     private async Task OnSubmitProduct()
     {
         if (string.IsNullOrWhiteSpace(ItemData.Name))
