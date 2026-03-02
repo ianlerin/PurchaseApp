@@ -301,7 +301,8 @@ namespace PurchaseBlazorApp2.Components.Repository
                             ID = reader.GetString(1),
                             Name = reader.GetString(5)
                         },
-                   
+                        Quantity = reader.GetInt32(2),
+                        
                     });
                 }
             }
