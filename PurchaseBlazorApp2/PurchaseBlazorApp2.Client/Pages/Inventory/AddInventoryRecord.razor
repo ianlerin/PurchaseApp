@@ -31,7 +31,11 @@
             }
         </InputSelect>
     </div>
-
+    <!--Current Quantity-->
+    <div class="mb-3">
+        <label class="form-label">Current Quantity</label>
+        <div class="form-control" readonly>@CurrentQuantity units available</div>
+    </div>
     <!-- Quantity -->
     <div class="mb-3">
         <label class="form-label">Quantity</label>
@@ -52,7 +56,7 @@
     [Parameter]
     [SupplyParameterFromQuery]
     public string? supplierId { get; set; }
-
+    private int CurrentQuantity = 0;
     [Parameter]
     [SupplyParameterFromQuery]
     public string? productId { get; set; }
@@ -67,6 +71,7 @@
             if (!string.IsNullOrEmpty(value))
             {
                 Record.ItemData.ID = value;
+                _ = LoadCurrentQuantity();
             }
         }
     }
@@ -82,6 +87,7 @@
             if (!string.IsNullOrEmpty(value))
             {
                 Record.SupplierData.ID = value;
+                _ = LoadCurrentQuantity();
             }
         }
     }
@@ -152,6 +158,13 @@
         {
             await JS.InvokeVoidAsync("alert", "Quantity must be greater than zero and cannot be negative");
             return;
+        }  
+
+        if (Record.Quantity > CurrentQuantity)
+        {
+            await JS.InvokeVoidAsync("alert",
+                $"Not enough stock. Only {CurrentQuantity} available.");
+            return;
         }
         Record.ItemData = ItemList.FirstOrDefault(x => x.ID == SelectedItemId) ?? new InventoryItemData();
         Record.SupplierData = SupplierList.FirstOrDefault(x => x.ID == SelectedSupplierId) ?? new InventorySupplierData();
@@ -167,6 +180,17 @@
         {
             var error = await response.Content.ReadAsStringAsync();
             await JS.InvokeVoidAsync("alert", $"Error: {error}");
+        }
+    }
+    private async Task LoadCurrentQuantity()
+    {
+        if (!string.IsNullOrEmpty(SelectedItemId) && !string.IsNullOrEmpty(SelectedSupplierId))
+        {
+            var qty = await Http.GetFromJsonAsync<int>(
+                $"api/inventory/get-quantity?productId={SelectedItemId}&supplierId={SelectedSupplierId}");
+
+            CurrentQuantity = qty;
+            StateHasChanged();
         }
     }
 }

@@ -265,6 +265,28 @@ namespace PurchaseBlazorApp2.Components.Repository
             }
         }
 
+        public async Task<int> GetQuantityAsync(string productId, string supplierId)
+        {
+            await Connection.OpenAsync();
+            try
+            {
+                var cmd = new NpgsqlCommand(
+                    @"SELECT COALESCE(SUM(quantity), 0)
+              FROM addrecord
+              WHERE product_id = @product_id AND supplier_id = @supplier_id",
+                    Connection);
+
+                cmd.Parameters.AddWithValue("product_id", productId);
+                cmd.Parameters.AddWithValue("supplier_id", supplierId);
+
+                return Convert.ToInt32(await cmd.ExecuteScalarAsync());
+            }
+            finally
+            {
+                await Connection.CloseAsync();
+            }
+        }
+
         public async Task<List<InventoryRecordData>> GetRecordsByProductAsync(string productId)
         {
             var records = new List<InventoryRecordData>();

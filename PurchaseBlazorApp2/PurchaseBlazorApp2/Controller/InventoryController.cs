@@ -77,6 +77,9 @@ namespace PurchaseBlazorApp2.Controller
         [HttpGet("get-quantity")]
         public async Task<int> GetQuantity(string? productId, string? supplierId)
         {
+            if (!string.IsNullOrEmpty(productId) && !string.IsNullOrEmpty(supplierId))
+                return await _repo.GetQuantityAsync(productId, supplierId);
+
             if (!string.IsNullOrEmpty(productId))
                 return await _repo.GetProductQuantityAsync(productId);
 
