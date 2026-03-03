@@ -154,11 +154,18 @@
             return;
         }
 
-        if (Record.Quantity <= 0)
+        if (Record.Quantity == 0)
         {
-            await JS.InvokeVoidAsync("alert", "Quantity must be greater than zero and cannot be negative");
+            await JS.InvokeVoidAsync("alert", "Quantity cannot be zero");
             return;
         }  
+       
+        if (Record.Quantity < 0 && Math.Abs(Record.Quantity) > CurrentQuantity)
+        {
+            await JS.InvokeVoidAsync("alert",
+                $"Not enough stock. Only {CurrentQuantity} available to remove.");
+            return;
+        }
         Record.ItemData = ItemList.FirstOrDefault(x => x.ID == SelectedItemId) ?? new InventoryItemData();
         Record.SupplierData = SupplierList.FirstOrDefault(x => x.ID == SelectedSupplierId) ?? new InventorySupplierData();
 
