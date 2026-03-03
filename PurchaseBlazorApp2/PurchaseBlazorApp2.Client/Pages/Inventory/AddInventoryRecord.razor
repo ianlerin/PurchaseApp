@@ -174,7 +174,9 @@
         if (response.IsSuccessStatusCode)
         {
             await JS.InvokeVoidAsync("alert", "Record saved successfully!");
-
+            await LoadCurrentQuantity();
+            Record.Quantity = 0;
+            StateHasChanged();
         }
         else
         {
