@@ -206,7 +206,7 @@
             await JS.InvokeVoidAsync("alert", $"SubmitSuccess! Product ID: {ItemData.ID}");
 
 
-            ItemData.Name = "";
+            ItemData = new InventoryItemData();
         }
         catch (Exception ex)
         {

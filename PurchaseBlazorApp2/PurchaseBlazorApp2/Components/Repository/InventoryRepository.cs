@@ -42,8 +42,8 @@ namespace PurchaseBlazorApp2.Components.Repository
                 (SELECT MAX(CAST(SUBSTRING({columnName} FROM '[0-9]+') AS BIGINT)) 
                 FROM {tableName}),
                  0
-              ),
-              true
+               ) + 1,
+                false
             )",
             Connection);
 
