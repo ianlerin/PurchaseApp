@@ -67,12 +67,7 @@
         set
         {
             _selectedItemId = value;
-
-            if (!string.IsNullOrEmpty(value))
-            {
-                Record.ItemData.ID = value;
-                _ = LoadCurrentQuantity();
-            }
+            ResetAndLoadQuantity();
         }
     }
 
@@ -83,15 +78,20 @@
         set
         {
             _selectedSupplierId = value;
-
-            if (!string.IsNullOrEmpty(value))
-            {
-                Record.SupplierData.ID = value;
-                _ = LoadCurrentQuantity();
-            }
+            ResetAndLoadQuantity();
         }
     }
 
+    private void ResetAndLoadQuantity()
+    {
+        Record.Quantity = 0;
+        CurrentQuantity = 0;
+
+        if (!string.IsNullOrEmpty(SelectedItemId) && !string.IsNullOrEmpty(SelectedSupplierId))
+        {
+            _ = LoadCurrentQuantity();
+        }
+    }
     private List<InventoryItemData> ItemList = new List<InventoryItemData>();
 
     private List<InventorySupplierData> SupplierList = new List<InventorySupplierData>();
@@ -188,10 +188,8 @@
     {
         if (!string.IsNullOrEmpty(SelectedItemId) && !string.IsNullOrEmpty(SelectedSupplierId))
         {
-            var qty = await Http.GetFromJsonAsync<int>(
+            CurrentQuantity = await Http.GetFromJsonAsync<int>(
                 $"api/inventory/get-quantity?productId={SelectedItemId}&supplierId={SelectedSupplierId}");
-
-            CurrentQuantity = qty;
             StateHasChanged();
         }
     }

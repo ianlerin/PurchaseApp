@@ -91,7 +91,7 @@
 
             await JS.InvokeVoidAsync("alert", $"SubmitSuccess! Supplier ID: {SupplierData.ID}");
 
-
+            SupplierData.ID = "";
             SupplierData.Name = "";
             SupplierData.Address = "";
             SupplierData.Contact = "";
