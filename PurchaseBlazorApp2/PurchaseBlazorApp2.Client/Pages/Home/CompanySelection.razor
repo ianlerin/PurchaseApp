@@ -1,0 +1,122 @@
+﻿
+@page "/company"
+@page "/"
+@using PurchaseBlazorApp2.Client.Layout
+@inject NavigationManager NavigationManager
+@layout SimpleLayout
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<h3>Company Selection</h3>
+
+<div class="card p-4" style="max-width:400px">
+    <div class="mb-3">
+        <label class="form-label">Select Company</label>
+
+        <select class="form-select" @bind="SelectedCompanyId">
+            <option value="">-- Select Company --</option>
+
+            @foreach (var company in Companies)
+            {
+                <option value="@company.ID">@company.Name</option>
+            }
+        </select>
+    </div>
+
+    <button class="btn btn-primary w-100" @onclick="Proceed">
+        Proceed
+    </button>
+
+    @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <div class="text-danger mt-2">
+            @ErrorMessage
+        </div>
+    }
+</div>
+
+@code {
+
+    private List<CompanyInfo> Companies = new();
+
+
+    private string _selectedCompanyId;
+    public string SelectedCompanyId
+    {
+        get => _selectedCompanyId;
+        set
+        {
+            _selectedCompanyId = value;
+
+            // Update the selected company object automatically
+            SelectedCompany = Companies
+                .FirstOrDefault(c => c.ID == _selectedCompanyId);
+        }
+    }
+
+
+
+
+    // Exposed selected object
+    private CompanyInfo? SelectedCompany;
+
+    private string ErrorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCompanies();
+    }
+
+    private async Task LoadCompanies()
+    {
+        try
+        {
+            string userId = await GeneralLibrary.GetCurrentUser(JS);
+
+            var response = await Http.PostAsJsonAsync(
+                "api/login/getavailablecompanies",
+                userId
+            );
+
+            if (response.IsSuccessStatusCode)
+            {
+                Companies = await response.Content
+                    .ReadFromJsonAsync<List<CompanyInfo>>()
+                    ?? new List<CompanyInfo>();
+            }
+            else
+            {
+                ErrorMessage = "Server returned error.";
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+    }
+
+    private async void Proceed()
+    {
+        if (SelectedCompany == null)
+        {
+
+            return;
+        }
+
+        if (JS != null)
+        {
+          
+            string SelectedCompanyUser = System.Text.Json.JsonSerializer.Serialize(SelectedCompany);
+            await JS.InvokeVoidAsync("setCookie", "SelectedCompany", SelectedCompanyUser, 1);
+            NavigationManager.NavigateTo("/home");
+        }
+
+    }
+
+    public class CompanyInfo
+    {
+        public string ID { get; set; }
+        public string Name { get; set; }
+    }
+}
