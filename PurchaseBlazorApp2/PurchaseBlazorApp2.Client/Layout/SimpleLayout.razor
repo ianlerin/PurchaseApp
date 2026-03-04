@@ -1,4 +1,4 @@
-﻿@page "/mainlayout"
+﻿@page "/simplelayout"
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
 @using PurchaseBlazorApp2.Client.Components.Pages.Login
@@ -19,21 +19,6 @@
 else
 {
     <div class="app-container">
-
-        <input type="checkbox" id="sidebarToggle" class="sidebar-toggler" />
-        <!-- Toggle button with icon -->
-        <label for="sidebarToggle" class="toggle-button">
-            <span class="bi bi-list-nested-nav-menu"></span>
-        </label>
-
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <NavMenu />
-        </div>
-
-        <!-- Overlay -->
-        <label for="sidebarToggle" class="sidebar-overlay"></label>
-
         <!-- Main content -->
         <div class="layout-container">
             <main class="main-content">
@@ -41,7 +26,7 @@ else
             </main>
         </div>
     </div>
-    }
+}
 @code {
     private bool _initialized;
     private bool _isLoggedIn;
@@ -78,11 +63,11 @@ else
         await JS.InvokeVoidAsync("console.log", "Mainlayout OnAfterRenderAsync");
         if (!firstRender || !OperatingSystem.IsBrowser())
         {
-           
+
             await JS.InvokeVoidAsync("console.log", "not first render or is browser");
             return;
         }
-        
+
 
         try
         {
@@ -141,7 +126,7 @@ else
 
     public void Dispose()
     {
-        
+
     }
 
     // Dummy method to allow safe unsubscribe (optional)

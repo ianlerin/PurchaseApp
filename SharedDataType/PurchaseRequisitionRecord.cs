@@ -86,7 +86,11 @@ namespace PurchaseBlazorApp2.Components.Data
         public bool bSuccess { get; set; }
         public UserName MyName { get; set; } = new UserName();
     }
-
+    public class CompanyInfo
+    {
+        public string ID { get; set; }
+        public string Name { get; set; }
+    }
 
     public class UserName
     {

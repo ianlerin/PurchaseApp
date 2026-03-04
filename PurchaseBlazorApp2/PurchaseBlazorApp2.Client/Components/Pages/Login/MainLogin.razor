@@ -265,11 +265,14 @@
             if (!string.IsNullOrEmpty(returnUrl))
             {
                 if (!returnUrl.StartsWith("/")) returnUrl = "/" + returnUrl;
+                await JS.InvokeVoidAsync("console.log", $"Navigate to:{returnUrl}");
+
                 NavigationManager.NavigateTo(returnUrl, forceLoad: true);
             }
             else
             {
-                NavigationManager.NavigateTo("/");
+                await JS.InvokeVoidAsync("console.log", $"Navigate to:company");
+                NavigationManager.NavigateTo("/company");
             }
 
             StateHasChanged();
