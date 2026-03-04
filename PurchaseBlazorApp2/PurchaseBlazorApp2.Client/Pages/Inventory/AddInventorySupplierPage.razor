@@ -1,0 +1,109 @@
+﻿@using InventoryRecord
+@inject NavigationManager NavigationManager
+@page "/add-supplier/{ID}"
+@page "/add-supplier"
+<h3>Add Supplier</h3>
+<div>
+    <label class="form-label fw-bold">ID</label>
+    <InputText class="form-control"
+               @bind-Value="SupplierData.ID" readonly />
+</div>
+
+<div>
+    <label class="form-label fw-bold">Name</label>
+    <InputText class="form-control"
+               @bind-Value="SupplierData.Name" />
+</div>
+<div>
+    <label class="form-label fw-bold">Address</label>
+    <InputText class="form-control"
+               @bind-Value="SupplierData.Address" />
+</div>
+<div>
+    <label class="form-label fw-bold">Contact</label>
+    <InputText class="form-control"
+               @bind-Value="SupplierData.Contact" />
+</div>
+
+<div>
+    <label class="form-label fw-bold">Quantity</label>
+    <InputNumber class="form-control" @bind-Value="SupplierData.Quantity" readonly />
+</div>
+
+<div class="d-flex gap-2 mt-3">
+    <button type="submit"
+            class="btn btn-primary"
+            @onclick="OnSubmitSupplier">
+        Edit
+    </button>
+
+    <button type="button"
+            class="btn btn-secondary"
+            @onclick="OnRecord">
+       Add Record
+    </button>
+</div>
+
+
+@code {
+    [Inject]
+    private HttpClient Http { get; set; }
+    [Inject]
+    private IJSRuntime JS { get; set; }
+    [Parameter]
+    public string ID { get; set; }
+    public InventorySupplierData SupplierData { get; set; } = new InventorySupplierData();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (string.IsNullOrEmpty(ID))
+        {
+            return;
+        }
+        SupplierData.ID = ID;
+
+        var suppliers = await Http.GetFromJsonAsync<List<InventorySupplierData>>("api/inventory/get-suppliers");
+        var supplier = suppliers?.FirstOrDefault(s => s.ID == ID);
+        if (supplier != null)
+        {
+            SupplierData.Name = supplier.Name;
+            SupplierData.Address = supplier.Address;
+            SupplierData.Contact = supplier.Contact;
+        }
+        SupplierData.Quantity = await Http.GetFromJsonAsync<int>($"api/inventory/get-quantity?supplierId={ID}");
+    }
+
+    private async Task OnSubmitSupplier()
+    {
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/inventory/add-supplier", SupplierData);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var msg = await response.Content.ReadAsStringAsync();
+                await JS.InvokeVoidAsync("alert", $"Submit failed! Reason: {msg}");
+                return;
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<IdResponse>();
+            if (result != null) SupplierData.ID = result.Id;
+
+            await JS.InvokeVoidAsync("alert", $"SubmitSuccess! Supplier ID: {SupplierData.ID}");
+
+            SupplierData.ID = "";
+            SupplierData.Name = "";
+            SupplierData.Address = "";
+            SupplierData.Contact = "";
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Submit failed! Exception: {ex.Message}");
+        }
+    }
+
+    private void OnRecord()
+    {
+        NavigationManager.NavigateTo($"/add-record?supplierId={SupplierData.ID}");
+    }
+}
