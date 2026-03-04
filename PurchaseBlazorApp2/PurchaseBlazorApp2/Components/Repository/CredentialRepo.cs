@@ -101,6 +101,81 @@ namespace PurchaseBlazorApp2.Components.Repository
            return SubmitResponse;
        }
 
+        public async Task<List<CompanyInfo>> TryGetAllCompanyInfo(string userName)
+        {
+            List<string> idToFind = await TryGetAllCompanyID(userName);
+            var companiesInfo = new List<CompanyInfo>();
+
+            if (idToFind == null || idToFind.Count == 0)
+                return companiesInfo;
+
+            try
+            {
+                await using var connection = new NpgsqlConnection(Connection.ConnectionString);
+                await connection.OpenAsync();
+
+                await using var cmd = new NpgsqlCommand(
+                    @"SELECT id, name 
+              FROM company 
+              WHERE id = ANY(@ids)
+              ORDER BY name", connection);
+
+                cmd.Parameters.AddWithValue("ids", idToFind.ToArray());
+
+                await using var reader = await cmd.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    companiesInfo.Add(new CompanyInfo
+                    {
+                        ID = reader.GetString(0),
+                        Name = reader.GetString(1)
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error fetching company info: " + ex.Message);
+            }
+
+            return companiesInfo;
+        }
+
+        public async Task<List<string>> TryGetAllCompanyID(string userName)
+        {
+            var companies = new List<string>();
+
+            try
+            {
+                await using var connection = new NpgsqlConnection(Connection.ConnectionString);
+                await connection.OpenAsync();
+
+                await using var cmd = new NpgsqlCommand(
+                    @"SELECT company 
+              FROM credential 
+              WHERE username = @username 
+              LIMIT 1", connection);
+
+                cmd.Parameters.AddWithValue("username", userName);
+
+                var result = await cmd.ExecuteScalarAsync();
+
+                if (result is string[] companyArray)
+                {
+                    companies = companyArray.ToList();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error fetching companies: " + ex.Message);
+            }
+
+            return companies;
+        }
+
+
+
+
         public async Task<List<string>> TryGetAllProcurementEmail(List<EDepartment> departments)
         {
             var emailList = new List<string>();

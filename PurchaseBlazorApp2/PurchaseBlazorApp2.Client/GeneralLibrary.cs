@@ -6,6 +6,48 @@ namespace PurchaseBlazorApp2.Client
 {
     public class GeneralLibrary
     {
+        static public async Task<string> GetCurrentUser(IJSRuntime JS)
+        {
+            string Email = "";
+            var json = await JS.InvokeAsync<string>("getCookie", "userKey");
+            if (!string.IsNullOrWhiteSpace(json))
+            {
+                try
+                {
+                    UserName restoredUser = System.Text.Json.JsonSerializer.Deserialize<UserName>(json);
+                    if (restoredUser != null)
+                    {
+                        Email = restoredUser.Email;
+                    }
+                }
+                catch (Exception Ex)
+                {
+
+                }
+            }
+            return Email;
+        }
+
+        static public async Task<CompanyInfo> GetCurrentCompanyInfo(IJSRuntime JS)
+        {
+            CompanyInfo NullCompany = new CompanyInfo();
+            string Email = "";
+            var json = await JS.InvokeAsync<string>("getCookie", "SelectedCompany");
+            if (!string.IsNullOrWhiteSpace(json))
+            {
+                try
+                {
+                    CompanyInfo restoredCompany = System.Text.Json.JsonSerializer.Deserialize<CompanyInfo>(json);
+                    return restoredCompany;
+                }
+                catch (Exception Ex)
+                {
+
+                }
+            }
+            return NullCompany;
+        }
+
         static public async Task<EDepartment> GetCurrentDepartmentRole(IJSRuntime JS)
         {
             EDepartment role = EDepartment.NotSpecified;
