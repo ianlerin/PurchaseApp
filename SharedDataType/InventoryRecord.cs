@@ -27,6 +27,7 @@ namespace InventoryRecord
         public InventorySupplierData SupplierData { get; set; } = new();
         public int Quantity { get; set; }
         public string? CreatedBy { get; set; }
+        public DateTime CreatedDate { get; set; }
     }
     public class IdResponse
     {

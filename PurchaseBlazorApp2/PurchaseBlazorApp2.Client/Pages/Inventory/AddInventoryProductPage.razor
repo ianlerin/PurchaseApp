@@ -78,6 +78,13 @@
                                       Property="Quantity"
                                       Title="Quantity"
                                       Width="200px" />
+                <RadzenDataGridColumn TItem="InventoryRecordData"
+                                      Title="Created Date"
+                                      Width="200px">
+                    <Template Context="data">
+                        @data.CreatedDate.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                    </Template>
+                </RadzenDataGridColumn>
 
 
             </Columns>

@@ -207,8 +207,8 @@ namespace PurchaseBlazorApp2.Components.Repository
             try
             {
                 var cmd = new NpgsqlCommand(@"
-              INSERT INTO addrecord (product_id, supplier_id, quantity, created_by)
-              VALUES (@product_id, @supplier_id, @quantity, @created_by)
+              INSERT INTO addrecord (product_id, supplier_id, quantity, created_by, created_date)
+              VALUES (@product_id, @supplier_id, @quantity, @created_by, NOW())
              
             ", Connection);
 
@@ -295,7 +295,7 @@ namespace PurchaseBlazorApp2.Components.Repository
             try
             {
                 var cmd = new NpgsqlCommand(@"
-                    SELECT r.product_id, r.supplier_id, r.quantity, r.created_by,
+                    SELECT r.product_id, r.supplier_id, r.quantity, r.created_by, r.created_date,
                            p.name as product_name,
                            s.name as supplier_name
                     FROM addrecord r
@@ -314,15 +314,16 @@ namespace PurchaseBlazorApp2.Components.Repository
                         ItemData = new InventoryItemData
                         {
                             ID = reader.GetString(0),
-                            Name = reader.GetString(4)
+                            Name = reader.GetString(5)
                         },
                         SupplierData = new InventorySupplierData
                         {
                             ID = reader.GetString(1),
-                            Name = reader.GetString(5)
+                            Name = reader.GetString(6)
                         },
                         Quantity = reader.GetInt32(2),
-                        
+                        CreatedDate = reader.GetDateTime(4),
+
                     });
                 }
             }
