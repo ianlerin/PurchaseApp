@@ -72,7 +72,7 @@
     {
         try
         {
-            string userId = await GeneralLibrary.GetCurrentUser(JS);
+            string userId = await GeneralLibrary.GetCurrentUserEmail(JS);
 
             var response = await Http.PostAsJsonAsync(
                 "api/login/getavailablecompanies",
