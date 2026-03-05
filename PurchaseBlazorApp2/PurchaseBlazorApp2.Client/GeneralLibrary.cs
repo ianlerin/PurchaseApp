@@ -6,7 +6,7 @@ namespace PurchaseBlazorApp2.Client
 {
     public class GeneralLibrary
     {
-        static public async Task<string> GetCurrentUser(IJSRuntime JS)
+        static public async Task<string> GetCurrentUserEmail(IJSRuntime JS)
         {
             string Email = "";
             var json = await JS.InvokeAsync<string>("getCookie", "userKey");
