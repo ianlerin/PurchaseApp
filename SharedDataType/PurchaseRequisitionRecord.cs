@@ -111,7 +111,8 @@ namespace PurchaseBlazorApp2.Components.Data
         }
         public EDepartment Role { get; set; }
 
-        public EHRRole HRRole {  get; set; }
+        public EHRRole HRRole { get; set; }
+        public string? CompanyId { get; set; }
     }
     public class SupplierLookUpInfo
     {
@@ -245,6 +246,7 @@ namespace PurchaseBlazorApp2.Components.Data
     public class FinanceRecord
     {
         [Key]
+        public string? CompanyId { get; set; }
         public string? PO_ID { get; set; }
         private EPaymentStatus _PaymentStatus = EPaymentStatus.PendingPayment;
         public EPaymentStatus PaymentStatus { get { return _PaymentStatus; } set { 
@@ -278,6 +280,7 @@ namespace PurchaseBlazorApp2.Components.Data
         public class PurchaseOrderRecord
     {
         [Key]
+        public string? CompanyId { get; set; }
         public string? PO_ID { get; set; }
         public string PR_ID { get; set; }
         public string CreatedBy { get; set; }
@@ -373,6 +376,7 @@ namespace PurchaseBlazorApp2.Components.Data
     public class PurchaseRequisitionRecord
     {
         [Key]
+        public string? CompanyId { get; set; }
         public string? RequisitionNumber { get; set; } 
         public DateTime RequestDate { get; set; } = DateTime.Now;
         public DateTime DeliveryDate { get; set; } = DateTime.MinValue;

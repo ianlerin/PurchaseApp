@@ -40,6 +40,10 @@ else
                                    readonly />
                     </div>
                 </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Company ID</label>
+                    <InputText class="form-control" @bind-Value="PurchaseRequisitionRecord.CompanyId" readonly />
+                </div>
 
                 <div>
                     <label class="form-label fw-bold">Purpose</label>
@@ -258,6 +262,12 @@ else
         {
 
             await JS.InvokeVoidAsync("alert", "null PurchaseRequisitionRecord!");
+        }
+        var CurrentCompany = await GeneralLibrary.GetCurrentCompanyInfo(JS);
+
+        if (CurrentCompany != null)
+        {
+            PurchaseRequisitionRecord.CompanyId = CurrentCompany.ID;
         }
         PurchaseRequisitionRecord.UpdateDate = DateTime.Now;
         var response = await Http.PostAsJsonAsync(
