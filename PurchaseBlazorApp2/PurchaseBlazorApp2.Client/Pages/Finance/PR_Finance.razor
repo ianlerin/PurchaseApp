@@ -34,6 +34,11 @@ else
                         <input class="form-control" value="@PO_ID" readonly />
                     </div>
                 </div>
+
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Company ID</label>
+                    <InputText class="form-control" @bind-Value="FinanceRecord.CompanyId" readonly />
+                </div>
             </div>
         </div>
 
@@ -175,14 +180,17 @@ else
     private bool bNewRequisition = false;
     private FinanceRecord FinanceRecord = new();
     private PurchaseOrderRecord PurchaseOrderRecord = new();
+    private CompanyInfo CurrentCompany; 
 
    private decimal LatestPercentage => 
     (FinanceRecord.FinanceRecordLists != null && FinanceRecord.FinanceRecordLists.Any())
         ? FinanceRecord.FinanceRecordLists.Keys.Max() 
         : 0m;
 
-    protected async override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        CurrentCompany = await GeneralLibrary.GetCurrentCompanyInfo(JS);
+        FinanceRecord.CompanyId = CurrentCompany.ID;
         if (string.IsNullOrWhiteSpace(PO_ID))
         {
             // Prevent access without PO_ID
@@ -312,6 +320,8 @@ else
 
     private async Task SaveRecord()
     {
+        CurrentCompany = await GeneralLibrary.GetCurrentCompanyInfo(JS);
+        FinanceRecord.CompanyId = CurrentCompany.ID;
         var response = await Http.PostAsJsonAsync("api/finance/submit", FinanceRecord);
         if (response.IsSuccessStatusCode)
         {

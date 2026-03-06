@@ -325,6 +325,7 @@
     public string EmailSendStatus{ get; set; }
     private string SearchSID { get; set; } = string.Empty;
     [Parameter] public string? RequisitionNumber { get; set; }
+    private CompanyInfo CurrentCompany;
     protected override async Task OnInitializedAsync()
     {
         //Record = StateStorage.Get<PurchaseOrderRecord>("PO");
@@ -563,6 +564,8 @@
     {
         try
         {
+            CurrentCompany = await GeneralLibrary.GetCurrentCompanyInfo(JS);
+            Record.CompanyId = CurrentCompany.ID;
             await OnNotifyGoodsReceived();
             var payload = new List<PurchaseOrderRecord> { Record };
             var response = await Http.PostAsJsonAsync("api/po/submit", payload);
