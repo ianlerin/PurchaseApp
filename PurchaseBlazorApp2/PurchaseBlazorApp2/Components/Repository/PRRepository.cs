@@ -127,16 +127,17 @@ namespace PurchaseBlazorApp2.Components.Repository
 
             return ExecutePRListCommandAsync(command);
         }
-        public Task<List<PurchaseRequisitionRecord>> GetAllRecordsForListAsync(
+        public Task<List<PurchaseRequisitionRecord>> GetAllRecordsForListAsync(string companyId,
       List<string>? requisitionNumbers = null)
         {
             string query = @"
         SELECT requisitionnumber, requestdate, prstatus, approvalstatus,
                burgent, deliverydate, paymentstatus, po_id
-        FROM prtable";
+        FROM prtable
+         WHERE companyid = @companyId";
 
             var command = new NpgsqlCommand();
-
+            command.Parameters.AddWithValue("@companyId", companyId);
             if (requisitionNumbers != null && requisitionNumbers.Count > 0)
             {
                 var paramNames = new List<string>();
@@ -417,7 +418,7 @@ namespace PurchaseBlazorApp2.Components.Repository
         }
 
 
-        public async Task<HashSet<string>> GetRequisitionNumbersByCreatedByAsync(string requestor)
+        public async Task<HashSet<string>> GetRequisitionNumbersByCreatedByAsync(string requestor, string companyId)
         {
             var requisitionNumbers = new HashSet<string>();
             bool shouldCloseConnection = false;
@@ -434,11 +435,11 @@ namespace PurchaseBlazorApp2.Components.Repository
                 using var command = new NpgsqlCommand(
                     @"SELECT requisitionnumber
               FROM prtable
-              WHERE requestor = @requestor",
+              WHERE requestor = @requestor  AND companyid = @companyId",
                     MyConnection);
 
                 command.Parameters.AddWithValue("@requestor", requestor);
-
+                command.Parameters.AddWithValue("@companyId", companyId);
                 using var reader = await command.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
                 {
@@ -462,7 +463,7 @@ namespace PurchaseBlazorApp2.Components.Repository
 
 
 
-        public async Task<HashSet<string>> GetRequisitionNumbersByDepartmentAsync(EDepartment department)
+        public async Task<HashSet<string>> GetRequisitionNumbersByDepartmentAsync(EDepartment department, string companyId)
         {
             var requisitionNumbers = new HashSet<string>();
             bool shouldCloseConnection = false;
@@ -479,11 +480,11 @@ namespace PurchaseBlazorApp2.Components.Repository
                 using var command = new NpgsqlCommand(
                     @"SELECT requisitionnumber, role
               FROM pr_approval_table
-              WHERE approvestatus = @status",
+              WHERE approvestatus = @status  AND companyid = @companyId",
                     MyConnection);
 
                 command.Parameters.AddWithValue("@status", ESingleApprovalStatus.PendingAction.ToString());
-
+                command.Parameters.AddWithValue("@companyId", companyId);
                 using var reader = await command.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
                 {

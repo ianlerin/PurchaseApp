@@ -20,6 +20,12 @@ namespace PurchaseBlazorApp2.Controller
         [HttpPost("submit")]
         public async Task<ActionResult<List<string>>> SubmitPRs([FromBody] IEnumerable<PurchaseRequisitionRecord> infoList)
         {
+            var companyId = HttpContext.Request.Headers["CompanyId"].ToString();
+
+            foreach (var item in infoList)
+            {
+                item.CompanyId = companyId;
+            }
             List<string> Result = await PRRepository.SubmitAsync(infoList);
            return Ok(Result);
         }
@@ -41,7 +47,8 @@ namespace PurchaseBlazorApp2.Controller
         [HttpPost("get-list-partial")]
         public async Task<ActionResult<List<PurchaseRequisitionRecord>>> GetRecordsForListAsync([FromBody] List<string> requisitionNumbers)
         {
-            var Result = await PRRepository.GetAllRecordsForListAsync(requisitionNumbers);
+            var companyId = HttpContext.Request.Headers["CompanyId"].ToString();
+            var Result = await PRRepository.GetAllRecordsForListAsync(requisitionNumbers, companyId);
             return Ok(Result);
         }
 
@@ -55,14 +62,17 @@ namespace PurchaseBlazorApp2.Controller
         [HttpPost("get-needapproval")]
         public async Task<ActionResult<HashSet<string>>> GetRecordsAsync([FromBody]EDepartment Department)
         {
-            var Result = await PRRepository.GetRequisitionNumbersByDepartmentAsync(Department);
+            var companyId = HttpContext.Request.Headers["CompanyId"].ToString();
+
+            var Result = await PRRepository.GetRequisitionNumbersByDepartmentAsync(Department, companyId);
             return Ok(Result);
         }
 
         [HttpPost("get-createdby")]
         public async Task<ActionResult<HashSet<string>>> GetRecordsAsync([FromBody] string CreatedBy)
         {
-            var Result = await PRRepository.GetRequisitionNumbersByCreatedByAsync(CreatedBy);
+            var companyId = HttpContext.Request.Headers["CompanyId"].ToString();
+            var Result = await PRRepository.GetRequisitionNumbersByCreatedByAsync(CreatedBy, companyId);
             return Ok(Result);
         }
 
