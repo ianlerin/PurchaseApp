@@ -48,7 +48,8 @@ namespace PurchaseBlazorApp2.Controller
         public async Task<ActionResult<List<PurchaseRequisitionRecord>>> GetRecordsForListAsync([FromBody] List<string> requisitionNumbers)
         {
             var companyId = HttpContext.Request.Headers["CompanyId"].ToString();
-            var Result = await PRRepository.GetAllRecordsForListAsync(requisitionNumbers, companyId);
+          
+            var Result = await PRRepository.GetAllRecordsForListAsync(companyId,requisitionNumbers);
             return Ok(Result);
         }
 
