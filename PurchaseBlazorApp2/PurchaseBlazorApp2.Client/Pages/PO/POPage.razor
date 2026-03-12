@@ -566,6 +566,8 @@
         {
             CurrentCompany = await GeneralLibrary.GetCurrentCompanyInfo(JS);
             Record.CompanyId = CurrentCompany.ID;
+            var User = await GeneralLibrary.GetCurrentUser(JS);
+            Record.CreatedBy = User.Name;
             await OnNotifyGoodsReceived();
             var payload = new List<PurchaseOrderRecord> { Record };
             var response = await Http.PostAsJsonAsync("api/po/submit", payload);
@@ -598,7 +600,8 @@
             }
             else
             {
-                await JS.InvokeVoidAsync("alert", $"❌ API call failed: {response.StatusCode}");
+                var errorContent = await response.Content.ReadAsStringAsync();
+                await JS.InvokeVoidAsync("alert", $"❌ API call failed: {response.StatusCode}\n{errorContent}");
             }
 
         }
