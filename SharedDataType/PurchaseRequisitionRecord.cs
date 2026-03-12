@@ -232,8 +232,27 @@ namespace PurchaseBlazorApp2.Components.Data
         public string requisitionNumber { get; set; } = "";
         public string bucket_name { get; set; } = "";
         public List<string> dataformats { get; set; } = new List<string>();
-        public List<string> s3_keys { get; set; } =  new List<string>();
+        public List<string> s3_keys { get; set; } = new List<string>();
     }
+
+    public class ApprovalRequest
+    {
+        public EDepartment Department { get; set; }
+        public string CompanyId { get; set; }
+    }
+
+
+    public class CreatedByRequest
+    {
+        public string Email { get; set; }
+        public string CompanyId { get; set; }
+    }
+    public class PRListRequest
+    {
+        public List<string> RequisitionNumbers { get; set; } = new List<string>();
+        public string CompanyId { get; set; }
+    }
+
     public class ImageUploadInfo
     {
         public byte[] Data { get; set; }

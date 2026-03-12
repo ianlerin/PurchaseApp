@@ -149,7 +149,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                     command.Parameters.AddWithValue(paramName, requisitionNumbers[i]);
                 }
 
-                query += $" WHERE requisitionnumber IN ({string.Join(", ", paramNames)})";
+                query += $" AND requisitionnumber IN ({string.Join(", ", paramNames)})";
             }
 
             command.CommandText = query;
@@ -267,7 +267,7 @@ namespace PurchaseBlazorApp2.Components.Repository
             return record;
         }
 
-        public async Task<List<PurchaseRequisitionRecord>> GetRecordsAsync(List<string> requisitionNumbers = null)
+        public async Task<List<PurchaseRequisitionRecord>> GetRecordsAsync(string companyId, List<string> requisitionNumbers = null)
         {
             List<PurchaseRequisitionRecord> ToReturn = new List<PurchaseRequisitionRecord>();
             if(requisitionNumbers.Count==0)
@@ -278,11 +278,13 @@ namespace PurchaseBlazorApp2.Components.Repository
             {
                 await Connection.OpenAsync();
 
-                string query = "SELECT * FROM prtable";
+                string query = "SELECT * FROM prtable  WHERE  companyid = @companyId";
 
                 var command = new NpgsqlCommand();
                 command.Connection = Connection;
-
+       
+                command.Parameters.AddWithValue("@companyId", companyId);
+                
                 if (requisitionNumbers != null && requisitionNumbers.Count > 0)
                 {
                     var paramNames = new List<string>();
@@ -294,7 +296,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                     }
 
                     string inClause = string.Join(", ", paramNames);
-                    query += $" WHERE requisitionnumber IN ({inClause})";
+                    query += $" AND requisitionnumber IN ({inClause})";
                 }
 
                 command.CommandText = query;
@@ -1015,7 +1017,7 @@ namespace PurchaseBlazorApp2.Components.Repository
             return rowsAffected;
         }
 
-        public async Task<List<string>> SubmitAsync(IEnumerable<PurchaseRequisitionRecord> InfoList)
+        public async Task<List<string>> SubmitAsync(IEnumerable<PurchaseRequisitionRecord> InfoList,string companyId)
         {
             var submittedIds = new List<string>();
 
@@ -1035,7 +1037,10 @@ namespace PurchaseBlazorApp2.Components.Repository
                             {
                                 var Info = infoEnumerator.Current;
                                 string SID;
-
+                                if (!string.IsNullOrEmpty(companyId))
+                                {
+                                    Info.CompanyId = companyId;
+                                }
                                 // Generate new RequisitionNumber if missing
                                 if (string.IsNullOrEmpty(Info.RequisitionNumber))
                                 {

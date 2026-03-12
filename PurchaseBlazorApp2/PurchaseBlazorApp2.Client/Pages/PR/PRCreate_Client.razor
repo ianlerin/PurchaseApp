@@ -329,9 +329,13 @@
             await JS.InvokeVoidAsync("alert", "null PurchaseRequisitionRecord!");
         }
         var currentUser = await GetCurrentUser();
-        if (currentUser != null)
+        if (currentUser != null && !string.IsNullOrEmpty(currentUser.CompanyId))
         {
             PurchaseRequisitionRecord.CompanyId = currentUser.CompanyId;
+        }
+        else if (!string.IsNullOrEmpty(CurrentCompany?.ID))
+        {
+            PurchaseRequisitionRecord.CompanyId = CurrentCompany.ID;
         }
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
@@ -451,8 +455,11 @@
             }
             bNewRequisition = true;
             await SetUserName();
-            PurchaseRequisitionRecord.Department = MyUser.Department;
-            PurchaseRequisitionRecord.CompanyId = MyUser.CompanyId;
+            if (MyUser != null)
+            {
+                PurchaseRequisitionRecord.Department = MyUser.Department;
+                PurchaseRequisitionRecord.CompanyId = MyUser.CompanyId; 
+            }
             
         }
         if (PurchaseRequisitionRecord.approvalstatus == EApprovalStatus.Rejected || PurchaseRequisitionRecord.approvalstatus == EApprovalStatus.Approved)

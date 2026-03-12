@@ -20,16 +20,9 @@ namespace PurchaseBlazorApp2.Controller
         [HttpPost("submit")]
         public async Task<ActionResult<List<string>>> SubmitPRs([FromBody] IEnumerable<PurchaseRequisitionRecord> infoList)
         {
-            var companyId = HttpContext.Request.Headers["CompanyId"].ToString();
-
-            foreach (var item in infoList)
-            {
-                item.CompanyId = companyId;
-            }
-            List<string> Result = await PRRepository.SubmitAsync(infoList);
-           return Ok(Result);
+            List<string> result = await PRRepository.SubmitAsync(infoList, null);
+            return Ok(result);
         }
-
         [HttpPost("insert-approval")]
         public async Task<ActionResult<List<ApprovalInfo>>> InsertApprovalByRequisitionNumber([FromBody] PurchaseRequisitionRecord record)
         {
@@ -43,38 +36,34 @@ namespace PurchaseBlazorApp2.Controller
             var result = await PRRepository.UpdateDeliveryDateAsync(Request.PR_ID, Request.DeliveryDate);
             return Ok(result);
         }
-
         [HttpPost("get-list-partial")]
-        public async Task<ActionResult<List<PurchaseRequisitionRecord>>> GetRecordsForListAsync([FromBody] List<string> requisitionNumbers)
+        public async Task<ActionResult<List<PurchaseRequisitionRecord>>> GetRecordsForListAsync([FromBody] PRListRequest request)
         {
-            var companyId = HttpContext.Request.Headers["CompanyId"].ToString();
-          
-            var Result = await PRRepository.GetAllRecordsForListAsync(companyId,requisitionNumbers);
+            var Result = await PRRepository.GetAllRecordsForListAsync(request.CompanyId, request.RequisitionNumbers);
             return Ok(Result);
         }
 
         [HttpPost("get-detail")]
         public async Task<ActionResult<List<PurchaseRequisitionRecord>>> GetRecordsAsync([FromBody] List<string> requisitionNumbers)
         {
-            var Result = await PRRepository.GetRecordsAsync(requisitionNumbers);
+            string companyId = HttpContext.Request.Headers["CompanyId"].ToString();
+
+            var Result = await PRRepository.GetRecordsAsync(companyId, requisitionNumbers);
             return Ok(Result);
         }
 
         [HttpPost("get-needapproval")]
-        public async Task<ActionResult<HashSet<string>>> GetRecordsAsync([FromBody]EDepartment Department)
+        public async Task<ActionResult<HashSet<string>>> GetRecordsNeedApproval([FromBody] ApprovalRequest request)
         {
-            var companyId = HttpContext.Request.Headers["CompanyId"].ToString();
-
-            var Result = await PRRepository.GetRequisitionNumbersByDepartmentAsync(Department, companyId);
-            return Ok(Result);
+            var result = await PRRepository.GetRequisitionNumbersByDepartmentAsync(request.Department, request.CompanyId);
+            return Ok(result);
         }
 
         [HttpPost("get-createdby")]
-        public async Task<ActionResult<HashSet<string>>> GetRecordsAsync([FromBody] string CreatedBy)
+        public async Task<ActionResult<HashSet<string>>> GetRecordsCreatedBy([FromBody] CreatedByRequest request)
         {
-            var companyId = HttpContext.Request.Headers["CompanyId"].ToString();
-            var Result = await PRRepository.GetRequisitionNumbersByCreatedByAsync(CreatedBy, companyId);
-            return Ok(Result);
+            var result = await PRRepository.GetRequisitionNumbersByCreatedByAsync(request.Email, request.CompanyId);
+            return Ok(result);
         }
 
         [HttpPost("get-finance")]

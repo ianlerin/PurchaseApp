@@ -174,6 +174,11 @@
             {
                 case EDepartment.ProcurementManager:
                     {
+                        var pmRequest = new PRListRequest
+                        {
+                            CompanyId = SelectedCompanyId,
+                            RequisitionNumbers = new List<string>() 
+                        };
                         response = await Http.PostAsJsonAsync(
                             NavigationManager.ToAbsoluteUri("api/pr/get-list-partial-all"),
                             SearchFilterType
@@ -184,6 +189,11 @@
                 case EDepartment.Finance:
                     {
                         // ===== Finance-specific PR numbers =====
+                        var financeRequest = new PRListRequest
+                        {
+                            CompanyId = SelectedCompanyId,
+                            RequisitionNumbers = new List<string>() 
+                        };
                         var financeResponse = await Http.PostAsJsonAsync(
                             NavigationManager.ToAbsoluteUri("api/pr/get-finance"),
                             new List<PurchaseRequisitionRecord>()
@@ -208,9 +218,14 @@
 
                         if (mergedRecords.Count > 0)
                         {
+                            var request = new PRListRequest
+                            {
+                                CompanyId = SelectedCompanyId,
+                                RequisitionNumbers = mergedRecords
+                            };
                             response = await Http.PostAsJsonAsync(
                                 NavigationManager.ToAbsoluteUri("api/pr/get-list-partial"),
-                                mergedRecords
+                                request
                             );
                         }
                         break;
@@ -227,9 +242,14 @@
 
                         if (recordsToView.Count > 0)
                         {
+                            var request = new PRListRequest
+                            {
+                                RequisitionNumbers = recordsToView,
+                                CompanyId = SelectedCompanyId
+                            };
                             response = await Http.PostAsJsonAsync(
                                 NavigationManager.ToAbsoluteUri("api/pr/get-list-partial"),
-                                recordsToView
+                                 request
                             );
                         }
                         break;
@@ -327,8 +347,14 @@
         switch (FilterType)
         {
             case(EFilterPRType.Approval):
+                var approvalRequest = new ApprovalRequest
+                {
+                    Department = MyDepartment,
+                    CompanyId = SelectedCompanyId
+                };
+
                 var ApprovalSearch = await Http.PostAsJsonAsync(
-                       NavigationManager.ToAbsoluteUri("api/pr/get-needapproval"), new { Department = MyDepartment, CompanyId = SelectedCompanyId }
+                       NavigationManager.ToAbsoluteUri("api/pr/get-needapproval"), approvalRequest
                        );
                 HashSet<string> ApprovalHashrecords = await ApprovalSearch.Content.ReadFromJsonAsync<HashSet<string>>();
                 MyHashSet = ApprovalHashrecords.ToList();
@@ -336,8 +362,13 @@
 
             case (EFilterPRType.CreatedBy):
                 UserName name=await GetCurrentUser();
+                var createdByRequest = new CreatedByRequest
+                {
+                    Email = name.Email,
+                    CompanyId = SelectedCompanyId
+                };
                 var CreatedBy = await Http.PostAsJsonAsync(
-                          NavigationManager.ToAbsoluteUri("api/pr/get-createdby"), new { Email = name.Email, CompanyId = SelectedCompanyId }
+                          NavigationManager.ToAbsoluteUri("api/pr/get-createdby"), createdByRequest
                           );
                 HashSet<string> FilterHashrecords = await CreatedBy.Content.ReadFromJsonAsync<HashSet<string>>();
                 MyHashSet = FilterHashrecords.ToList();

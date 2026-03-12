@@ -133,7 +133,7 @@ namespace PurchaseBlazorApp2.Components.Repository
         }
 
 
-        public async Task<List<PurchaseOrderRecord>> GetRecordsAsync(List<string> requisitionNumbers = null)
+        public async Task<List<PurchaseOrderRecord>> GetRecordsAsync(string companyId,List<string> requisitionNumbers = null)
         {
             List<PurchaseOrderRecord> ToReturn = new List<PurchaseOrderRecord>();
             var PRRepository = new PRRepository();
@@ -172,7 +172,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                         MainInfo.ReceiveInfo= await GetReceiveInfo(MainInfo.PO_ID);
                         MainInfo.InvoiceInfo = await GetInvoiceInfo(MainInfo.PO_ID);
 
-                        var PRRecords = await PRRepository.GetRecordsAsync(new List<string> { MainInfo.PR_ID });
+                        var PRRecords = await PRRepository.GetRecordsAsync(companyId,new List<string> { MainInfo.PR_ID });
                         if (PRRecords.Count > 0)
                         {
                             MainInfo._Approvals = PRRecords[0].Approvals;
@@ -358,11 +358,11 @@ namespace PurchaseBlazorApp2.Components.Repository
             }
         }
 
-        public async Task<bool> UpdatePaymentStatus(string RequisitionNumber,EPaymentStatus Status)
+        public async Task<bool> UpdatePaymentStatus(string RequisitionNumber,EPaymentStatus Status,string companyId)
         {
             try
             {
-                List<PurchaseOrderRecord> OrderRecords=await GetRecordsAsync(new List<string> { RequisitionNumber });
+                List<PurchaseOrderRecord> OrderRecords=await GetRecordsAsync(companyId,new List<string> { RequisitionNumber });
                 if (OrderRecords.Count > 0)
                 {
                     PurchaseOrderRecord OrderRecord = OrderRecords[0];
