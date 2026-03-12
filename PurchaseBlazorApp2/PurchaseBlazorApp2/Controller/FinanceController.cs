@@ -11,8 +11,10 @@ namespace PurchaseBlazorApp2.Controller
         [HttpPost("submit")]
         public async Task<ActionResult<bool>> SubmitAsync([FromBody] FinanceRecord Info)
         {
+            string companyId = HttpContext.Request.Headers["CompanyId"].ToString();
+
             FinanceRepository financeRepository = new FinanceRepository();  
-            bool bSubmitResult = await financeRepository.Submit(Info);
+            bool bSubmitResult = await financeRepository.Submit(Info,companyId);
             return Ok(bSubmitResult);
 
         }

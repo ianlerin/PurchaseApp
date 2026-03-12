@@ -111,7 +111,8 @@ namespace PurchaseBlazorApp2.Components.Data
         }
         public EDepartment Role { get; set; }
 
-        public EHRRole HRRole {  get; set; }
+        public EHRRole HRRole { get; set; }
+        public string? CompanyId { get; set; }
     }
     public class SupplierLookUpInfo
     {
@@ -231,7 +232,35 @@ namespace PurchaseBlazorApp2.Components.Data
         public string requisitionNumber { get; set; } = "";
         public string bucket_name { get; set; } = "";
         public List<string> dataformats { get; set; } = new List<string>();
-        public List<string> s3_keys { get; set; } =  new List<string>();
+        public List<string> s3_keys { get; set; } = new List<string>();
+    }
+
+    public class ApprovalRequest
+    {
+        public EDepartment Department { get; set; }
+        public string CompanyId { get; set; }
+    }
+
+
+    public class CreatedByRequest
+    {
+        public string Email { get; set; }
+        public string CompanyId { get; set; }
+    }
+    public class PRListRequest
+    {
+        public List<string> RequisitionNumbers { get; set; } = new List<string>();
+        public string CompanyId { get; set; }
+    }
+    public class RecordsRequest
+    {
+        public string CompanyId { get; set; }
+        public EPRSearchStatus Status { get; set; }
+    }
+    public class PRDetailRequest
+    {
+        public string CompanyId { get; set; }
+        public List<string> RequisitionNumbers { get; set; }
     }
     public class ImageUploadInfo
     {
@@ -245,6 +274,7 @@ namespace PurchaseBlazorApp2.Components.Data
     public class FinanceRecord
     {
         [Key]
+        public string? CompanyId { get; set; }
         public string? PO_ID { get; set; }
         private EPaymentStatus _PaymentStatus = EPaymentStatus.PendingPayment;
         public EPaymentStatus PaymentStatus { get { return _PaymentStatus; } set { 
@@ -278,6 +308,7 @@ namespace PurchaseBlazorApp2.Components.Data
         public class PurchaseOrderRecord
     {
         [Key]
+        public string? CompanyId { get; set; }
         public string? PO_ID { get; set; }
         public string PR_ID { get; set; }
         public string CreatedBy { get; set; }
@@ -373,6 +404,7 @@ namespace PurchaseBlazorApp2.Components.Data
     public class PurchaseRequisitionRecord
     {
         [Key]
+        public string? CompanyId { get; set; }
         public string? RequisitionNumber { get; set; } 
         public DateTime RequestDate { get; set; } = DateTime.Now;
         public DateTime DeliveryDate { get; set; } = DateTime.MinValue;

@@ -127,7 +127,7 @@
     private List<PurchaseRequisitionRecord> Records = new();
     private bool IsLoading = true;
     private bool bProcurementOrFinance = false;
-
+    private string SelectedCompanyId = "";
     private EFilterPRType _FilterType = EFilterPRType.Approval;
     public EFilterPRType FilterType { get { return _FilterType; } set { _FilterType = value; OnSetFilterType(); } }
 
@@ -136,6 +136,12 @@
 
     protected override async Task OnInitializedAsync()
     {
+        var selectedCompanyJson = await JS.InvokeAsync<string>("getCookie", "SelectedCompany");
+        if (!string.IsNullOrEmpty(selectedCompanyJson))
+        {
+            var selectedCompany = System.Text.Json.JsonSerializer.Deserialize<CompanySelection>(selectedCompanyJson);
+            SelectedCompanyId = selectedCompany?.ID ?? string.Empty;
+        }
         await ReloadList();
     }
 
@@ -168,9 +174,14 @@
             {
                 case EDepartment.ProcurementManager:
                     {
+                        var pmRequest = new PRListRequest
+                        {
+                            CompanyId = SelectedCompanyId,
+                            RequisitionNumbers = new List<string>() 
+                        };
                         response = await Http.PostAsJsonAsync(
                             NavigationManager.ToAbsoluteUri("api/pr/get-list-partial-all"),
-                            SearchFilterType
+                            pmRequest
                         );
                         break;
                     }
@@ -178,6 +189,11 @@
                 case EDepartment.Finance:
                     {
                         // ===== Finance-specific PR numbers =====
+                        var financeRequest = new PRListRequest
+                        {
+                            CompanyId = SelectedCompanyId,
+                            RequisitionNumbers = new List<string>() 
+                        };
                         var financeResponse = await Http.PostAsJsonAsync(
                             NavigationManager.ToAbsoluteUri("api/pr/get-finance"),
                             new List<PurchaseRequisitionRecord>()
@@ -202,9 +218,14 @@
 
                         if (mergedRecords.Count > 0)
                         {
+                            var request = new PRListRequest
+                            {
+                                CompanyId = SelectedCompanyId,
+                                RequisitionNumbers = mergedRecords
+                            };
                             response = await Http.PostAsJsonAsync(
                                 NavigationManager.ToAbsoluteUri("api/pr/get-list-partial"),
-                                mergedRecords
+                                request
                             );
                         }
                         break;
@@ -221,9 +242,14 @@
 
                         if (recordsToView.Count > 0)
                         {
+                            var request = new PRListRequest
+                            {
+                                RequisitionNumbers = recordsToView,
+                                CompanyId = SelectedCompanyId
+                            };
                             response = await Http.PostAsJsonAsync(
                                 NavigationManager.ToAbsoluteUri("api/pr/get-list-partial"),
-                                recordsToView
+                                 request
                             );
                         }
                         break;
@@ -321,8 +347,14 @@
         switch (FilterType)
         {
             case(EFilterPRType.Approval):
+                var approvalRequest = new ApprovalRequest
+                {
+                    Department = MyDepartment,
+                    CompanyId = SelectedCompanyId
+                };
+
                 var ApprovalSearch = await Http.PostAsJsonAsync(
-                       NavigationManager.ToAbsoluteUri("api/pr/get-needapproval"), MyDepartment
+                       NavigationManager.ToAbsoluteUri("api/pr/get-needapproval"), approvalRequest
                        );
                 HashSet<string> ApprovalHashrecords = await ApprovalSearch.Content.ReadFromJsonAsync<HashSet<string>>();
                 MyHashSet = ApprovalHashrecords.ToList();
@@ -330,8 +362,13 @@
 
             case (EFilterPRType.CreatedBy):
                 UserName name=await GetCurrentUser();
+                var createdByRequest = new CreatedByRequest
+                {
+                    Email = name.Email,
+                    CompanyId = SelectedCompanyId
+                };
                 var CreatedBy = await Http.PostAsJsonAsync(
-                          NavigationManager.ToAbsoluteUri("api/pr/get-createdby"), name.Email
+                          NavigationManager.ToAbsoluteUri("api/pr/get-createdby"), createdByRequest
                           );
                 HashSet<string> FilterHashrecords = await CreatedBy.Content.ReadFromJsonAsync<HashSet<string>>();
                 MyHashSet = FilterHashrecords.ToList();
@@ -372,5 +409,11 @@
     private void OnActionClicked(PurchaseRequisitionRecord record)
     {
         NavigationManager.NavigateTo($"/pr-preapproval/{record.RequisitionNumber}");
+    }
+
+    private class CompanySelection
+    {
+        public string ID { get; set; }
+        public string Name { get; set; }
     }
 }

@@ -13,7 +13,7 @@ namespace PurchaseBlazorApp2.Components.Repository
             Connection = new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432; User Id=postgres; Password=password; Database=purchase");
         }
 
-        public async Task<bool> Submit(FinanceRecord info)
+        public async Task<bool> Submit(FinanceRecord info,string companyId)
         {
             bool shouldCloseConnection = false;
 
@@ -53,7 +53,7 @@ namespace PurchaseBlazorApp2.Components.Repository
 
 
                     PORepository PORepository = new PORepository();
-                    await PORepository.UpdatePaymentStatus(info.PO_ID, info.PaymentStatus);
+                    await PORepository.UpdatePaymentStatus(companyId,info.PO_ID, info.PaymentStatus);
                     return true;
                 }
                 catch (Exception exInner)

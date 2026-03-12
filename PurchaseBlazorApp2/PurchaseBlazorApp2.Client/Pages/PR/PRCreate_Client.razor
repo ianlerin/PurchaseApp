@@ -47,6 +47,12 @@
                                        readonly />
                         </div>
                     }
+                    <div class="mb-3">
+                        <label class="form-label">Company ID:</label>
+                        <InputText class="form-control"
+                                   @bind-Value="PurchaseRequisitionRecord.CompanyId"
+                                   readonly />
+                    </div>
 
                     <!-- Request Date -->
                     <div class="mb-3">
@@ -217,6 +223,7 @@
     private UploadImageHelper MyImageHelper;
     private bool bIsDepartmentMatchApproval;
     UserName? MyUser;
+    private CompanyInfo CurrentCompany;
     public class CurrencyItem
     {
         public string Text { get; set; } = string.Empty;  // "US Dollar (USD)"
@@ -321,6 +328,15 @@
 
             await JS.InvokeVoidAsync("alert", "null PurchaseRequisitionRecord!");
         }
+        var currentUser = await GetCurrentUser();
+        if (currentUser != null && !string.IsNullOrEmpty(currentUser.CompanyId))
+        {
+            PurchaseRequisitionRecord.CompanyId = currentUser.CompanyId;
+        }
+        else if (!string.IsNullOrEmpty(CurrentCompany?.ID))
+        {
+            PurchaseRequisitionRecord.CompanyId = CurrentCompany.ID;
+        }
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
 
@@ -377,6 +393,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        CurrentCompany = await GeneralLibrary.GetCurrentCompanyInfo(JS);
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         filteredCurrencyList = CurrencyList;
         EDepartment MyDepartment = await GetCurrentDepartmentRole();
@@ -392,8 +409,13 @@
             }
             else
             {
+                var request = new PRDetailRequest
+                {
+                    CompanyId = CurrentCompany?.ID ?? "",
+                    RequisitionNumbers = new List<string> { RequisitionNumber }
+                };
                 var response = await Http.PostAsJsonAsync(
-                NavigationManager.ToAbsoluteUri("api/pr/get-detail"), new List<string> { RequisitionNumber });
+                NavigationManager.ToAbsoluteUri("api/pr/get-detail"), request);
                 if (response.IsSuccessStatusCode)
                 {
                     try
@@ -438,7 +460,12 @@
             }
             bNewRequisition = true;
             await SetUserName();
-            PurchaseRequisitionRecord.Department = MyUser.Department;
+            if (MyUser != null)
+            {
+                PurchaseRequisitionRecord.Department = MyUser.Department;
+                PurchaseRequisitionRecord.CompanyId = MyUser.CompanyId; 
+            }
+            
         }
         if (PurchaseRequisitionRecord.approvalstatus == EApprovalStatus.Rejected || PurchaseRequisitionRecord.approvalstatus == EApprovalStatus.Approved)
         {

@@ -11,11 +11,11 @@ namespace PurchaseBlazorApp2.Controller
     public class PDFController : ControllerBase
     {
         [HttpGet("purchase/{poId}")]
-        public async Task<IActionResult> GeneratePurchasePdf(string poId)
+        public async Task<IActionResult> GeneratePurchasePdf(string poId, string companyId)
         {
             // Fetch your PO from DB based on poId
             PORepository Repo = new PORepository();
-            List<PurchaseOrderRecord> Records = await Repo.GetRecordsAsync(new List<string> { poId });
+            List<PurchaseOrderRecord> Records = await Repo.GetRecordsAsync(companyId,new List<string> { poId });
 
             if (Records.Count == 0) return NotFound();
             var PO = Records[0];
