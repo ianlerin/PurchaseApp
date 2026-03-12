@@ -191,7 +191,7 @@ namespace PurchaseBlazorApp2.Components.Repository
             var command = new NpgsqlCommand(@"
         SELECT requisitionnumber, requestdate, prstatus, approvalstatus,
                burgent, deliverydate, paymentstatus, po_id
-        FROM prtable");
+        FROM prtable WHERE companyid = @companyId");
 
             return ExecutePRListCommandAsync(command);
         }
@@ -201,7 +201,8 @@ namespace PurchaseBlazorApp2.Components.Repository
         SELECT requisitionnumber, requestdate, prstatus, approvalstatus,
                burgent, deliverydate, paymentstatus, po_id
         FROM prtable
-        WHERE prstatus <> 'Cancel'
+        WHERE companyid = @companyId
+          AND prstatus <> 'Cancel'
           AND paymentstatus <> 'Paid'");
 
             return ExecutePRListCommandAsync(command);
