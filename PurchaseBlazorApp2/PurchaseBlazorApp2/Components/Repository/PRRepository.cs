@@ -186,16 +186,17 @@ namespace PurchaseBlazorApp2.Components.Repository
 
             return result;
         }
-        public Task<List<PurchaseRequisitionRecord>> GetAllRecordsForListAsync()
+        public Task<List<PurchaseRequisitionRecord>> GetAllRecordsForListAsync(string companyId)
         {
             var command = new NpgsqlCommand(@"
         SELECT requisitionnumber, requestdate, prstatus, approvalstatus,
                burgent, deliverydate, paymentstatus, po_id
         FROM prtable WHERE companyid = @companyId");
 
+            command.Parameters.AddWithValue("@companyId", companyId);
             return ExecutePRListCommandAsync(command);
         }
-        public Task<List<PurchaseRequisitionRecord>> GetPartialRecordsForListAsync()
+        public Task<List<PurchaseRequisitionRecord>> GetPartialRecordsForListAsync(string companyId)
         {
             var command = new NpgsqlCommand(@"
         SELECT requisitionnumber, requestdate, prstatus, approvalstatus,
@@ -205,6 +206,7 @@ namespace PurchaseBlazorApp2.Components.Repository
           AND prstatus <> 'Cancel'
           AND paymentstatus <> 'Paid'");
 
+            command.Parameters.AddWithValue("@companyId", companyId);
             return ExecutePRListCommandAsync(command);
         }
         private async Task<List<PurchaseRequisitionRecord>> ExecutePRListQueryAsync(string query)

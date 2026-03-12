@@ -195,6 +195,14 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        var selectedCompanyJson = await JS.InvokeAsync<string>("getCookie", "SelectedCompany");
+        string selectedCompanyId = string.Empty;
+        if (!string.IsNullOrEmpty(selectedCompanyJson))
+        {
+            var selectedCompany = System.Text.Json.JsonSerializer.Deserialize<CompanySelection>(selectedCompanyJson);
+            selectedCompanyId = selectedCompany?.ID ?? string.Empty;
+        }
+
         if (!string.IsNullOrEmpty(RequisitionNumber))
         {
             try
@@ -361,5 +369,10 @@ else
         {
             await JS.InvokeVoidAsync("console.groupEnd");
         }
+    }
+    private class CompanySelection
+    {
+        public string ID { get; set; }
+        public string Name { get; set; }
     }
 }
