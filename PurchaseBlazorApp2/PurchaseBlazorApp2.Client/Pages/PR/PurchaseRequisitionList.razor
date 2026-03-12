@@ -181,7 +181,7 @@
                         };
                         response = await Http.PostAsJsonAsync(
                             NavigationManager.ToAbsoluteUri("api/pr/get-list-partial-all"),
-                            SearchFilterType
+                            pmRequest
                         );
                         break;
                     }

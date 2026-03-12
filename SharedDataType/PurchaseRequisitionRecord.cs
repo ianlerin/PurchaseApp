@@ -252,7 +252,16 @@ namespace PurchaseBlazorApp2.Components.Data
         public List<string> RequisitionNumbers { get; set; } = new List<string>();
         public string CompanyId { get; set; }
     }
-
+    public class RecordsRequest
+    {
+        public string CompanyId { get; set; }
+        public EPRSearchStatus Status { get; set; }
+    }
+    public class PRDetailRequest
+    {
+        public string CompanyId { get; set; }
+        public List<string> RequisitionNumbers { get; set; }
+    }
     public class ImageUploadInfo
     {
         public byte[] Data { get; set; }

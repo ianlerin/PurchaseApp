@@ -44,11 +44,9 @@ namespace PurchaseBlazorApp2.Controller
         }
 
         [HttpPost("get-detail")]
-        public async Task<ActionResult<List<PurchaseRequisitionRecord>>> GetRecordsAsync([FromBody] List<string> requisitionNumbers)
+        public async Task<ActionResult<List<PurchaseRequisitionRecord>>> GetRecordsAsync([FromBody] PRDetailRequest request)
         {
-            string companyId = HttpContext.Request.Headers["CompanyId"].ToString();
-
-            var Result = await PRRepository.GetRecordsAsync(companyId, requisitionNumbers);
+            var Result = await PRRepository.GetRecordsAsync(request.CompanyId, request.RequisitionNumbers);
             return Ok(Result);
         }
 
@@ -74,17 +72,16 @@ namespace PurchaseBlazorApp2.Controller
         }
 
         [HttpPost("get-list-partial-all")]
-        public async Task<ActionResult<List<PurchaseRequisitionRecord>>> GetRecordsForListAsync([FromBody] EPRSearchStatus Status)
+        public async Task<ActionResult<List<PurchaseRequisitionRecord>>> GetRecordsForListAsync([FromBody] RecordsRequest request)
         {
-            string companyId = HttpContext.Request.Headers["CompanyId"].ToString();
             List<PurchaseRequisitionRecord> Result;
-            if(Status==EPRSearchStatus.Full)
+            if(request.Status==EPRSearchStatus.Full)
             {
-                Result = await PRRepository.GetAllRecordsForListAsync(companyId);
+                Result = await PRRepository.GetAllRecordsForListAsync(request.CompanyId);
             }
             else
             {
-                Result = await PRRepository.GetPartialRecordsForListAsync(companyId);
+                Result = await PRRepository.GetPartialRecordsForListAsync(request.CompanyId);
             }
             return Result;
         }

@@ -409,8 +409,13 @@
             }
             else
             {
+                var request = new PRDetailRequest
+                {
+                    CompanyId = CurrentCompany?.ID ?? "",
+                    RequisitionNumbers = new List<string> { RequisitionNumber }
+                };
                 var response = await Http.PostAsJsonAsync(
-                NavigationManager.ToAbsoluteUri("api/pr/get-detail"), new List<string> { RequisitionNumber });
+                NavigationManager.ToAbsoluteUri("api/pr/get-detail"), request);
                 if (response.IsSuccessStatusCode)
                 {
                     try

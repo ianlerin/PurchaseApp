@@ -195,21 +195,20 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        var selectedCompanyJson = await JS.InvokeAsync<string>("getCookie", "SelectedCompany");
-        string selectedCompanyId = string.Empty;
-        if (!string.IsNullOrEmpty(selectedCompanyJson))
-        {
-            var selectedCompany = System.Text.Json.JsonSerializer.Deserialize<CompanySelection>(selectedCompanyJson);
-            selectedCompanyId = selectedCompany?.ID ?? string.Empty;
-        }
-
+        var currentUser = await GeneralLibrary.GetCurrentUser(JS);
+        var CurrentCompany = await GeneralLibrary.GetCurrentCompanyInfo(JS);
         if (!string.IsNullOrEmpty(RequisitionNumber))
         {
             try
             {
+                var request = new PRDetailRequest
+                {
+                    CompanyId = CurrentCompany?.ID ?? "",
+                    RequisitionNumbers = new List<string> { RequisitionNumber }
+                };
                 var response = await Http.PostAsJsonAsync(
                     NavigationManager.ToAbsoluteUri("api/pr/get-detail"),
-                    new List<string> { RequisitionNumber });
+                    request);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -370,9 +369,5 @@ else
             await JS.InvokeVoidAsync("console.groupEnd");
         }
     }
-    private class CompanySelection
-    {
-        public string ID { get; set; }
-        public string Name { get; set; }
-    }
+   
 }
