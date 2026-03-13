@@ -8,32 +8,36 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 
-<h3>Company Selection</h3>
+<div class="d-flex justify-content-center align-items-center vh-100">
+    <div>
+        <h3 class="text-center">Company Selection</h3>
 
-<div class="card p-4" style="max-width:400px">
-    <div class="mb-3">
-        <label class="form-label">Select Company</label>
+        <div class="card p-4" style="max-width:400px">
+            <div class="mb-3">
+                <label class="form-label">Select Company</label>
 
-        <select class="form-select" @bind="SelectedCompanyId">
-            <option value="">-- Select Company --</option>
+                <select class="form-select" @bind="SelectedCompanyId">
+                    <option value="">-- Select Company --</option>
 
-            @foreach (var company in Companies)
+                    @foreach (var company in Companies)
+                    {
+                        <option value="@company.ID">@company.Name</option>
+                    }
+                </select>
+            </div>
+
+            <button class="btn btn-primary w-100" @onclick="Proceed">
+                Proceed
+            </button>
+
+            @if (!string.IsNullOrEmpty(ErrorMessage))
             {
-                <option value="@company.ID">@company.Name</option>
+                <div class="text-danger mt-2">
+                    @ErrorMessage
+                </div>
             }
-        </select>
-    </div>
-
-    <button class="btn btn-primary w-100" @onclick="Proceed">
-        Proceed
-    </button>
-
-    @if (!string.IsNullOrEmpty(ErrorMessage))
-    {
-        <div class="text-danger mt-2">
-            @ErrorMessage
         </div>
-    }
+    </div>
 </div>
 
 @code {
@@ -109,7 +113,7 @@
           
             string SelectedCompanyUser = System.Text.Json.JsonSerializer.Serialize(SelectedCompany);
             await JS.InvokeVoidAsync("setCookie", "SelectedCompany", SelectedCompanyUser, 1);
-            NavigationManager.NavigateTo("/home");
+            NavigationManager.NavigateTo("/homepage");
         }
 
     }
