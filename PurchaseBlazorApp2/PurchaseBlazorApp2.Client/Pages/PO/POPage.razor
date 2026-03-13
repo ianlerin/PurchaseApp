@@ -328,6 +328,7 @@
     private CompanyInfo CurrentCompany;
     protected override async Task OnInitializedAsync()
     {
+        CurrentCompany = await GeneralLibrary.GetCurrentCompanyInfo(JS);
         //Record = StateStorage.Get<PurchaseOrderRecord>("PO");
         PRRecord = StateStorage.Get<PurchaseRequisitionRecord>("PR");
 
@@ -343,7 +344,7 @@
             await JS.InvokeVoidAsync("console.log", $"PRRecord found, RequisitionNumber = {RequisitionNumber}");
         }
 
-        FoundSupplierLookupInfos = await Http.GetFromJsonAsync<List<SupplierLookUpInfo>>("api/supplier/getallname") ?? new();
+        FoundSupplierLookupInfos = await Http.GetFromJsonAsync<List<SupplierLookUpInfo>>($"api/supplier/getbycompany/{CurrentCompany.ID}") ?? new();
 
         if (Record == null && !string.IsNullOrEmpty(RequisitionNumber))
         {

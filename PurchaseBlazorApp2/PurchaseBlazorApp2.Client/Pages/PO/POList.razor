@@ -5,6 +5,7 @@
 @inject NavigationManager NavigationManager
 @inject ClientStateStorage StateStorage
 @inject HttpClient Http
+@inject IJSRuntime JS
 
 @rendermode InteractiveAuto
 <h3>PO List</h3>
@@ -35,14 +36,21 @@
 </div>
 @code {
     private List<PurchaseOrderRecord> Records = new();
-
+    private string SelectedCompanyId = "";
 
 
     protected override async Task OnInitializedAsync()
     {
-       
+        var CurrentCompany = await GeneralLibrary.GetCurrentCompanyInfo(JS);
+        SelectedCompanyId = CurrentCompany.ID;
+        var request = new POListRequest
+        {
+            CompanyId = SelectedCompanyId,
+            RequisitionNumbers = new List<string>() 
+        };
+
         var response = await Http.PostAsJsonAsync(
-            NavigationManager.ToAbsoluteUri("api/po/get"), new List<string>());
+            NavigationManager.ToAbsoluteUri("api/po/get"), request);
         if (response.IsSuccessStatusCode)
         {
             try

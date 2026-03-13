@@ -15,11 +15,9 @@ namespace PurchaseBlazorApp2.Controller
             PORepository = new PORepository();
         }
         [HttpPost("get")]
-        public async Task<ActionResult<List<PurchaseOrderRecord>>> GetRecordsAsync([FromBody] List<string> requisitionNumbers)
+        public async Task<ActionResult<List<PurchaseOrderRecord>>> GetRecordsAsync([FromBody] POListRequest request)
         {
-            string companyId = HttpContext.Request.Headers["CompanyId"].ToString();
-
-            var allRecords = await PORepository.GetRecordsAsync(companyId,requisitionNumbers);
+            var allRecords = await PORepository.GetRecordsAsync(request.CompanyId,request.RequisitionNumbers);
             return Ok(allRecords);
 
         }
@@ -27,7 +25,7 @@ namespace PurchaseBlazorApp2.Controller
         [HttpPost("submit")]
         public async Task<ActionResult<POSubmitResponse>> SubmitAsync([FromBody] IEnumerable<PurchaseOrderRecord> InfoList)
         {
-            var allRecords = await PORepository.SubmitAsync(InfoList);
+            var allRecords = await PORepository.SubmitAsync(InfoList,null); 
             return Ok(allRecords);
 
         }

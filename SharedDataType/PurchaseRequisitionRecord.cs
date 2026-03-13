@@ -118,6 +118,7 @@ namespace PurchaseBlazorApp2.Components.Data
     {
         public string ID { get; set; }
         public string Name { get; set; }
+        public string CompanyId { get; set; }
         public string DisplayName => $"{ID}:{Name}";
     }
 
@@ -262,6 +263,12 @@ namespace PurchaseBlazorApp2.Components.Data
         public string CompanyId { get; set; }
         public List<string> RequisitionNumbers { get; set; }
     }
+
+    public class POListRequest
+    {
+        public string CompanyId { get; set; }
+        public List<string> RequisitionNumbers { get; set; }
+    }
     public class ImageUploadInfo
     {
         public byte[] Data { get; set; }
@@ -302,10 +309,10 @@ namespace PurchaseBlazorApp2.Components.Data
     {
         public List<ImageUploadInfo> SupportDocuments { get; set; } = new List<ImageUploadInfo>();
         public DateTime AddDate { get; set; } = DateTime.Now;
-      
+
     }
 
-        public class PurchaseOrderRecord
+    public class PurchaseOrderRecord
     {
         [Key]
         public string? CompanyId { get; set; }
@@ -327,6 +334,7 @@ namespace PurchaseBlazorApp2.Components.Data
         public string? suppliercontactperson { get; set; }
         public string? suppliercontact { get; set; }
         public string? supplieremail { get; set; }
+
 
         //ship to detail
         public string? shiptocompanyname { get; set; }
@@ -397,8 +405,10 @@ namespace PurchaseBlazorApp2.Components.Data
           myaddress = "166, Kampung Kovil, Lot 931 Mk17, 14000 Bukit Mertajam, Penang, Malaysia";
           myemail = "lcdamsbpineapple@gmail.com, nitsei1@hotmail.com";
           tel = "604-5308419/ 5370081";
-          
+
         }
+
+      
     }
 
     public class PurchaseRequisitionRecord

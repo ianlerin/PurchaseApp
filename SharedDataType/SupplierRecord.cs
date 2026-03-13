@@ -16,6 +16,8 @@ namespace SharedDataType
         public string? contactperson { get; set; }
         public string? contact { get; set; }
         public string? email { get; set; }
+        public string? CompanyId {  get; set; }
+
 
         //ship to detail
         public string? shiptocompanyname { get; set; }

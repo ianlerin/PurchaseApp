@@ -245,6 +245,45 @@ namespace PurchaseBlazorApp2.Components.Repository
                 Connection.Close();
             }
         }
+        public async Task<List<SupplierLookUpInfo>> GetSupplierByCompanyAsync(string companyId)
+        {
+            var suppliers = new List<SupplierLookUpInfo>();
 
+            try
+            {
+                await Connection.OpenAsync();
+
+                string query = "SELECT sid, companyname FROM supplier WHERE companyid = @companyid";
+
+                using (var cmd = new NpgsqlCommand(query, Connection))
+                {
+                    cmd.Parameters.AddWithValue("@companyid", companyId);
+
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            var supplier = new SupplierLookUpInfo
+                            {
+                                ID = reader["sid"].ToString(),
+                                Name = reader["companyname"].ToString(),
+
+                            };
+                            suppliers.Add(supplier);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("GetSupplierByCompanyAsync: " + ex.Message);
+            }
+            finally
+            {
+                Connection.Close();
+            }
+
+            return suppliers;
+        }
     }
 }

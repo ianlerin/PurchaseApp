@@ -51,5 +51,13 @@ namespace PurchaseBlazorApp2.Controller
             return Ok(supplier);
         }
 
+        [HttpGet("getbycompany/{companyId}")]
+        public async Task<ActionResult<List<SupplierLookUpInfo>>> GetSupplierByCompany(string companyId)
+        {
+            SupplierRepository repo = new SupplierRepository();
+            var suppliers = await repo.GetSupplierByCompanyAsync(companyId);
+
+            return Ok(suppliers);
+        }
     }
 }

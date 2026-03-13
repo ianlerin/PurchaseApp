@@ -142,10 +142,11 @@ namespace PurchaseBlazorApp2.Components.Repository
             {
                 await Connection.OpenAsync();
 
-                string query = "SELECT * FROM potable";
+                string query = "SELECT * FROM potable WHERE companyid = @companyid";
 
                 var command = new NpgsqlCommand();
                 command.Connection = Connection;
+                command.Parameters.AddWithValue("@companyid", companyId);
 
                 if (requisitionNumbers != null && requisitionNumbers.Count > 0)
                 {
@@ -158,7 +159,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                     }
 
                     string inClause = string.Join(", ", paramNames);
-                    query += $" WHERE po_id IN ({inClause})";
+                    query += $" AND po_id IN ({inClause})";
                 }
 
                 command.CommandText = query;
@@ -551,7 +552,7 @@ namespace PurchaseBlazorApp2.Components.Repository
             }
         }
 
-        public async Task<POSubmitResponse> SubmitAsync(IEnumerable<PurchaseOrderRecord> InfoList)
+        public async Task<POSubmitResponse> SubmitAsync(IEnumerable<PurchaseOrderRecord> InfoList,string companyId)
         {
             POSubmitResponse MySubmitResponse = new POSubmitResponse();
             try
@@ -573,6 +574,11 @@ namespace PurchaseBlazorApp2.Components.Repository
 
                                 var Info = infoEnumerator.Current;
                                 string SID = "";
+                                if (!string.IsNullOrEmpty(companyId))
+                                {
+                                    Info.CompanyId = companyId;
+                                }
+
                                 if (string.IsNullOrEmpty(Info.PO_ID))
                                 {
                                     await using (var Seqcommand = new NpgsqlCommand("SELECT last_value FROM po_table_id_seq;", Connection, transaction))

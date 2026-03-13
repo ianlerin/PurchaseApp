@@ -68,7 +68,7 @@
 
 @code {
     [Parameter] public string? sid { get; set; }
-
+    private string SelectedCompanyId = "";
     private SupplierRecord Record = new();
     private SupplierRecord? SavedRecord;
 
@@ -90,6 +90,9 @@
 
     private async Task HandleValidSubmit()
     {
+        var CurrentCompany = await GeneralLibrary.GetCurrentCompanyInfo(JS);
+        SelectedCompanyId = CurrentCompany.ID;
+        Record.CompanyId = SelectedCompanyId;
         var payload = new List<SupplierRecord> { Record };
 
         try
