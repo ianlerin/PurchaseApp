@@ -324,17 +324,20 @@
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
 
-        if (user.Identity?.IsAuthenticated ?? false)
-        {
-            string email = user.FindFirst(c => c.Type == "preferred_username" || c.Type == "email")?.Value;
 
-            PurchaseRequisitionRecord.Requestor = email ?? "Unknown";
-        }
         if(PurchaseRequisitionRecord.approvalstatus==EApprovalStatus.Creation)
         {
             PurchaseRequisitionRecord.approvalstatus = EApprovalStatus.PreApproval;
         }
+        if (PurchaseRequisitionRecord.approvalstatus == EApprovalStatus.PreApproval)
+        {
+            if (user.Identity?.IsAuthenticated ?? false)
+            {
+                string email = user.FindFirst(c => c.Type == "preferred_username" || c.Type == "email")?.Value;
 
+                PurchaseRequisitionRecord.Requestor = email ?? "Unknown";
+            }
+        }
         PurchaseRequisitionRecord.UpdateDate = DateTime.Now;
         var response = await Http.PostAsJsonAsync(
             NavigationManager.ToAbsoluteUri("api/pr/submit"),

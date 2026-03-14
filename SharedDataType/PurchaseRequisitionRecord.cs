@@ -377,7 +377,7 @@ namespace PurchaseBlazorApp2.Components.Data
         public DateTime RequestDate { get; set; } = DateTime.Now;
         public DateTime DeliveryDate { get; set; } = DateTime.MinValue;
         public DateTime UpdateDate { get; set; } = DateTime.MinValue;
-        public string Requestor { get; set; }
+        public string? Requestor { get; set; }
         public string? Rejectreason { get; set; }
         public string? Purpose { get; set; }
 
