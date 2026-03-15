@@ -3,6 +3,7 @@
 #15 March 2025 - Alex
 ### Split database
 - added an empty db for different entities
+- added a master db for credentials
 
 #11 Dec 2025 - Alex
 ### Table update
