@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.SignalR.Protocol;
 using Npgsql;
 using PurchaseBlazorApp2.Components.Data;
+using PurchaseBlazorApp2.Components.Global;
 using PurchaseBlazorApp2.Resource;
 using SharedDataType;
 
@@ -16,7 +17,10 @@ namespace PurchaseBlazorApp2.Components.Repository
 
         private NpgsqlConnection GetConnection()
         {
-            return new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432; User Id=postgres; Password=password; Database=purchase");
+            string DbName = string.IsNullOrWhiteSpace(Database.CurrentDb)
+                                  ? "purchase_master"
+                                  : Database.CurrentDb;
+            return new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432; User Id=postgres; Password=password; Database={DbName}");
         }
         public async Task<List<SupplierRecord>> GetAllSuppliersAsync()
         {

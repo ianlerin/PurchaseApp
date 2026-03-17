@@ -36,11 +36,8 @@
 @code {
     private List<PurchaseOrderRecord> Records = new();
 
-
-
     protected override async Task OnInitializedAsync()
-    {
-       
+    { 
         var response = await Http.PostAsJsonAsync(
             NavigationManager.ToAbsoluteUri("api/po/get"), new List<string>());
         if (response.IsSuccessStatusCode)

@@ -2,6 +2,7 @@
 @page "/company"
 @page "/"
 @using PurchaseBlazorApp2.Client.Layout
+@using PurchaseBlazorApp2.Components.Global
 @inject NavigationManager NavigationManager
 @layout SimpleLayout
 @inject HttpClient Http
@@ -76,11 +77,11 @@
     {
         try
         {
-            string userId = await GeneralLibrary.GetCurrentUserEmail(JS);
+            string email = await GeneralLibrary.GetCurrentUserEmail(JS);
 
             var response = await Http.PostAsJsonAsync(
                 "api/login/getavailablecompanies",
-                userId
+                email
             );
 
             if (response.IsSuccessStatusCode)
@@ -109,8 +110,9 @@
         }
 
         if (JS != null)
-        {
-          
+        {  
+            Database.CurrentDb = SelectedCompany.DbName;
+            Console.WriteLine($"Selected DB inside Proceed(): {Database.CurrentDb}");
             string SelectedCompanyUser = System.Text.Json.JsonSerializer.Serialize(SelectedCompany);
             await JS.InvokeVoidAsync("setCookie", "SelectedCompany", SelectedCompanyUser, 1);
             NavigationManager.NavigateTo("/homepage");
@@ -122,5 +124,6 @@
     {
         public string ID { get; set; }
         public string Name { get; set; }
+        public string DbName { get; set; }
     }
 }

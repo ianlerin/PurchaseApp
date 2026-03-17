@@ -30,22 +30,22 @@ namespace PurchaseBlazorApp2.Controller
         }
 
         [HttpPost("getrole")]
-        public async Task<ActionResult<EDepartment>> GetRole([FromBody] string  username)
+        public async Task<ActionResult<EDepartment>> GetRole([FromBody] string  email)
         {
-            EDepartment Department = await CredentialRepository.TryGetRole(username);
+            EDepartment Department = await CredentialRepository.TryGetRole(email);
             return Ok(Department);
         }
         [HttpPost("gethrrole")]
-        public async Task<ActionResult<EHRRole>> GetHRRole([FromBody] string username)
+        public async Task<ActionResult<EHRRole>> GetHRRole([FromBody] string email)
         {
-            EHRRole Department = await CredentialRepository.TryGetHRRole(username);
+            EHRRole Department = await CredentialRepository.TryGetHRRole(email);
             return Ok(Department);
         }
-        [HttpGet("checkexist/{username}")]
-        public async Task<ActionResult<bool>> IfExist(string username)
+        [HttpGet("checkexist/{email}")]
+        public async Task<ActionResult<bool>> IfExist(string email)
         {
-            bool bExist = await CredentialRepository.CheckIfUsernameExistsAsync(username);
-            return Ok(bExist);
+            bool exists = await CredentialRepository.CheckIfUserExistsAsync(email);
+            return Ok(exists);
         }
 
 
@@ -57,9 +57,9 @@ namespace PurchaseBlazorApp2.Controller
         }
 
         [HttpPost("getavailablecompanies")]
-        public async Task<ActionResult<List<CompanyInfo>>> TryGetAllAvailableCompanies([FromBody] string UserID)
+        public async Task<ActionResult<List<CompanyInfo>>> TryGetAllAvailableCompanies([FromBody] string userId)
         {
-            List<CompanyInfo> CompanyInfo = await CredentialRepository.TryGetAllCompanyInfo(UserID);
+            List<CompanyInfo> CompanyInfo = await CredentialRepository.TryGetAllCompanyInfo(userId);
             return Ok(CompanyInfo);
         }
 
