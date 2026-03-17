@@ -3,6 +3,7 @@ using DocumentFormat.OpenXml.Wordprocessing;
 using InventoryRecord;
 using Npgsql;
 using PurchaseBlazorApp2.Components.Data;
+using PurchaseBlazorApp2.Components.Global;
 using PurchaseBlazorApp2.Resource;
 
 namespace PurchaseBlazorApp2.Components.Repository
@@ -18,7 +19,10 @@ namespace PurchaseBlazorApp2.Components.Repository
 
         private NpgsqlConnection GetConnection()
         {
-            return new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432;User Id=postgres;Password=password;Database=purchase");
+            string DbName = string.IsNullOrWhiteSpace(Database.CurrentDb)
+                                  ? "purchase_master"
+                                  : Database.CurrentDb;
+            return new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432;User Id=postgres;Password=password;Database={DbName}");
         }
 
         private async Task EnsureSequenceAsync(string sequenceName, string tableName, string columnName)
