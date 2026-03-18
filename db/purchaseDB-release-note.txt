@@ -1,5 +1,9 @@
 # Database Change Log
 
+#18 March 2025 - Alex
+### Schema update
+- added inventory schema
+
 #15 March 2025 - Alex
 ### Split database
 - added an empty db for different entities
