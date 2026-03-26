@@ -10,7 +10,7 @@ namespace PurchaseBlazorApp2.Controller
     public class EmailController : ControllerBase
     {
         private readonly EmailService _emailService;
-
+        int MyCompanyID = 0;
         public EmailController(EmailService emailService)
         {
             _emailService = emailService;
