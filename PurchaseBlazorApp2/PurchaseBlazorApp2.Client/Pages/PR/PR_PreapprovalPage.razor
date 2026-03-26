@@ -3,11 +3,12 @@
 @using Genesis.UserService
 @using PurchaseBlazorApp2.Client.Components.Helper
 @using PurchaseBlazorApp2.Client.Pages.Quotation
+@using PurchaseBlazorApp2.Client.Service
 @using PurchaseBlazorApp2.Components.Data
 @using System.Globalization
 @using Radzen.Blazor
 @inject NavigationManager NavigationManager
-@inject HttpClient Http
+@inject MyHttpService Http
 
 <h1 class="mb-4">View Purchase Requisition</h1>
 <hr />
@@ -263,7 +264,9 @@ else
         var response = await Http.PostAsJsonAsync(
             NavigationManager.ToAbsoluteUri("api/pr/submit"),
             new List<PurchaseRequisitionRecord> { PurchaseRequisitionRecord });
+        
 
+        CompanyInfo MyCompanyInfo = await GeneralLibrary.GetCurrentCompanyInfo(JS);
         if (response.IsSuccessStatusCode)
         {
             var PR_Ids = await response.Content.ReadFromJsonAsync<List<string>>();
@@ -271,7 +274,7 @@ else
             {
                 PurchaseRequisitionRecord.RequisitionNumber = PR_Ids[0];
             }
-            await MyEmailHelper.SendEmailToRelevantPartyAsync(PurchaseRequisitionRecord);
+            await MyEmailHelper.SendEmailToRelevantPartyAsync(PurchaseRequisitionRecord, MyCompanyInfo.ID);
             await SubmitQuotation();
             await JS.InvokeVoidAsync("alert", "Purchase Requisition updated successfully!");
         }

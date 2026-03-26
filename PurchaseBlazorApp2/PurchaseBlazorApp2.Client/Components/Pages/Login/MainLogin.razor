@@ -94,8 +94,8 @@
     protected override async Task OnInitializedAsync()
     {
         startLogin = false;
-        
-   
+
+
         // Safe check for AuthStateProvider
         try
         {
@@ -107,14 +107,14 @@
             authState = null;
         }
 
-   
+
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {    
         // Check if RemoteAuthenticationService is registered
         remoteAuthServiceAvailable = ServiceProvider.GetService<IRemoteAuthenticationService<RemoteAuthenticationState>>() != null;
-        
+
         if (firstRender)
         {
             try
@@ -127,14 +127,14 @@
                 await JS.InvokeVoidAsync("console.error", $"Error fetching auth state: {ex.Message}");
             }
         }
-        
+
         // Avoid rendering loop, force reload only if not in browser or no auth state
         if (!OperatingSystem.IsBrowser() || authState == null || !remoteAuthServiceAvailable)
         {
             await Task.Delay(1000);
             NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
         }
-      
+
     }
 
     private void StartLogin()
@@ -185,15 +185,8 @@
             // ---------- START PARALLEL CALLS ----------
             var graphTask = GetGraphUserAsync(token.Value);
             var existsTask = Http.GetFromJsonAsync<bool>($"api/login/checkexist/{email}");
-            var roleTask = Http.PostAsJsonAsync(
-                NavigationManager.ToAbsoluteUri("api/login/getrole"),
-                email
-            );
-            var hrroleTask = Http.PostAsJsonAsync(
-               NavigationManager.ToAbsoluteUri("api/login/gethrrole"),
-               email
-           );
-            await Task.WhenAll(graphTask, existsTask, roleTask, hrroleTask);
+
+            await Task.WhenAll(graphTask, existsTask);
             // ---------- END PARALLEL ----------
 
             // --- HANDLE BACKEND EXISTENCE CHECK ---
@@ -203,29 +196,17 @@
                 await JS.InvokeVoidAsync("alert", "unauthorized!");
                 return;
             }
+            int userID = 0;
+            var response = await Http.PostAsJsonAsync(
+          NavigationManager.ToAbsoluteUri("api/login/getuserid"),
+          email
+      );
 
-            // --- ROLE ---
-            EDepartment departmentRole = EDepartment.NotSpecified;
-            try
+            if (response.IsSuccessStatusCode)
             {
-                var roleResponse = roleTask.Result;
-                departmentRole = await roleResponse.Content.ReadFromJsonAsync<EDepartment>();
+                userID = await response.Content.ReadFromJsonAsync<int>();
             }
-            catch (Exception ex)
-            {
-                await JS.InvokeVoidAsync("console.error", $"Error retrieving role: {ex.Message}");
-            }
-
-            EHRRole HRRole = EHRRole.None;
-            try
-            {
-                var hrroleResponse = hrroleTask.Result;
-                HRRole = await hrroleResponse.Content.ReadFromJsonAsync<EHRRole>();
-            }
-            catch (Exception ex)
-            {
-                await JS.InvokeVoidAsync("console.error", $"Error retrieving role: {ex.Message}");
-            }
+            
 
             // --- MICROSOFT GRAPH USER INFO ---
             var graph = graphTask.Result;
@@ -235,10 +216,9 @@
             // --- BUILD USER ---
             var MyUser = new UserName(displayName, "")
             {
-                Role = departmentRole,
+                ID=userID,
                 JobTitle = jobTitle,
                 Department = department,
-                HRRole=HRRole,
                 Email = email
 
             };

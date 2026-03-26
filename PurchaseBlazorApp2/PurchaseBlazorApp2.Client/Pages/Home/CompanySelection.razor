@@ -2,6 +2,7 @@
 @page "/company"
 @page "/"
 @using PurchaseBlazorApp2.Client.Layout
+@using PurchaseBlazorApp2.Components.Data
 @inject NavigationManager NavigationManager
 @layout SimpleLayout
 @inject HttpClient Http
@@ -45,8 +46,8 @@
     private List<CompanyInfo> Companies = new();
 
 
-    private string _selectedCompanyId;
-    public string SelectedCompanyId
+    private int _selectedCompanyId;
+    public int SelectedCompanyId
     {
         get => _selectedCompanyId;
         set
@@ -76,7 +77,27 @@
     {
         try
         {
-            string userId = await GeneralLibrary.GetCurrentUserEmail(JS);
+            int userId = 0;
+
+            int maxAttempts = 20;     // try for ~10 seconds
+            int attempt = 0;
+
+            while (userId==0 && attempt < maxAttempts)
+            {
+                userId = await GeneralLibrary.GetCurrentUserID(JS);
+
+                if (userId==0)
+                {
+                    await Task.Delay(500); // wait 0.5 seconds before retry
+                    attempt++;
+                }
+            }
+
+            if (userId==0)
+            {
+                ErrorMessage = "Unable to retrieve user id.";
+                return;
+            }
 
             var response = await Http.PostAsJsonAsync(
                 "api/login/getavailablecompanies",
@@ -84,13 +105,13 @@
             );
 
             if (response.IsSuccessStatusCode)
-            {
+            {   await JS.InvokeVoidAsync("console.error", $"response success");
                 Companies = await response.Content
                     .ReadFromJsonAsync<List<CompanyInfo>>()
                     ?? new List<CompanyInfo>();
             }
             else
-            {
+            {   await JS.InvokeVoidAsync("console.error", $"response error");
                 ErrorMessage = "Server returned error.";
             }
         }
@@ -110,7 +131,56 @@
 
         if (JS != null)
         {
-          
+            UserName MyUser = new UserName();
+            string userKey = await JS.InvokeAsync<string>("getCookie", "userKey");
+            if (!string.IsNullOrWhiteSpace(userKey))
+            {
+                MyUser = System.Text.Json.JsonSerializer.Deserialize<UserName>(userKey);
+            }
+            GetRoleRequest Request = new GetRoleRequest();
+            Request.UserID = MyUser.ID;
+            Request.CompanyId = SelectedCompanyId;
+            var roleTask = Http.PostAsJsonAsync(
+              NavigationManager.ToAbsoluteUri("api/login/getrole"),
+              Request
+          );
+            var hrroleTask = Http.PostAsJsonAsync(
+               NavigationManager.ToAbsoluteUri("api/login/gethrrole"),
+               Request
+           );
+
+            await Task.WhenAll(hrroleTask, roleTask);
+            // --- ROLE ---
+            EDepartment departmentRole = EDepartment.NotSpecified;
+            try
+            {
+                var roleResponse = roleTask.Result;
+                departmentRole = await roleResponse.Content.ReadFromJsonAsync<EDepartment>();
+            }
+            catch (Exception ex)
+            {
+                await JS.InvokeVoidAsync("console.error", $"Error retrieving role: {ex.Message}");
+            }
+
+            EHRRole HRRole = EHRRole.None;
+            try
+            {
+                var hrroleResponse = hrroleTask.Result;
+                HRRole = await hrroleResponse.Content.ReadFromJsonAsync<EHRRole>();
+            }
+            catch (Exception ex)
+            {
+                await JS.InvokeVoidAsync("console.error", $"Error retrieving role: {ex.Message}");
+            }
+            MyUser.Role = departmentRole;
+            MyUser.Department = departmentRole.ToString();
+            MyUser.HRRole = HRRole;
+            if (JS != null)
+            {
+                string jsonUser = System.Text.Json.JsonSerializer.Serialize(MyUser);
+                await JS.InvokeVoidAsync("setCookie", "userKey", jsonUser, 1);
+            }
+
             string SelectedCompanyUser = System.Text.Json.JsonSerializer.Serialize(SelectedCompany);
             await JS.InvokeVoidAsync("setCookie", "SelectedCompany", SelectedCompanyUser, 1);
             NavigationManager.NavigateTo("/homepage");
@@ -118,9 +188,4 @@
 
     }
 
-    public class CompanyInfo
-    {
-        public string ID { get; set; }
-        public string Name { get; set; }
-    }
 }

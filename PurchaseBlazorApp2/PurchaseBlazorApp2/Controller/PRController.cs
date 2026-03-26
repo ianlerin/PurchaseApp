@@ -11,15 +11,27 @@ namespace PurchaseBlazorApp2.Controller
     [ApiController]
     public class PRController : ControllerBase
     {
-        PRRepository PRRepository { get; set; }
+        int MyCompanyID = 0;
         public PRController()
         {
-            PRRepository= new PRRepository();
+          
+        
+        }
+
+        private async Task<PRRepository> GetMyRepo()
+        {
+            int.TryParse(Request.Headers["CompanyID"], out MyCompanyID);
+            CredentialRepo CredentialRepo = new CredentialRepo();
+            string DBName = await CredentialRepo.TryGetDatabaseNameByCompanyId(MyCompanyID);
+            PRRepository MyRepo= new PRRepository(DBName);
+            return MyRepo;
+
         }
 
         [HttpPost("submit")]
         public async Task<ActionResult<List<string>>> SubmitPRs([FromBody] IEnumerable<PurchaseRequisitionRecord> infoList)
         {
+            PRRepository PRRepository=await GetMyRepo();
             List<string> Result = await PRRepository.SubmitAsync(infoList);
            return Ok(Result);
         }
@@ -27,6 +39,7 @@ namespace PurchaseBlazorApp2.Controller
         [HttpPost("insert-approval")]
         public async Task<ActionResult<List<ApprovalInfo>>> InsertApprovalByRequisitionNumber([FromBody] PurchaseRequisitionRecord record)
         {
+            PRRepository PRRepository = await GetMyRepo();
             var result = await PRRepository.InsertApprovalByRequisitionNumber(record);
             return Ok(result);
         }
@@ -34,6 +47,7 @@ namespace PurchaseBlazorApp2.Controller
         [HttpPost("edit-deliverydate")]
         public async Task<ActionResult<bool>> InsertDeliveryDate([FromBody] DeliveryDateUpdateRequest Request)
         {
+            PRRepository PRRepository = await GetMyRepo();
             var result = await PRRepository.UpdateDeliveryDateAsync(Request.PR_ID, Request.DeliveryDate);
             return Ok(result);
         }
@@ -41,6 +55,7 @@ namespace PurchaseBlazorApp2.Controller
         [HttpPost("get-list-partial")]
         public async Task<ActionResult<List<PurchaseRequisitionRecord>>> GetRecordsForListAsync([FromBody] List<string> requisitionNumbers)
         {
+            PRRepository PRRepository = await GetMyRepo();
             var Result = await PRRepository.GetAllRecordsForListAsync(requisitionNumbers);
             return Ok(Result);
         }
@@ -48,6 +63,7 @@ namespace PurchaseBlazorApp2.Controller
         [HttpPost("get-detail")]
         public async Task<ActionResult<List<PurchaseRequisitionRecord>>> GetRecordsAsync([FromBody] List<string> requisitionNumbers)
         {
+            PRRepository PRRepository = await GetMyRepo();
             var Result = await PRRepository.GetRecordsAsync(requisitionNumbers);
             return Ok(Result);
         }
@@ -55,6 +71,7 @@ namespace PurchaseBlazorApp2.Controller
         [HttpPost("get-needapproval")]
         public async Task<ActionResult<HashSet<string>>> GetRecordsAsync([FromBody]EDepartment Department)
         {
+            PRRepository PRRepository = await GetMyRepo();
             var Result = await PRRepository.GetRequisitionNumbersByDepartmentAsync(Department);
             return Ok(Result);
         }
@@ -62,6 +79,7 @@ namespace PurchaseBlazorApp2.Controller
         [HttpPost("get-createdby")]
         public async Task<ActionResult<HashSet<string>>> GetRecordsAsync([FromBody] string CreatedBy)
         {
+            PRRepository PRRepository = await GetMyRepo();
             var Result = await PRRepository.GetRequisitionNumbersByCreatedByAsync(CreatedBy);
             return Ok(Result);
         }
@@ -69,6 +87,7 @@ namespace PurchaseBlazorApp2.Controller
         [HttpPost("get-finance")]
         public async Task<ActionResult<HashSet<string>>> GetRecordsFinance()
         {
+            PRRepository PRRepository = await GetMyRepo();
             var Result = await PRRepository.GetRequisitionsFinance();
             return Ok(Result);
         }
@@ -76,6 +95,7 @@ namespace PurchaseBlazorApp2.Controller
         [HttpPost("get-list-partial-all")]
         public async Task<ActionResult<List<PurchaseRequisitionRecord>>> GetRecordsForListAsync([FromBody] EPRSearchStatus Status)
         {
+            PRRepository PRRepository = await GetMyRepo();
             List<PurchaseRequisitionRecord> Result;
             if(Status==EPRSearchStatus.Full)
             {

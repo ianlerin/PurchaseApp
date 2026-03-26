@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Components;
 using PurchaseBlazorApp2.Components.Data;
 using ServiceStack;
 using System.Text;
+using PurchaseBlazorApp2.Resource;
 
 namespace PurchaseBlazorApp2.Service
 {
@@ -37,7 +38,9 @@ namespace PurchaseBlazorApp2.Service
             {
                 try
                 {
-                    await GatherandSendReminder();
+                    await GatherandSendReminder("purchase_Freebitz",1);
+                    await GatherandSendReminder("purchase_LCDA",2);
+                   
                 }
                 catch (Exception ex)
                 {
@@ -49,14 +52,19 @@ namespace PurchaseBlazorApp2.Service
             }
         }
 
-        private async Task GatherandSendReminder()
+        private async Task GatherandSendReminder(string DBName,int CompanyID)
         {
-            PRRepository PRRepo = new PRRepository();
+            PRRepository PRRepo = new PRRepository(DBName);
             List<string> ToRemind=await PRRepo.GetPendingRemindersAsync(1);
             CredentialRepo CredentialRepository = new CredentialRepo();
             List<EDepartment> Departments = new List<EDepartment> { EDepartment.ProcurementManager};
-            List<string> Emails=await CredentialRepository.TryGetAllProcurementEmail(Departments);
+            DepartmentInfo departmentInfo = new DepartmentInfo();
+            departmentInfo.Departments = Departments;
+            departmentInfo.CompanyId = CompanyID;
+
+            List<string> Emails=await CredentialRepository.TryGetAllProcurementEmail(departmentInfo);
             await PRRepo.MarkRemindersAsSentAsync(ToRemind);
+          
             await SendApprovalEmailAsync(Emails, null, ToRemind, "https://localhost:7129");
         }
 

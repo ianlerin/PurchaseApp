@@ -3,6 +3,7 @@
 @using System.ComponentModel.DataAnnotations
 @using Genesis.EmailService
 @using Microsoft.AspNetCore.Components.Forms
+@using PurchaseBlazorApp2.Client.Service
 @using PurchaseBlazorApp2.Components.Data
 @using QuestPDF.Fluent;
 @using QuestPDF.Helpers
@@ -13,7 +14,7 @@
 @using SharedDataType
 @inject NavigationManager NavigationManager
 @inject ClientStateStorage StateStorage
-@inject HttpClient Http
+@inject MyHttpService Http
 @inject IJSRuntime JS
 
 
@@ -613,10 +614,11 @@
     }
     private async Task ToFinance()
     {
+        CompanyInfo MyCompanyInfo = await GeneralLibrary.GetCurrentCompanyInfo(JS);
         Record.InvoiceInfo.PaymentStatus = EPaymentStatus.PendingPayment;
         await HandleValidSubmit();
         EmailWorkflowService MyEmailHelper = new EmailWorkflowService(Http, NavigationManager, JS);
-        await MyEmailHelper.SendEmailToRelevantPartyFinance(Record);
+        await MyEmailHelper.SendEmailToRelevantPartyFinance(Record, MyCompanyInfo.ID);
     }
 
     private async Task DownloadPdf()

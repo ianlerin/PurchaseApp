@@ -7,10 +7,14 @@ namespace PurchaseBlazorApp2.Components.Repository
 {
     public class FinanceRepository
     {
+        string MyDB = "";
         private NpgsqlConnection Connection;
-        public FinanceRepository()
+        public FinanceRepository(string DBName)
         {
-            Connection = new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432; User Id=postgres; Password=password; Database=purchase");
+            MyDB = DBName;
+            Connection = new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432; User Id=postgres; Password=password; Database={MyDB}");
+
+          
         }
 
         public async Task<bool> Submit(FinanceRecord info)
@@ -52,7 +56,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                     await transaction.CommitAsync();
 
 
-                    PORepository PORepository = new PORepository();
+                    PORepository PORepository = new PORepository(MyDB);
                     await PORepository.UpdatePaymentStatus(info.PO_ID, info.PaymentStatus);
                     return true;
                 }
