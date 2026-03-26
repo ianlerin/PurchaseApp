@@ -1,9 +1,10 @@
 ﻿@page "/supplier/list"
+@using PurchaseBlazorApp2.Client.Service
 @using PurchaseBlazorApp2.Components.Data
 @using Radzen.Blazor
 @using SharedDataType
 @inject NavigationManager NavigationManager
-@inject HttpClient Http
+@inject MyHttpService Http
 @inject IJSRuntime JS
 
 @rendermode InteractiveAuto

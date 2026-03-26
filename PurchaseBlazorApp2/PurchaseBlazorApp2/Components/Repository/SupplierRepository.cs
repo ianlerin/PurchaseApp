@@ -8,15 +8,18 @@ namespace PurchaseBlazorApp2.Components.Repository
 {
     public class SupplierRepository
     {
+        string MyDB = "";
         private NpgsqlConnection Connection;
-        public SupplierRepository()
+        public SupplierRepository(string DBName)
         {
+            MyDB = DBName;
             Connection = GetConnection();
+          
         }
 
         private NpgsqlConnection GetConnection()
         {
-            return new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432; User Id=postgres; Password=password; Database=purchase");
+            return new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432; User Id=postgres; Password=password; Database={MyDB}");
         }
         public async Task<List<SupplierRecord>> GetAllSuppliersAsync()
         {

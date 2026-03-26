@@ -1,6 +1,6 @@
 ﻿using Microsoft.JSInterop;
 using PurchaseBlazorApp2.Components.Data;
-using PurchaseBlazorApp2.Components.Global;
+
 
 namespace PurchaseBlazorApp2.Client
 {
@@ -27,7 +27,27 @@ namespace PurchaseBlazorApp2.Client
             }
             return Email;
         }
+        static public async Task<int> GetCurrentUserID(IJSRuntime JS)
+        {
+            int UserID = 0;
+            var json = await JS.InvokeAsync<string>("getCookie", "userKey");
+            if (!string.IsNullOrWhiteSpace(json))
+            {
+                try
+                {
+                    UserName restoredUser = System.Text.Json.JsonSerializer.Deserialize<UserName>(json);
+                    if (restoredUser != null)
+                    {
+                        UserID = restoredUser.ID;
+                    }
+                }
+                catch (Exception Ex)
+                {
 
+                }
+            }
+            return UserID;
+        }
         static public async Task<CompanyInfo> GetCurrentCompanyInfo(IJSRuntime JS)
         {
             CompanyInfo NullCompany = new CompanyInfo();
