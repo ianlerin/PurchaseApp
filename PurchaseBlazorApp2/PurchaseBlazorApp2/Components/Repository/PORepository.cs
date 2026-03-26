@@ -13,15 +13,18 @@ namespace PurchaseBlazorApp2.Components.Repository
 {
     public class PORepository
     {
+        string MyDB = "";
         private NpgsqlConnection Connection;
-        public PORepository()
+        public PORepository(string DBName)
         {
+            MyDB = DBName;
             Connection = GetConnection();
+         
         }
 
         private NpgsqlConnection GetConnection()
         {
-            return new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432; User Id=postgres; Password=password; Database=purchase");
+            return new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432; User Id=postgres; Password=password; Database={MyDB}");
         }
 
         public async Task<List<DateTime>> GetDeliveryDatesAsync(List<string> requisitionNumbers)
@@ -136,7 +139,7 @@ namespace PurchaseBlazorApp2.Components.Repository
         public async Task<List<PurchaseOrderRecord>> GetRecordsAsync(List<string> requisitionNumbers = null)
         {
             List<PurchaseOrderRecord> ToReturn = new List<PurchaseOrderRecord>();
-            var PRRepository = new PRRepository();
+            var PRRepository = new PRRepository(MyDB);
 
             try
             {
@@ -329,7 +332,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                 }
 
                 // 3️⃣ Update PR payment status
-                var prRepository = new PRRepository();
+                var prRepository = new PRRepository(MyDB);
                 await prRepository.UpdatePaymentStatus(prId, info.PaymentStatus);
 
                 if (shouldDisposeTransaction)
@@ -399,7 +402,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                     command.Parameters.AddWithValue("@requisitionnumber", PO_ID);
 
                     int rowsAffected = await command.ExecuteNonQueryAsync();
-                    var prRepository = new PRRepository();
+                    var prRepository = new PRRepository(MyDB);
                     await prRepository.UpdatePaymentStatus(PR_ID, Status);
                     return rowsAffected > 0; // true if updated
                 }
@@ -645,7 +648,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                                 Info.PO_ID= SID;
                                 await InsertImage(Info, transaction);
                                 await InsertInvoiceInfo(Info.PO_ID, Info.PR_ID, Info.InvoiceInfo,transaction);
-                                var prRepository = new PRRepository();
+                                var prRepository = new PRRepository(MyDB);
                                 await prRepository.UpdatePOID(Info.PR_ID, Info.PO_ID);
                             }
                         }

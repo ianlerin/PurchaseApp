@@ -2,6 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Net.NetworkInformation;
 using System.Numerics;
+using System.Text.Json.Serialization;
 
 
 namespace PurchaseBlazorApp2.Components.Data
@@ -88,12 +89,24 @@ namespace PurchaseBlazorApp2.Components.Data
     }
     public class CompanyInfo
     {
-        public string ID { get; set; }
+        public int ID { get; set; }
+
         public string Name { get; set; }
     }
 
+    public class DepartmentInfo
+    {
+        public List<EDepartment> Departments { get; set; }
+        public int CompanyId { get; set; }
+    }
+    public class GetRoleRequest
+    {
+        public int UserID { get; set; }
+        public int CompanyId { get; set; }
+    }
     public class UserName
     {
+        public int ID { get; set; }
         public string Name { get; set; }
         public string Password { get; set; }
         public string Email { get; set; }

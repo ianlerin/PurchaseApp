@@ -8,15 +8,19 @@ namespace PurchaseBlazorApp2.Components.Repository
 {
     public class QuotationRepo
     {
+        string MyDB = "";
         private NpgsqlConnection Connection;
-        public QuotationRepo()
+        public QuotationRepo(string DBName)
         {
+            MyDB = DBName;
             Connection = GetConnection();
         }
 
+
+
         private NpgsqlConnection GetConnection()
         {
-            return new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432; User Id=postgres; Password=password; Database=purchase");
+            return new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432; User Id=postgres; Password=password; Database={MyDB}");
         }
 
 

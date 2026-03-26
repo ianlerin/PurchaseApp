@@ -2,11 +2,12 @@
 @page "/supplier-record/{sid}"
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Components.Forms
+@using PurchaseBlazorApp2.Client.Service
 @using SharedDataType
 
 <h3>Supplier Record</h3>
 
-@inject HttpClient Http
+@inject MyHttpService Http
 @inject IJSRuntime JS
 
 <EditForm Model="Record" OnValidSubmit="HandleValidSubmit">

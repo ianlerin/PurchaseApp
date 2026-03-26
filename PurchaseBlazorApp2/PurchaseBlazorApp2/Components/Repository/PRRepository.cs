@@ -14,14 +14,16 @@ namespace PurchaseBlazorApp2.Components.Repository
     public class PRRepository
     {
         private NpgsqlConnection Connection;
-        public PRRepository()
+        string MyDB = "";
+        public PRRepository(string DBName)
         {
-            Connection = GetConnection();
+            Connection = GetConnection(DBName);
+            MyDB = DBName;
         }
 
-        private NpgsqlConnection GetConnection()
+        private NpgsqlConnection GetConnection(string DBName)
         {
-            return new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432; User Id=postgres; Password=password; Database=purchase");
+            return new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432; User Id=postgres; Password=password; Database={DBName}");
         }
 
         private void InsertInfoOfBasicInfo<T>(T MainInfo, NpgsqlDataReader reader)
@@ -343,7 +345,7 @@ namespace PurchaseBlazorApp2.Components.Repository
         {
             var images = new List<ImageUploadInfo>();
             bool shouldCloseConnection = false;
-            var MyConnection = GetConnection();
+            var MyConnection = GetConnection(MyDB);
             try
             {
                 await MyConnection.OpenAsync();
@@ -380,7 +382,7 @@ namespace PurchaseBlazorApp2.Components.Repository
         public async Task<List<RequestItemInfo>> GetRequestedItemByRequisitionNumber(string requisitionNumber,string requesttablename, NpgsqlTransaction? externalTransaction = null)
         {
             var Items = new List<RequestItemInfo>();
-            var MyConnection = GetConnection();
+            var MyConnection = GetConnection(MyDB);
             try
             {
                 await MyConnection.OpenAsync();
@@ -421,7 +423,7 @@ namespace PurchaseBlazorApp2.Components.Repository
         {
             var requisitionNumbers = new HashSet<string>();
             bool shouldCloseConnection = false;
-            var MyConnection = GetConnection();
+            var MyConnection = GetConnection(MyDB);
 
             try
             {
@@ -466,7 +468,7 @@ namespace PurchaseBlazorApp2.Components.Repository
         {
             var requisitionNumbers = new HashSet<string>();
             bool shouldCloseConnection = false;
-            var MyConnection = GetConnection();
+            var MyConnection = GetConnection(MyDB);
 
             try
             {
@@ -523,7 +525,7 @@ namespace PurchaseBlazorApp2.Components.Repository
         {
             var Approvals = new List<ApprovalInfo>(); // Build a fresh list
             bool shouldCloseConnection = false;
-            var MyConnection = GetConnection();
+            var MyConnection = GetConnection(MyDB);
 
             try
             {
