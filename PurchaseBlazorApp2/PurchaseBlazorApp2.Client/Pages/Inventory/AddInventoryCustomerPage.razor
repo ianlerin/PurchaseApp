@@ -1,0 +1,116 @@
+﻿@using InventoryRecord
+@using Radzen.Blazor
+@inject NavigationManager NavigationManager
+@inject HttpClient Http
+@inject IJSRuntime JS
+@page "/add-customer/{Id}"
+@page "/add-customer"
+<h3>AddInventoryCustomerPage</h3>
+
+<div>
+    <label class="form-label fw-bold">ID</label>
+    <InputText class="form-control"
+               @bind-Value="CustomerData.ID" readonly />
+</div>
+
+<div>
+    <label class="form-label fw-bold">Company Name</label>
+    <InputText class="form-control"
+               @bind-Value="CustomerData.CompanyName" />
+</div>
+
+<div>
+    <label class="form-label fw-bold">Contact Person</label>
+    <InputText class="form-control"
+               @bind-Value="CustomerData.ContactPerson" />
+</div>
+
+<div>
+    <label class="form-label fw-bold">Phone</label>
+    <InputText class="form-control"
+               @bind-Value="CustomerData.Phone" />
+</div>
+
+<div>
+    <label class="form-label fw-bold">Address</label>
+    <InputText class="form-control"
+               @bind-Value="CustomerData.Address" />
+</div>
+
+<div>
+    <label class="form-label fw-bold">Payment Terms</label>
+    <InputText class="form-control"
+               @bind-Value="CustomerData.PaymentTerms" />
+</div>
+
+<div>
+    <label class="form-label fw-bold">Credit Limit</label>
+    <InputText class="form-control"
+                 @bind-Value="CustomerData.CreditLimit" />
+</div>
+<div class="d-flex gap-2 mt-3">
+    <button type="submit"
+            class="btn btn-primary"
+            @onclick="OnSubmitCustomer">
+        Edit
+    </button>
+
+    <button type="button"
+            class="btn btn-secondary"
+            @onclick="OnRecord">
+        Add Record
+    </button>
+</div>
+
+@code {
+    [Parameter]
+    public string Id { get; set; }
+    public InventoryCustomerData CustomerData { get; set; } = new();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (string.IsNullOrEmpty(Id))
+            return;
+
+        CustomerData.ID = Id;
+
+        var customers = await Http.GetFromJsonAsync<List<InventoryCustomerData>>("api/inventory/get-customers");
+        var customer = customers?.FirstOrDefault(c => c.ID == Id);
+
+        if (customer != null)
+        {
+            CustomerData = customer;
+        }
+    }
+
+    private async Task OnSubmitCustomer()
+    {
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/inventory/add-customer", CustomerData);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var msg = await response.Content.ReadAsStringAsync();
+                await JS.InvokeVoidAsync("alert", $"Submit failed! Reason: {msg}");
+                return;
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<IdResponse>();
+            if (result != null) CustomerData.ID = result.Id;
+
+            await JS.InvokeVoidAsync("alert", $"Success! Customer ID: {CustomerData.ID}");
+
+            CustomerData = new InventoryCustomerData();
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Error: {ex.Message}");
+        }
+    }
+
+    private void OnRecord()
+    {
+        NavigationManager.NavigateTo($"/add-record?customerId={CustomerData.ID}");
+    }
+}
