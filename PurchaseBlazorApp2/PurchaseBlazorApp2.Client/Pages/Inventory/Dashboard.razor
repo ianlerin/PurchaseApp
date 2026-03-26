@@ -16,6 +16,12 @@
             @onclick="@(() => activeTab = "Supplier")">
         Supplier
     </button>
+
+    <button class="tab-button @(activeTab == "Customer" ? "active" : "")"
+            @onclick="@(() => activeTab = "Customer")">
+        Customer
+    </button>
+
 </div>
 
 @if (IsLoading)
@@ -112,6 +118,63 @@ else
             </Columns>
         </RadzenDataGrid>
     }
+
+    @if (activeTab == "Customer")
+    {
+        <RadzenDataGrid Data="@Customer"
+                        TItem="InventoryCustomerData"
+                        AllowSorting="true"
+                        Class="shadow-sm border rounded p-3"
+                        Style="min-width:1000px;">
+            <Columns>
+                <RadzenDataGridColumn TItem="InventoryCustomerData"
+                                      Property="ID"
+                                      Title="Customer ID"
+                                      Width="150px" />
+
+                <RadzenDataGridColumn TItem="InventoryCustomerData"
+                                      Property="CompanyName"
+                                      Title="Company Name"
+                                      Width="200px" />
+
+                <RadzenDataGridColumn TItem="InventoryCustomerData"
+                                      Property="ContactPerson"
+                                      Title="Contact Person"
+                                      Width="300px" />
+
+                <RadzenDataGridColumn TItem="InventoryCustomerData"
+                                      Property="Phone"
+                                      Title="Phone"
+                                      Width="200px" />
+
+                <RadzenDataGridColumn TItem="InventoryCustomerData"
+                                      Property="Address"
+                                      Title="Address"
+                                      Width="200px" />
+
+                <RadzenDataGridColumn TItem="InventoryCustomerData"
+                                      Property="PaymentTerms"
+                                      Title="Payment Terms"
+                                      Width="200px" />
+
+                <RadzenDataGridColumn TItem="InventoryCustomerData"
+                                      Property="CreditLimit"
+                                      Title="Credit Limit"
+                                      Width="200px" />
+
+                <RadzenDataGridColumn TItem="InventoryCustomerData" Title="Actions" Width="120px">
+                    <Template Context="data">
+                        <div style="display:flex; gap:6px;">
+                            <RadzenButton Text="View"
+                                          Icon="visibility"
+                                          Click="@(() => OnViewProductClicked(data))"
+                                          Style="min-width:70px;" />
+                        </div>
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    }
 }
 
 <style>
@@ -141,6 +204,7 @@ else
 
     private List<InventoryItemData> Product = new();
     private List<InventorySupplierData> Supplier = new();
+    private List<InventoryCustomerData> Customer = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -160,6 +224,11 @@ else
             Supplier =
                 await Http.GetFromJsonAsync<List<InventorySupplierData>>("api/inventory/get-suppliers")
                 ?? new();
+
+            Customer =
+               await Http.GetFromJsonAsync<List<InventoryCustomerData>>("api/inventory/get-customers")
+               ?? new();
+
             foreach (var p in Product)
             {
                 p.Quantity = await Http.GetFromJsonAsync<int>($"api/inventory/get-quantity?productId={p.ID}");
@@ -174,6 +243,7 @@ else
         {
             Product = new();
             Supplier= new();
+            Customer = new();
         }
 
         IsLoading = false;
@@ -186,5 +256,10 @@ else
     private void OnViewProductClicked(InventorySupplierData product)
     {
         NavigationManager.NavigateTo($"/add-supplier/{product.ID}");
+    }
+
+    private void OnViewProductClicked(InventoryCustomerData product)
+    {
+        NavigationManager.NavigateTo($"/add-customer/{product.ID}");
     }
 }

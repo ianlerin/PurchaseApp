@@ -23,18 +23,11 @@ namespace PurchaseBlazorApp2.Components.Repository
 
         private async Task EnsureSequenceAsync(string sequenceName, string tableName, string columnName)
         {
-            //Check sequence exists
-            var checkCmd = new NpgsqlCommand(
-                $"SELECT COUNT(*) FROM information_schema.sequences WHERE sequence_name = '{sequenceName}'",
-                Connection);
-            var count = (long)await checkCmd.ExecuteScalarAsync();
+            // Create sequence if it doesn't exist
+            var createCmd = new NpgsqlCommand($"CREATE SEQUENCE IF NOT EXISTS {sequenceName} START 1;", Connection);
+            await createCmd.ExecuteNonQueryAsync();
 
-            if (count == 0)
-            {
-                var createCmd = new NpgsqlCommand($"CREATE SEQUENCE {sequenceName} START 1;", Connection);
-                await createCmd.ExecuteNonQueryAsync();
-            }
-
+            // Set sequence value to max + 1
             var setValCmd = new NpgsqlCommand(
               $@"SELECT setval(
                '{sequenceName}',
@@ -333,6 +326,108 @@ namespace PurchaseBlazorApp2.Components.Repository
             }
 
             return records;
+        }
+
+        public async Task<List<InventoryCustomerData>> GetCustomersAsync()
+        {
+            await Connection.OpenAsync();
+            try
+            {
+                var cmd = new NpgsqlCommand(
+                    @"SELECT id, companyname, contactperson, phone, address, paymentterms, creditlimit 
+              FROM inventory.addcustomer ORDER BY id", Connection);
+
+                var list = new List<InventoryCustomerData>();
+
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    list.Add(new InventoryCustomerData
+                    {
+                        ID = reader.GetString(0),
+                        CompanyName = reader.GetString(1),
+                        ContactPerson = reader.GetString(2),
+                        Phone = reader.GetString(3),
+                        Address = reader.GetString(4),
+                        PaymentTerms = reader.GetString(5),
+                        CreditLimit = reader.GetString(6)
+                    });
+                }
+
+                return list;
+            }
+            finally
+            {
+                await Connection.CloseAsync();
+            }
+        }
+
+        public async Task<string> AddCustomerAsync(InventoryCustomerData customer)
+        {
+            await Connection.OpenAsync();
+            try
+            {
+                var checkCmd = new NpgsqlCommand("SELECT COUNT(*) FROM inventory.addcustomer WHERE id=@id", Connection);
+                checkCmd.Parameters.AddWithValue("id", customer.ID ?? "");
+                var exists = (long)await checkCmd.ExecuteScalarAsync() > 0;
+
+                if (exists)
+                {
+               
+                    var updateCmd = new NpgsqlCommand(
+                        @"UPDATE inventory.addcustomer 
+                  SET companyname=@companyname,
+                      contactperson=@contactperson,
+                      phone=@phone,
+                      address=@address,
+                      paymentterms=@paymentterms,
+                      creditlimit=@creditlimit
+                  WHERE id=@id", Connection);
+
+                    updateCmd.Parameters.AddWithValue("id", customer.ID);
+                    updateCmd.Parameters.AddWithValue("companyname", customer.CompanyName ?? "");
+                    updateCmd.Parameters.AddWithValue("contactperson", customer.ContactPerson ?? "");
+                    updateCmd.Parameters.AddWithValue("phone", customer.Phone ?? "");
+                    updateCmd.Parameters.AddWithValue("address", customer.Address ?? "");
+                    updateCmd.Parameters.AddWithValue("paymentterms", customer.PaymentTerms ?? "");
+                    updateCmd.Parameters.AddWithValue("creditlimit", customer.CreditLimit);
+
+                    await updateCmd.ExecuteNonQueryAsync();
+                    return customer.ID;
+                }
+                else
+                {
+                   
+                    await EnsureSequenceAsync("inventory.addcustomer_seq", "inventory.addcustomer", "id");
+
+                    var seqCmd = new NpgsqlCommand("SELECT nextval('inventory.addcustomer_seq')", Connection);
+                    var seq = (long)await seqCmd.ExecuteScalarAsync();
+
+                    customer.ID = $"Customer_{seq}";
+
+                    var insertCmd = new NpgsqlCommand(
+                        @"INSERT INTO inventory.addcustomer 
+                  (id, companyname, contactperson, phone, address, paymentterms, creditlimit)
+                  VALUES (@id, @companyname, @contactperson, @phone, @address, @paymentterms, @creditlimit)",
+                        Connection);
+
+                    insertCmd.Parameters.AddWithValue("id", customer.ID);
+                    insertCmd.Parameters.AddWithValue("companyname", customer.CompanyName ?? "");
+                    insertCmd.Parameters.AddWithValue("contactperson", customer.ContactPerson ?? "");
+                    insertCmd.Parameters.AddWithValue("phone", customer.Phone ?? "");
+                    insertCmd.Parameters.AddWithValue("address", customer.Address ?? "");
+                    insertCmd.Parameters.AddWithValue("paymentterms", customer.PaymentTerms ?? "");
+                    insertCmd.Parameters.AddWithValue("creditlimit", customer.CreditLimit);
+
+                    await insertCmd.ExecuteNonQueryAsync();
+
+                    return customer.ID;
+                }
+            }
+            finally
+            {
+                await Connection.CloseAsync();
+            }
         }
 
     }

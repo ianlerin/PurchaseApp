@@ -97,5 +97,31 @@ namespace PurchaseBlazorApp2.Controller
 
             return await _repo.GetRecordsByProductAsync(productId);
         }
+
+        [HttpGet("get-customers")]
+        public async Task<List<InventoryCustomerData>> GetCustomers()
+        {
+            return await _repo.GetCustomersAsync();
+        }
+
+        [HttpPost("add-customer")]
+        public async Task<IActionResult> AddCustomer([FromBody] InventoryCustomerData customer)
+        {
+            if (customer == null)
+                return BadRequest("Customer data cannot be null");
+
+            if (string.IsNullOrWhiteSpace(customer.CompanyName))
+                return BadRequest("Company Name is required");
+
+            try
+            {
+                var newId = await _repo.AddCustomerAsync(customer);
+                return Ok(new { id = newId });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error adding customer: {ex.Message}");
+            }
+        }
     }
 }
