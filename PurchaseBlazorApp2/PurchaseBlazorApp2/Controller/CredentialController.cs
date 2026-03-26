@@ -28,17 +28,22 @@ namespace PurchaseBlazorApp2.Controller
             bool bSuccess = await CredentialRepository.RegisterAsync(info);
             return Ok(bSuccess);
         }
-
-        [HttpPost("getrole")]
-        public async Task<ActionResult<EDepartment>> GetRole([FromBody] string  username)
+        [HttpPost("getuserid")]
+        public async Task<ActionResult<int>> GetUserID([FromBody] string username)
         {
-            EDepartment Department = await CredentialRepository.TryGetRole(username);
+            int ID = await CredentialRepository.GetUserID(username);
+            return Ok(ID);
+        }
+        [HttpPost("getrole")]
+        public async Task<ActionResult<EDepartment>> GetRole([FromBody] GetRoleRequest Request)
+        {
+            EDepartment Department = await CredentialRepository.TryGetRole(Request.UserID, Request.CompanyId);
             return Ok(Department);
         }
         [HttpPost("gethrrole")]
-        public async Task<ActionResult<EHRRole>> GetHRRole([FromBody] string username)
+        public async Task<ActionResult<EHRRole>> GetHRRole([FromBody] GetRoleRequest Request)
         {
-            EHRRole Department = await CredentialRepository.TryGetHRRole(username);
+            EHRRole Department = await CredentialRepository.TryGetHRRole(Request.UserID, Request.CompanyId);
             return Ok(Department);
         }
         [HttpGet("checkexist/{username}")]
@@ -50,14 +55,14 @@ namespace PurchaseBlazorApp2.Controller
 
 
         [HttpPost("getrolemail")]
-        public async Task<ActionResult<List<string>>> TryGetAllProcurementEmail([FromBody] List<EDepartment> Departments)
+        public async Task<ActionResult<List<string>>> TryGetAllProcurementEmail([FromBody] DepartmentInfo DepartmentInfo)
         {
-            List<string> Emails = await CredentialRepository.TryGetAllProcurementEmail(Departments);
+            List<string> Emails = await CredentialRepository.TryGetAllProcurementEmail(DepartmentInfo);
             return Ok(Emails);
         }
 
         [HttpPost("getavailablecompanies")]
-        public async Task<ActionResult<List<CompanyInfo>>> TryGetAllAvailableCompanies([FromBody] string UserID)
+        public async Task<ActionResult<List<CompanyInfo>>> TryGetAllAvailableCompanies([FromBody] int UserID)
         {
             List<CompanyInfo> CompanyInfo = await CredentialRepository.TryGetAllCompanyInfo(UserID);
             return Ok(CompanyInfo);

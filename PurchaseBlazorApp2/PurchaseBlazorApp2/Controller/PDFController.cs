@@ -10,18 +10,41 @@ namespace PurchaseBlazorApp2.Controller
     [ApiController]
     public class PDFController : ControllerBase
     {
+        int MyCompanyID = 0;
+        public PDFController(int CompanyID)
+        {
+            MyCompanyID = CompanyID;
+        }
+
+        private async Task<PORepository> GetPORepo()
+        {
+            int.TryParse(Request.Headers["CompanyID"], out MyCompanyID);
+            CredentialRepo CredentialRepo = new CredentialRepo();
+            string DBName = await CredentialRepo.TryGetDatabaseNameByCompanyId(MyCompanyID);
+            PORepository MyRepo = new PORepository(DBName);
+            return MyRepo;
+
+        }
+        private async Task<PRRepository> GetPRRepo()
+        {
+            CredentialRepo CredentialRepo = new CredentialRepo();
+            string DBName = await CredentialRepo.TryGetDatabaseNameByCompanyId(MyCompanyID);
+            PRRepository MyRepo = new PRRepository(DBName);
+            return MyRepo;
+
+        }
         [HttpGet("purchase/{poId}")]
         public async Task<IActionResult> GeneratePurchasePdf(string poId)
         {
             // Fetch your PO from DB based on poId
-            PORepository Repo = new PORepository();
+            PORepository Repo = await GetPORepo();
             List<PurchaseOrderRecord> Records = await Repo.GetRecordsAsync(new List<string> { poId });
 
             if (Records.Count == 0) return NotFound();
             var PO = Records[0];
             if (PO == null) return NotFound();
 
-            PRRepository PRRepo = new PRRepository();
+            PRRepository PRRepo = await GetPRRepo();
             List<RequestItemInfo> RequestedItems = await PRRepo.GetRequestedItemByRequisitionNumber(PO.PR_ID, "pr_approved_requestitem_table");
 
             var pdfBytes = new POPDFHelper().GeneratePurchaseOrderPdf(PO, RequestedItems);

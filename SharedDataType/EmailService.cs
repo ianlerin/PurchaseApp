@@ -1,22 +1,24 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
+using PurchaseBlazorApp2.Client.Service;
+using PurchaseBlazorApp2.Components.Data;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
-using PurchaseBlazorApp2.Components.Data;
 
 namespace Genesis.EmailService
 {
     public class EmailWorkflowService
     {
-        private readonly HttpClient _http;
+        private readonly MyHttpService _http;
         private readonly NavigationManager _navigation;
         private readonly IJSRuntime _js;
 
-        public EmailWorkflowService(HttpClient http, NavigationManager navigation, IJSRuntime js)
+        public EmailWorkflowService(MyHttpService http, NavigationManager navigation, IJSRuntime js)
         {
             _http = http;
             _navigation = navigation;
@@ -28,7 +30,7 @@ namespace Genesis.EmailService
         /// <summary>
         /// Sends PR-related notification emails to the appropriate parties.
         /// </summary>
-        public async Task SendEmailToRelevantPartyAsync(PurchaseRequisitionRecord record)
+        public async Task SendEmailToRelevantPartyAsync(PurchaseRequisitionRecord record, int CompanyID)
         {
             if (record == null)
                 throw new ArgumentNullException(nameof(record));
@@ -43,7 +45,7 @@ namespace Genesis.EmailService
             {
                 case EApprovalStatus.PreApproval:
                     await _js.InvokeVoidAsync("console.log", "Status: PreApproval");
-                    mainList = await GetProcurementEmailsAsync();
+                    mainList = await GetProcurementEmailsAsync(CompanyID);
                     if (!string.IsNullOrWhiteSpace(currentEmail))
                         ccList.Add(currentEmail);
                     await SendPreApprovalEmailAsync(record, mainList, ccList);
@@ -51,15 +53,15 @@ namespace Genesis.EmailService
 
                 case EApprovalStatus.PendingApproval:
                     await _js.InvokeVoidAsync("console.log", "Status: PendingApproval");
-                    mainList = await GetAllNeededForApprovalEmailsAsync(record);
-                    ccList = await GetProcurementEmailsAsync();
+                    mainList = await GetAllNeededForApprovalEmailsAsync(record, CompanyID);
+                    ccList = await GetProcurementEmailsAsync(CompanyID);
                     await SendEmailAsync(record, mainList, ccList);
                     break;
 
                 case EApprovalStatus.Approved:
                 case EApprovalStatus.Rejected:
                     await _js.InvokeVoidAsync("console.log", $"Status: {record.approvalstatus}");
-                    mainList = await GetProcurementEmailsAsync();
+                    mainList = await GetProcurementEmailsAsync(CompanyID);
                     if (!string.IsNullOrWhiteSpace(currentEmail))
                         ccList.Add(currentEmail);
                     await SendApprovalNotificationEmailAsync(record, mainList, ccList);
@@ -69,7 +71,7 @@ namespace Genesis.EmailService
            
         }
 
-        public async Task SendEmailToRelevantPartyFinance(PurchaseOrderRecord PORecord)
+        public async Task SendEmailToRelevantPartyFinance(PurchaseOrderRecord PORecord, int CompanyID)
         {
             if (PORecord == null)
                 throw new ArgumentNullException(nameof(PORecord));
@@ -77,16 +79,15 @@ namespace Genesis.EmailService
 
             List<string> ccList = new();
             List<string> mainList = new();
-            string? currentEmail = await GetCurrentEmailAsync();
 
             switch (PORecord.InvoiceInfo.PaymentStatus)
             {
                 case (EPaymentStatus.PendingPayment):
-                mainList = await GetFinanceEmailsAsync();
+                mainList = await GetFinanceEmailsAsync(CompanyID);
                 await SendPaymentReadyEmailAsync(PORecord.PO_ID, mainList, ccList);
                 break;
                 case (EPaymentStatus.Paid):
-                    mainList = await GetProcurementEmailsAsync();
+                    mainList = await GetProcurementEmailsAsync(CompanyID);
                     await SendFinanceApprovalNotificationAsync(PORecord.PO_ID, mainList, ccList);
                     break;
             }
@@ -470,16 +471,18 @@ namespace Genesis.EmailService
         /// <summary>
         /// Retrieves all approval department emails for this PR.
         /// </summary>
-        private async Task<List<string>> GetAllNeededForApprovalEmailsAsync(PurchaseRequisitionRecord record)
+        private async Task<List<string>> GetAllNeededForApprovalEmailsAsync(PurchaseRequisitionRecord record,int CompanyID)
         {
             List<string> emailList = new();
             if (record == null)
                 return emailList;
+            DepartmentInfo departmentInfo = new DepartmentInfo();
 
-            var departments = record.GetSelectedDepartments();
+            departmentInfo.Departments = record.GetSelectedDepartments().ToList();
+            departmentInfo.CompanyId = CompanyID;   
             var response = await _http.PostAsJsonAsync(
                 _navigation.ToAbsoluteUri("api/login/getrolemail"),
-                departments.ToList());
+               departmentInfo);
 
             if (response.IsSuccessStatusCode)
             {
@@ -492,11 +495,15 @@ namespace Genesis.EmailService
         /// <summary>
         /// Retrieves finance emails.
         /// </summary>
-        private async Task<List<string>> GetFinanceEmailsAsync()
+        private async Task<List<string>> GetFinanceEmailsAsync(int CompanyID)
         {
+            DepartmentInfo departmentInfo = new DepartmentInfo();
+
+            departmentInfo.Departments = new List<EDepartment> { EDepartment.Finance };
+            departmentInfo.CompanyId = CompanyID;
             var response = await _http.PostAsJsonAsync(
                 _navigation.ToAbsoluteUri("api/login/getrolemail"),
-                new List<EDepartment> { EDepartment.Finance });
+                departmentInfo);
 
             if (response.IsSuccessStatusCode)
             {
@@ -509,11 +516,15 @@ namespace Genesis.EmailService
         /// <summary>
         /// Retrieves procurement manager emails.
         /// </summary>
-        private async Task<List<string>> GetProcurementEmailsAsync()
+        private async Task<List<string>> GetProcurementEmailsAsync(int CompanyID)
         {
+            DepartmentInfo departmentInfo = new DepartmentInfo();
+
+            departmentInfo.Departments = new List<EDepartment> { EDepartment.ProcurementManager };
+            departmentInfo.CompanyId = CompanyID;
             var response = await _http.PostAsJsonAsync(
                 _navigation.ToAbsoluteUri("api/login/getrolemail"),
-                new List<EDepartment> { EDepartment.ProcurementManager });
+               departmentInfo);
 
             if (response.IsSuccessStatusCode)
             {
