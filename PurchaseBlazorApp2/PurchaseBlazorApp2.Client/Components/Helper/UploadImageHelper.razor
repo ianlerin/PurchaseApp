@@ -176,8 +176,10 @@ else
                 {
                     Id = Guid.NewGuid(),
                     Data = buffer,
-                    DataFormat = file.ContentType
+                    DataFormat = file.ContentType,
+                    OriginalFileName = file.Name
                 };
+            newImage.Url = await UploadFileAndGetUrlAsync(newImage.Data, newImage.OriginalFileName, newImage.DataFormat);
 
             UploadedImages.Add(newImage);
 
@@ -198,9 +200,7 @@ else
         string name = user.FindFirst(c => c.Type == "name")?.Value;
         for (int i = 0; i < UploadedImages.Count(); i++)
         {
-            string FileName = name + "Temp_" + Prefix + i;
-
-          
+            string FileName = UploadedImages[i].OriginalFileName;
 
             string url = await UploadFileAndGetUrlAsync(UploadedImages[i].Data, FileName, UploadedImages[i].DataFormat);
             UploadedImages[i].Url = url;
@@ -215,8 +215,8 @@ else
         var user = authState.User;
         string name = user.FindFirst(c => c.Type == "name")?.Value;
         for (int i = 0; i < UploadedImages.Count(); i++)
-        { string FileName = name + "Temp_" + Prefix+ i;
-           
+        {
+            string FileName = UploadedImages[i].OriginalFileName;
             string url = await UploadFileAndGetUrlAsync(UploadedImages[i].Data, FileName, UploadedImages[i].DataFormat);
             UploadedImages[i].Url = url;
 
