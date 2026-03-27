@@ -217,6 +217,10 @@ else
         for (int i = 0; i < UploadedImages.Count(); i++)
         {
             string FileName = UploadedImages[i].OriginalFileName;
+            if(FileName=="")
+            {
+                FileName = name + "Temp_" + Prefix + i;
+            }
             string url = await UploadFileAndGetUrlAsync(UploadedImages[i].Data, FileName, UploadedImages[i].DataFormat);
             UploadedImages[i].Url = url;
 
@@ -302,6 +306,7 @@ else
     {  
         try
         {
+            await JS.InvokeVoidAsync("alert", $"fileName:{fileName}");
             // --- Step 1: Request signed PUT URL ---
             var lambdaUploadUrl = "https://pfd3awi6h6.execute-api.ap-southeast-1.amazonaws.com/BetaTesting/CreateImageUploadSignURl";
             var uploadRequestBody = new
@@ -351,7 +356,7 @@ else
         }
         catch (Exception ex)
         {
-            await JS.InvokeVoidAsync("alert", $"Error: {ex.Message}");
+            await JS.InvokeVoidAsync("alert", $"UploadFileAndGetUrlAsync Error: {ex.Message}");
             return null;
         }
     }
