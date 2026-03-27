@@ -348,7 +348,7 @@ namespace PurchaseBlazorApp2.Components.Repository
             {
                 await MyConnection.OpenAsync();
                 var command = new NpgsqlCommand(
-                    "SELECT imagebyte, photoformat FROM pr_image_table WHERE requisitionnumber = @req",
+                    "SELECT imagebyte, photoformat, original_filename FROM pr_image_table WHERE requisitionnumber = @req",
                     MyConnection, externalTransaction);
                 command.Parameters.AddWithValue("@req", requisitionNumber);
 
@@ -358,7 +358,8 @@ namespace PurchaseBlazorApp2.Components.Repository
                     var image = new ImageUploadInfo
                     {
                         Data = reader["imagebyte"] as byte[] ?? Array.Empty<byte>(),
-                        DataFormat = reader["photoformat"]?.ToString() ?? string.Empty
+                        DataFormat = reader["photoformat"]?.ToString() ?? string.Empty,
+                        OriginalFileName = reader["original_filename"]?.ToString() ?? string.Empty
                     };
                     images.Add(image);
                 }
@@ -612,11 +613,12 @@ namespace PurchaseBlazorApp2.Components.Repository
                 foreach (ImageUploadInfo single in info.SupportDocuments)
                 {
                     var insertCmd = new NpgsqlCommand(
-                        "INSERT INTO pr_image_table (requisitionnumber, imagebyte, photoformat) VALUES (@req, @doc, @format)",
+                        "INSERT INTO pr_image_table (requisitionnumber, imagebyte, photoformat, original_filename) VALUES (@req, @doc, @format,@filename)",
                         Connection, transaction);
                     insertCmd.Parameters.AddWithValue("@req", info.RequisitionNumber);
                     insertCmd.Parameters.AddWithValue("@doc", single.Data ?? Array.Empty<byte>());
                     insertCmd.Parameters.AddWithValue("@format", single.DataFormat ?? string.Empty);
+                    insertCmd.Parameters.AddWithValue("@filename", single.OriginalFileName ?? string.Empty);
                     await insertCmd.ExecuteNonQueryAsync();
                 }
 
