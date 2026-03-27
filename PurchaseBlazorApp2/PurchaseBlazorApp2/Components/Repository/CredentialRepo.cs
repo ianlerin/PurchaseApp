@@ -19,7 +19,7 @@ namespace PurchaseBlazorApp2.Components.Repository
         private NpgsqlConnection Connection;
         public CredentialRepo()
         {
-            Connection = new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432; User Id=postgres; Password=password; Database=purchase");
+            Connection = new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432; User Id=postgres; Password=password; Database=purchase_master");
         }
 
         public async Task<bool> RegisterAsync(UserName info)
@@ -101,46 +101,40 @@ namespace PurchaseBlazorApp2.Components.Repository
            return SubmitResponse;
        }
 
-        public async Task<List<CompanyInfo>> TryGetAllCompanyInfo(string userName)
+        public async Task<List<CompanyInfo>> TryGetAllCompanyInfo(string email)
         {
-            List<string> idToFind = await TryGetAllCompanyID(userName);
-            var companiesInfo = new List<CompanyInfo>();
+            var companies = new List<CompanyInfo>();
 
-            if (idToFind == null || idToFind.Count == 0)
-                return companiesInfo;
+            await using var connection = new NpgsqlConnection(Connection.ConnectionString);
+            await connection.OpenAsync();
 
-            try
+            string query = @"
+        SELECT c.company_id, c.display_name, c.db_name
+        FROM users u
+        JOIN user_access ua ON u.user_id = ua.user_id
+        JOIN companies c ON ua.company_id = c.company_id
+        WHERE u.email = @Email
+        AND c.is_active = true
+        ORDER BY c.display_name;";
+
+            await using var cmd = new NpgsqlCommand(query, connection);
+            cmd.Parameters.AddWithValue("Email", email);
+
+            await using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
             {
-                await using var connection = new NpgsqlConnection(Connection.ConnectionString);
-                await connection.OpenAsync();
-
-                await using var cmd = new NpgsqlCommand(
-                    @"SELECT id, name 
-              FROM company 
-              WHERE id = ANY(@ids)
-              ORDER BY name", connection);
-
-                cmd.Parameters.AddWithValue("ids", idToFind.ToArray());
-
-                await using var reader = await cmd.ExecuteReaderAsync();
-
-                while (await reader.ReadAsync())
+                companies.Add(new CompanyInfo
                 {
-                    companiesInfo.Add(new CompanyInfo
-                    {
-                        ID = reader.GetString(0),
-                        Name = reader.GetString(1)
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error fetching company info: " + ex.Message);
+                    ID = reader.GetInt32(0).ToString(),
+                    Name = reader.GetString(1),
+                    DbName = reader.GetString(2)
+                });
             }
 
-            return companiesInfo;
+            return companies;
         }
-
+ 
         public async Task<List<string>> TryGetAllCompanyID(string userName)
         {
             var companies = new List<string>();
@@ -222,19 +216,22 @@ namespace PurchaseBlazorApp2.Components.Repository
             return emailList;
         }
 
-        public async Task<bool> CheckIfUsernameExistsAsync(string username)
+        public async Task<bool> CheckIfUserExistsAsync(string email)
         {
             try
             {
-                await Connection.OpenAsync();
+                await using var connection = new NpgsqlConnection(Connection.ConnectionString);
+                await connection.OpenAsync();
 
                 string query = @"
-                            SELECT COUNT(*) 
-                            FROM credential
-                            WHERE username = @username;";
+            SELECT COUNT(*)
+            FROM users u
+            JOIN user_access ua ON u.user_id = ua.user_id
+            JOIN companies c ON ua.company_id = c.company_id
+            WHERE u.email = @Email AND c.is_active = true;";
 
-                using var cmd = new NpgsqlCommand(query, Connection);
-                cmd.Parameters.AddWithValue("@username", username);
+                using var cmd = new NpgsqlCommand(query, connection);
+                cmd.Parameters.AddWithValue("Email", email);
 
                 var result = await cmd.ExecuteScalarAsync();
                 int count = Convert.ToInt32(result);
@@ -243,31 +240,32 @@ namespace PurchaseBlazorApp2.Components.Repository
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error checking username existence: " + ex.Message);
+                Console.WriteLine("Error checking user existence: " + ex.Message);
                 return false;
             }
-            finally
-            {
-                await Connection.CloseAsync();
-            }
         }
-        public async Task<EDepartment> TryGetRole(string userName)
+        public async Task<EDepartment> TryGetRole(string email)
         {
             try
             {
-                await Connection.OpenAsync();
+                await using var connection = new NpgsqlConnection(Connection.ConnectionString);
+                await connection.OpenAsync();
 
-                using var cmd = new NpgsqlCommand(
-                    @"SELECT user_role FROM credential WHERE username = @username LIMIT 1", Connection);
+                string query = @"
+            SELECT ua.user_role
+            FROM users u
+            JOIN user_access ua ON u.user_id = ua.user_id
+            JOIN companies c ON ua.company_id = c.company_id
+            WHERE u.email = @Email AND c.is_active = true
+            LIMIT 1;";
 
-                cmd.Parameters.AddWithValue("username", userName);
+                using var cmd = new NpgsqlCommand(query, connection);
+                cmd.Parameters.AddWithValue("Email", email);
 
                 var result = await cmd.ExecuteScalarAsync();
 
                 if (result != null && Enum.TryParse<EDepartment>(result.ToString(), out var department))
-                {
                     return department;
-                }
 
                 return EDepartment.NotSpecified;
             }
@@ -275,41 +273,38 @@ namespace PurchaseBlazorApp2.Components.Repository
             {
                 Console.WriteLine("Error fetching role: " + ex.Message);
                 return EDepartment.NotSpecified;
-            }
-            finally
-            {
-                await Connection.CloseAsync();
             }
         }
 
-        public async Task<EHRRole> TryGetHRRole(string userName)
+        public async Task<EHRRole> TryGetHRRole(string email)
         {
             try
             {
-                await Connection.OpenAsync();
+                await using var connection = new NpgsqlConnection(Connection.ConnectionString);
+                await connection.OpenAsync();
 
-                using var cmd = new NpgsqlCommand(
-                    @"SELECT hr_role FROM credential WHERE username = @username LIMIT 1", Connection);
+                string query = @"
+            SELECT ua.hr_role
+            FROM users u
+            JOIN user_access ua ON u.user_id = ua.user_id
+            JOIN companies c ON ua.company_id = c.company_id
+            WHERE u.email = @Email AND c.is_active = true
+            LIMIT 1;";
 
-                cmd.Parameters.AddWithValue("username", userName);
+                using var cmd = new NpgsqlCommand(query, connection);
+                cmd.Parameters.AddWithValue("Email", email);
 
                 var result = await cmd.ExecuteScalarAsync();
 
-                if (result != null && Enum.TryParse<EHRRole>(result.ToString(), out var department))
-                {
-                    return department;
-                }
+                if (result != null && Enum.TryParse<EHRRole>(result.ToString(), out var hrRole))
+                    return hrRole;
 
                 return EHRRole.None;
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error fetching role: " + ex.Message);
+                Console.WriteLine("Error fetching HR role: " + ex.Message);
                 return EHRRole.None;
-            }
-            finally
-            {
-                await Connection.CloseAsync();
             }
         }
     }

@@ -2,6 +2,7 @@
 using Npgsql;
 using PurchaseBlazorApp2.Client.Pages.HR;
 using PurchaseBlazorApp2.Components.Data;
+using PurchaseBlazorApp2.Components.Global;
 using PurchaseBlazorApp2.Resource;
 using ServiceStack.Messaging;
 using System.Data.Common;
@@ -14,20 +15,25 @@ namespace PurchaseBlazorApp2.Components.Repository
         private NpgsqlConnection Connection;
         public HRRepository()
         {
-            Connection = new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432; User Id=postgres; Password=password; Database=purchase");
+            string DbName = string.IsNullOrWhiteSpace(Database.CurrentDb)
+                                  ? "purchase_master"
+                                  : Database.CurrentDb;
+            Connection = new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432; User Id=postgres; Password=password; Database={DbName}");
 
         }
         private string GetConnectionString()
         {
-            return $@"
-            Server={StaticResources.ConnectionId};
-            Port=5432;
-            User Id=postgres;
-            Password=password;
-            Database=purchase
-            ";
+            string DbName = string.IsNullOrWhiteSpace(Database.CurrentDb)
+                                ? "purchase_master"
+                                : Database.CurrentDb;
+
+            return $@"Server={StaticResources.ConnectionId};
+              Port=5432;
+              User Id=postgres;
+              Password=password;
+              Database={DbName};";
         }
-       public async Task<bool> Submit(List<WorkerRecord.WorkerRecord> workers)
+        public async Task<bool> Submit(List<WorkerRecord.WorkerRecord> workers)
 
        {
             try

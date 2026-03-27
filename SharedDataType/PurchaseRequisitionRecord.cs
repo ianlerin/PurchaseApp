@@ -90,6 +90,8 @@ namespace PurchaseBlazorApp2.Components.Data
     {
         public string ID { get; set; }
         public string Name { get; set; }
+
+        public string DbName { get; set; }
     }
 
     public class UserName

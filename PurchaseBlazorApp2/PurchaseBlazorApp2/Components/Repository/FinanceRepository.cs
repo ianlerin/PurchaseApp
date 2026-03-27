@@ -1,5 +1,6 @@
 ﻿using Npgsql;
 using PurchaseBlazorApp2.Components.Data;
+using PurchaseBlazorApp2.Components.Global;
 using PurchaseBlazorApp2.Resource;
 using System.Transactions;
 
@@ -10,7 +11,10 @@ namespace PurchaseBlazorApp2.Components.Repository
         private NpgsqlConnection Connection;
         public FinanceRepository()
         {
-            Connection = new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432; User Id=postgres; Password=password; Database=purchase");
+            string DbName = string.IsNullOrWhiteSpace(Database.CurrentDb)
+                                  ? "purchase_master"
+                                  : Database.CurrentDb;
+            Connection = new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432; User Id=postgres; Password=password; Database={DbName}");
         }
 
         public async Task<bool> Submit(FinanceRecord info)
