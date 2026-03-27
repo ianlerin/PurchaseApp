@@ -1044,7 +1044,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                                     {
                                         var result = await Seqcommand.ExecuteScalarAsync();
                                         long lastSequenceValue = (long)result;
-                                        SID = $"PR_{lastSequenceValue + 1}";
+                                        SID = $"PR_{lastSequenceValue}";
                                     }
                                     command.Parameters.Clear();
                                 }

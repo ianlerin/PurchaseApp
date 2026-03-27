@@ -114,13 +114,11 @@ namespace PurchaseBlazorApp2.Components.Repository
                                 string SID = "";
                                 if (string.IsNullOrEmpty(Info.quotation_id))
                                 {
-                                    await using (var Seqcommand = new NpgsqlCommand("SELECT last_value FROM quotation_sequence;", Connection, transaction))
+                                    await using (var Seqcommand = new NpgsqlCommand("SELECT nextval('quotation_sequence');", Connection, transaction))
                                     {
                                         var result = await Seqcommand.ExecuteScalarAsync();
-                                        lastSequenceValue = (long)result;
-                                        SID = $"Quotation_{lastSequenceValue + 1}";
+                                        SID = $"Quotation_{result}";
                                     }
-
                                     command.Parameters.Clear();
                                 }
                                 else
