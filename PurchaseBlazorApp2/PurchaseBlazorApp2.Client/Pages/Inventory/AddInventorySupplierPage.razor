@@ -1,4 +1,5 @@
 ﻿@using InventoryRecord
+@using PurchaseBlazorApp2.Client.Service
 @inject NavigationManager NavigationManager
 @page "/add-supplier/{ID}"
 @page "/add-supplier"
@@ -47,7 +48,7 @@
 
 @code {
     [Inject]
-    private HttpClient Http { get; set; }
+    private MyHttpService Http { get; set; }
     [Inject]
     private IJSRuntime JS { get; set; }
     [Parameter]

@@ -9,17 +9,29 @@ namespace PurchaseBlazorApp2.Controller
     [ApiController]
     public class HRController : ControllerBase
     {
-        private readonly HRRepository _repo;
+        int MyCompanyID = 0;
+     
         private readonly IEPFTableService _epfService;
         public HRController(IEPFTableService epfService)
         {
-            _repo = new HRRepository();
             _epfService = epfService;
         }
+
+        private async Task<HRRepository> GetMyRepo()
+        {
+            int.TryParse(Request.Headers["CompanyID"], out MyCompanyID);
+            CredentialRepo CredentialRepo = new CredentialRepo();
+            string DBName = await CredentialRepo.TryGetDatabaseNameByCompanyId(MyCompanyID);
+            HRRepository MyRepo = new HRRepository(DBName);
+            return MyRepo;
+
+        }
+
         [HttpPost("SubmitWorker")]
         public async Task<IActionResult> SubmitWorker([FromBody] List<WorkerRecord.WorkerRecord> workers
 )
         {
+            HRRepository _repo= await GetMyRepo();
             if (workers == null)
                 return BadRequest("Worker record is empty.");
 
@@ -34,6 +46,7 @@ namespace PurchaseBlazorApp2.Controller
         [HttpGet("GetWorkersByStatus/{status}")]
         public async Task<IActionResult> GetWorkersByStatus(string status)
         {
+            HRRepository _repo = await GetMyRepo();
             if (!Enum.TryParse<EWorkerStatus>(status, true, out var parsedStatus))
                 return BadRequest(new { message = "Invalid worker status." });
 
@@ -46,6 +59,7 @@ namespace PurchaseBlazorApp2.Controller
         [HttpGet("GetWagesInfo")]
         public async Task<IActionResult> GetWagesInfo([FromQuery] int year, [FromQuery] int month)
         {
+            HRRepository _repo = await GetMyRepo();
             try
             {
 
@@ -65,8 +79,9 @@ namespace PurchaseBlazorApp2.Controller
 
 
         [HttpPost("InsertWagesInfo")]
-        public IActionResult InsertWageRecord([FromBody] WageRecord WageInfo)
+        public async Task<IActionResult> InsertWageRecord([FromBody] WageRecord WageInfo)
         {
+            HRRepository _repo = await GetMyRepo();
             if (WageInfo.WageRecords == null || WageInfo.WageRecords == null || WageInfo.WageRecords.Count == 0)
             {
                 return BadRequest("WageRecord data is empty or null.");
@@ -86,6 +101,7 @@ namespace PurchaseBlazorApp2.Controller
         [HttpGet("GetAllWorkers")]
         public async Task<IActionResult> GetAllWorkers([FromQuery] EWorkerStatus status = EWorkerStatus.All)
         {
+            HRRepository _repo = await GetMyRepo();
             if (status == EWorkerStatus.All)
             {
                 var activeWorkers = await _repo.GetWorkersByStatus(EWorkerStatus.Active);
@@ -99,8 +115,9 @@ namespace PurchaseBlazorApp2.Controller
         }
 
         [HttpPost("calculateEPF")]
-        public ActionResult<ContributeResult> Calculate([FromBody] SingleWageRecord record)
+        public async Task<ActionResult<ContributeResult>> Calculate([FromBody] SingleWageRecord record)
         {
+            HRRepository _repo = await GetMyRepo();
             if (record == null)
                 return BadRequest("Record is null.");
 
@@ -121,6 +138,7 @@ namespace PurchaseBlazorApp2.Controller
         [HttpGet("GetWorkerById")]
         public async Task<WorkerRecord.WorkerRecord> GetWorkerById(string id)
         {
+            HRRepository _repo = await GetMyRepo();
             var workers = await _repo.GetWorkersByStatus(EWorkerStatus.Active);
             return workers.FirstOrDefault(w => w.ID == id);
         }
