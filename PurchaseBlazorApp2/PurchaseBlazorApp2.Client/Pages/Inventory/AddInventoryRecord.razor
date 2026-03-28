@@ -1,9 +1,10 @@
 ﻿@page "/add-record"
 @using InventoryRecord
+@using PurchaseBlazorApp2.Client.Service
 @using PurchaseBlazorApp2.Components.Data
 
 <h3>Inventory Record</h3>
-@inject HttpClient Http
+@inject MyHttpService Http
 <EditForm Model="Record" OnValidSubmit="HandleValidSubmit">
     <DataAnnotationsValidator />
     <ValidationSummary />
