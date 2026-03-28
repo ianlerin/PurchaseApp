@@ -306,7 +306,6 @@ else
     {  
         try
         {
-            await JS.InvokeVoidAsync("alert", $"fileName:{fileName}");
             // --- Step 1: Request signed PUT URL ---
             var lambdaUploadUrl = "https://pfd3awi6h6.execute-api.ap-southeast-1.amazonaws.com/BetaTesting/CreateImageUploadSignURl";
             var uploadRequestBody = new
