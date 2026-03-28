@@ -11,10 +11,12 @@ namespace PurchaseBlazorApp2.Components.Repository
 {
     public class HRRepository
     {
+        string MyDB = "";
         private NpgsqlConnection Connection;
-        public HRRepository()
+        public HRRepository(string DBName)
         {
-            Connection = new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432; User Id=postgres; Password=password; Database=purchase");
+            MyDB = DBName;
+            Connection = new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432; User Id=postgres; Password=password; Database={MyDB}");
 
         }
         private string GetConnectionString()
@@ -24,7 +26,7 @@ namespace PurchaseBlazorApp2.Components.Repository
             Port=5432;
             User Id=postgres;
             Password=password;
-            Database=purchase
+            Database={MyDB}
             ";
         }
        public async Task<bool> Submit(List<WorkerRecord.WorkerRecord> workers)
