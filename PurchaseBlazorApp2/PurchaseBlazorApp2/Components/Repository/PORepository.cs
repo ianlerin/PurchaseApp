@@ -1,4 +1,5 @@
-﻿using Npgsql;
+﻿using Microsoft.Graph.Models;
+using Npgsql;
 using PurchaseBlazorApp2.Components.Data;
 using PurchaseBlazorApp2.Components.Global;
 using PurchaseBlazorApp2.Resource;
@@ -204,13 +205,18 @@ namespace PurchaseBlazorApp2.Components.Repository
                 await connection.OpenAsync();
 
                 var command = new NpgsqlCommand(
-                    "SELECT imagebyte, photoformat, paymentstatus " +
+                    "SELECT imagebyte, photoformat,original_filename, paymentstatus " +
                     "FROM po_invoice_image_table WHERE requisitionnumber = @req",
                     connection);
                 command.Parameters.AddWithValue("@req", poNumber);
 
                 await using var reader = await command.ExecuteReaderAsync();
-
+                invoice = new InvoiceInfo
+                {
+                    po_id = poNumber,
+      
+                    SupportDocuments = new List<ImageUploadInfo>()
+                };
                 while (await reader.ReadAsync())
                 {
                     var statusText = reader["paymentstatus"]?.ToString() ?? "PendingInvoice";
@@ -218,17 +224,13 @@ namespace PurchaseBlazorApp2.Components.Repository
 
                     if (!Enum.TryParse(statusText, true, out status))
                         status = EPaymentStatus.PendingInvoice;
+                    invoice.PaymentStatus = status;
 
-                    invoice = new InvoiceInfo
-                    {
-                        po_id = poNumber,
-                        PaymentStatus = status,
-                        SupportDocuments = new List<ImageUploadInfo>()
-                    };
                     var image = new ImageUploadInfo
                     {
                         Data = reader["imagebyte"] as byte[] ?? Array.Empty<byte>(),
-                        DataFormat = reader["photoformat"]?.ToString() ?? string.Empty
+                        DataFormat = reader["photoformat"]?.ToString() ?? string.Empty,
+                        OriginalFileName = reader["original_filename"]?.ToString() ?? string.Empty
                     };
 
                     invoice.SupportDocuments.Add(image);
@@ -315,15 +317,15 @@ namespace PurchaseBlazorApp2.Components.Repository
                 {
                     using (var insertCmd = new NpgsqlCommand(
                         @"INSERT INTO po_invoice_image_table 
-                    (requisitionnumber, imagebyte, photoformat, paymentstatus)
-                  VALUES (@requisitionnumber, @imagebyte, @photoformat, @paymentstatus);",
+                    (requisitionnumber, imagebyte, photoformat, paymentstatus, original_filename)
+                  VALUES (@requisitionnumber, @imagebyte, @photoformat, @paymentstatus, @filename);",
                         Connection, transaction))
                     {
                         insertCmd.Parameters.AddWithValue("@requisitionnumber", poId);
                         insertCmd.Parameters.AddWithValue("@imagebyte", single.Data ?? Array.Empty<byte>());
                         insertCmd.Parameters.AddWithValue("@photoformat", single.DataFormat ?? string.Empty);
                         insertCmd.Parameters.AddWithValue("@paymentstatus", info.PaymentStatus.ToString());
-
+                        insertCmd.Parameters.AddWithValue("@filename", single.OriginalFileName);
                         await insertCmd.ExecuteNonQueryAsync();
                     }
                 }

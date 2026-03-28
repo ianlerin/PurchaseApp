@@ -52,12 +52,12 @@ namespace PurchaseBlazorApp2.Components.Repository
                 {
                     string itemid = $"{info.quotation_id}+{i}";
                     var insertCmd = new NpgsqlCommand(
-                        "INSERT INTO quotation_image_table (quotation_id, item_id,imagebyte, photoformat) VALUES (@req,@itemid, @doc, @format)",
+                        "INSERT INTO quotation_image_table (quotation_id, item_id,imagebyte, photoformat,original_filename) VALUES (@req,@itemid, @doc, @format,@filename)",
                         Connection, transaction);
                     insertCmd.Parameters.AddWithValue("@req", info.quotation_id);
                     insertCmd.Parameters.AddWithValue("@itemid", itemid);
+                    insertCmd.Parameters.AddWithValue("@filename", info.SupportDocuments[i].OriginalFileName ?? string.Empty);
 
-                    
                     insertCmd.Parameters.AddWithValue("@doc", info.SupportDocuments[i].Data ?? Array.Empty<byte>());
                     insertCmd.Parameters.AddWithValue("@format", info.SupportDocuments[i].DataFormat ?? string.Empty);
                     await insertCmd.ExecuteNonQueryAsync();
@@ -267,7 +267,7 @@ namespace PurchaseBlazorApp2.Components.Repository
             {
                 await MyConnection.OpenAsync();
                 var command = new NpgsqlCommand(
-                    "SELECT imagebyte, photoformat FROM quotation_image_table WHERE quotation_id = @req",
+                    "SELECT imagebyte, photoformat,original_filename FROM quotation_image_table WHERE quotation_id = @req",
                     MyConnection, externalTransaction);
                 command.Parameters.AddWithValue("@req", quotationnumber);
 
@@ -277,7 +277,8 @@ namespace PurchaseBlazorApp2.Components.Repository
                     var image = new ImageUploadInfo
                     {
                         Data = reader["imagebyte"] as byte[] ?? Array.Empty<byte>(),
-                        DataFormat = reader["photoformat"]?.ToString() ?? string.Empty
+                        DataFormat = reader["photoformat"]?.ToString() ?? string.Empty,
+                          OriginalFileName = reader["original_filename"]?.ToString() ?? string.Empty
                     };
                     images.Add(image);
                 }
