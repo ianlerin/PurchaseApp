@@ -1,4 +1,5 @@
 ﻿@page "/page-info"
+@using PurchaseBlazorApp2.Client.Service
 @using PurchaseBlazorApp2.Components.Data
 @using WorkerRecord
 @using Radzen.Blazor
@@ -257,7 +258,7 @@ else
     string FilterName = "";
     ExcelWriter excelWriter;
     [Inject]
-    private HttpClient Http { get; set; }
+    private MyHttpService Http { get; set; }
     [Inject] 
     private IJSRuntime JS { get; set; }
     protected async override void OnInitialized()

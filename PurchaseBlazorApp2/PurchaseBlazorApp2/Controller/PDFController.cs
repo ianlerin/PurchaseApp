@@ -15,7 +15,15 @@ namespace PurchaseBlazorApp2.Controller
         {
             MyCompanyID = CompanyID;
         }
+        private async Task<HRRepository> GetHRRepo()
+        {
+            int.TryParse(Request.Headers["CompanyID"], out MyCompanyID);
+            CredentialRepo CredentialRepo = new CredentialRepo();
+            string DBName = await CredentialRepo.TryGetDatabaseNameByCompanyId(MyCompanyID);
+            HRRepository MyRepo = new HRRepository(DBName);
+            return MyRepo;
 
+        }
         private async Task<PORepository> GetPORepo()
         {
             int.TryParse(Request.Headers["CompanyID"], out MyCompanyID);
@@ -54,7 +62,7 @@ namespace PurchaseBlazorApp2.Controller
         public async Task<IActionResult> GenerateWagesPDF(GenerateWagesPdfRequest WagesRequest)
         {
             // Fetch your PO from DB based on poId
-            HRRepository Repo = new HRRepository();
+            HRRepository Repo = await GetHRRepo();
             WageRecord Record = await Repo.GetWageRecordAsync(WagesRequest.Year, WagesRequest.Month);
 
             if (Record.WageRecords.Count == 0) return NotFound();
@@ -65,7 +73,7 @@ namespace PurchaseBlazorApp2.Controller
         [HttpGet("hr/workers")]
         public async Task<IActionResult> GenerateWorkerPdf([FromQuery] string status = "All", [FromQuery] string nationality = "All")
         {
-            HRRepository repo = new HRRepository();
+            HRRepository repo = await GetHRRepo();
             List<WorkerRecord.WorkerRecord> workers;
 
             if (!Enum.TryParse<EWorkerStatus>(status, true, out var parsedStatus))

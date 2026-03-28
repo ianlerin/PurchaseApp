@@ -10,15 +10,17 @@ namespace PurchaseBlazorApp2.Components.Repository
     public class InventoryRepository
     {
         private NpgsqlConnection Connection;
-
-        public InventoryRepository()
+        string MyDB = "";
+        public InventoryRepository(string DBName)
         {
+            MyDB = DBName;
             Connection = GetConnection();
+   
         }
 
         private NpgsqlConnection GetConnection()
         {
-            return new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432;User Id=postgres;Password=password;Database=purchase");
+            return new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432;User Id=postgres;Password=password;Database={MyDB}");
         }
 
         private async Task EnsureSequenceAsync(string sequenceName, string tableName, string columnName)
