@@ -25,26 +25,28 @@ namespace PurchaseBlazorApp2.Components.Repository
 
         private async Task EnsureSequenceAsync(string sequenceName, string tableName, string columnName)
         {
-            // Create sequence if it doesn't exist
-            var createCmd = new NpgsqlCommand($"CREATE SEQUENCE IF NOT EXISTS {sequenceName} START 1;", Connection);
+            // ✅ Let PostgreSQL handle existence safely
+            var createCmd = new NpgsqlCommand(
+                $"CREATE SEQUENCE IF NOT EXISTS {sequenceName} START 1;",
+                Connection);
+
             await createCmd.ExecuteNonQueryAsync();
 
-            // Set sequence value to max + 1
+            // ✅ Sync sequence with existing data
             var setValCmd = new NpgsqlCommand(
-              $@"SELECT setval(
-               '{sequenceName}',
-                COALESCE(
-                (SELECT MAX(CAST(SUBSTRING({columnName} FROM '[0-9]+') AS BIGINT)) 
-                FROM {tableName}),
-                 0
-               ) + 1,
-                false
-            )",
+            $@"SELECT setval(
+        '{sequenceName}',
+        COALESCE(
+            (SELECT MAX(CAST(SUBSTRING({columnName} FROM '[0-9]+') AS BIGINT)) 
+             FROM {tableName}),
+            0
+        ) + 1,
+        false
+    )",
             Connection);
 
             await setValCmd.ExecuteNonQueryAsync();
         }
-
         public async Task<string> AddSupplierAsync(InventorySupplierData supplier)
         {
             await Connection.OpenAsync();
@@ -137,6 +139,11 @@ namespace PurchaseBlazorApp2.Components.Repository
                     return product.ID;
 
                 }
+            }
+            catch(Exception Ex)
+            {
+                Console.WriteLine(Ex);
+                return "-1";
             }
             finally
             {
