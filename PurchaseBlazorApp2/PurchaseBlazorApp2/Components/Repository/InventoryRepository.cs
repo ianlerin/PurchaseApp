@@ -25,33 +25,28 @@ namespace PurchaseBlazorApp2.Components.Repository
 
         private async Task EnsureSequenceAsync(string sequenceName, string tableName, string columnName)
         {
-            //Check sequence exists
-            var checkCmd = new NpgsqlCommand(
-                $"SELECT COUNT(*) FROM information_schema.sequences WHERE sequence_name = '{sequenceName}'",
+            // ✅ Let PostgreSQL handle existence safely
+            var createCmd = new NpgsqlCommand(
+                $"CREATE SEQUENCE IF NOT EXISTS {sequenceName} START 1;",
                 Connection);
-            var count = (long)await checkCmd.ExecuteScalarAsync();
 
-            if (count == 0)
-            {
-                var createCmd = new NpgsqlCommand($"CREATE SEQUENCE {sequenceName} START 1;", Connection);
-                await createCmd.ExecuteNonQueryAsync();
-            }
+            await createCmd.ExecuteNonQueryAsync();
 
+            // ✅ Sync sequence with existing data
             var setValCmd = new NpgsqlCommand(
-              $@"SELECT setval(
-               '{sequenceName}',
-                COALESCE(
-                (SELECT MAX(CAST(SUBSTRING({columnName} FROM '[0-9]+') AS BIGINT)) 
-                FROM {tableName}),
-                 0
-               ) + 1,
-                false
-            )",
+            $@"SELECT setval(
+        '{sequenceName}',
+        COALESCE(
+            (SELECT MAX(CAST(SUBSTRING({columnName} FROM '[0-9]+') AS BIGINT)) 
+             FROM {tableName}),
+            0
+        ) + 1,
+        false
+    )",
             Connection);
 
             await setValCmd.ExecuteNonQueryAsync();
         }
-
         public async Task<string> AddSupplierAsync(InventorySupplierData supplier)
         {
             await Connection.OpenAsync();
@@ -144,6 +139,11 @@ namespace PurchaseBlazorApp2.Components.Repository
                     return product.ID;
 
                 }
+            }
+            catch(Exception Ex)
+            {
+                Console.WriteLine(Ex);
+                return "-1";
             }
             finally
             {
