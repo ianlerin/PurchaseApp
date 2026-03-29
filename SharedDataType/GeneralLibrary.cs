@@ -54,7 +54,6 @@ namespace PurchaseBlazorApp2.Client
         }
         static public async Task<CompanyInfo> GetCurrentCompanyInfo(IJSRuntime JS)
         {
-            await JS.InvokeVoidAsync("alert", $"GetCurrentCompanyInfo");
             CompanyInfo NullCompany = new CompanyInfo();
             string Email = "";
             var json = await JS.InvokeAsync<string>("getCookie", "SelectedCompany");
@@ -64,16 +63,13 @@ namespace PurchaseBlazorApp2.Client
                 {
                     CompanyInfo restoredCompany = System.Text.Json.JsonSerializer.Deserialize<CompanyInfo>(json);
 
-                    await JS.InvokeVoidAsync("alert", $"restoredCompany:{restoredCompany.Name}");
                     return restoredCompany;
                 }
                 catch (Exception Ex)
                 {
-                    await JS.InvokeVoidAsync("alert", $"Exception{Ex}");
                 }
             }
 
-            await JS.InvokeVoidAsync("alert", $"null company");
             return NullCompany;
         }
 

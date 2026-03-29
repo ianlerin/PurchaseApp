@@ -247,7 +247,6 @@
 
             if (!string.IsNullOrEmpty(returnUrl))
             {
-                await JS.InvokeVoidAsync("alert", $"return url available:{returnUrl}");
                 if (!returnUrl.StartsWith("/")) returnUrl = "/" + returnUrl;
                 var match = returnUrl.Split("companyId=").LastOrDefault();
                 if (match != null && int.TryParse(match.Split('&')[0], out var parsed))
@@ -255,8 +254,6 @@
                     int companyId = parsed;
                     CompanyInfo Info = await LoadReturnCompanyInfo(companyId, userID);
                     CompanyState.CurrentCompany = Info;
-
-                    await JS.InvokeVoidAsync("alert", $"setting company state id as:{CompanyState.CurrentCompany.ID}");
                     await GeneralLibrary.LoadCompanyInfo(Info, NavigationManager, Http, JS);
                 }
                 NavigationManager.NavigateTo(returnUrl, forceLoad: true);
