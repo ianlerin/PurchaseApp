@@ -3,9 +3,11 @@
 @page "/"
 @using PurchaseBlazorApp2.Client.Layout
 @using PurchaseBlazorApp2.Components.Data
+@using SharedDataType.Service
 @inject NavigationManager NavigationManager
 @layout SimpleLayout
 @inject HttpClient Http
+@inject CompanyState CompanyState
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 
@@ -68,10 +70,19 @@
 
     private string ErrorMessage;
 
+    private CancellationTokenSource _cts = new();
+
     protected override async Task OnInitializedAsync()
     {
         await LoadCompanies();
+
+        if (CompanyState.CurrentCompany?.ID > 0)
+        {
+            NavigationManager.NavigateTo("/homepage");
+        }
     }
+
+   
 
     private async Task LoadCompanies()
     {
@@ -133,6 +144,7 @@
         if (JS != null)
         {
             await GeneralLibrary.LoadCompanyInfo(SelectedCompany, NavigationManager, Http, JS);
+            CompanyState.CurrentCompany = SelectedCompany;
             NavigationManager.NavigateTo("/homepage");
         }
 
