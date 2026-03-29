@@ -8,6 +8,7 @@ using Microsoft.Kiota.Abstractions.Authentication;
 using PurchaseBlazorApp2.Client.Service;
 using PurchaseBlazorApp2.Components.Global;
 using Radzen;
+using SharedDataType.Service;
 
 
 
@@ -57,6 +58,7 @@ builder.Services.AddScoped<ContextMenuService>();
 builder.Services.AddScoped<ClientGlobalVar>();
 builder.Services.AddScoped<ClientStateStorage>();
 builder.Services.AddScoped<MyHttpService>();
+builder.Services.AddScoped<CompanyState>();
 builder.Services.AddAuthorizationCore();
 builder.Services.AddApiAuthorization();
 builder.Services.AddCascadingAuthenticationState();
