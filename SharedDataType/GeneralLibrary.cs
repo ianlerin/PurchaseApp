@@ -1,5 +1,9 @@
-﻿using Microsoft.JSInterop;
+﻿using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
+using PurchaseBlazorApp2.Client.Service;
 using PurchaseBlazorApp2.Components.Data;
+using System.Net.Http.Json;
+using static System.Net.WebRequestMethods;
 
 
 namespace PurchaseBlazorApp2.Client
@@ -130,6 +134,66 @@ namespace PurchaseBlazorApp2.Client
             return restoredUser;
         }
 
+        static public async Task LoadCompanyInfo(CompanyInfo SelectedCompany, NavigationManager NavigationManager, HttpClient Http, IJSRuntime JS)
+        {
+
+            if (JS != null)
+            {
+                UserName MyUser = new UserName();
+                string userKey = await JS.InvokeAsync<string>("getCookie", "userKey");
+                if (!string.IsNullOrWhiteSpace(userKey))
+                {
+                    MyUser = System.Text.Json.JsonSerializer.Deserialize<UserName>(userKey);
+                }
+                GetRoleRequest Request = new GetRoleRequest();
+                Request.UserID = MyUser.ID;
+                Request.CompanyId = SelectedCompany.ID;
+                var roleTask = Http.PostAsJsonAsync(
+                  NavigationManager.ToAbsoluteUri("api/login/getrole"),
+                  Request
+              );
+                var hrroleTask = Http.PostAsJsonAsync(
+                   NavigationManager.ToAbsoluteUri("api/login/gethrrole"),
+                   Request
+               );
+
+                await Task.WhenAll(hrroleTask, roleTask);
+                // --- ROLE ---
+                EDepartment departmentRole = EDepartment.NotSpecified;
+                try
+                {
+                    var roleResponse = roleTask.Result;
+                    departmentRole = await roleResponse.Content.ReadFromJsonAsync<EDepartment>();
+                }
+                catch (Exception ex)
+                {
+                    await JS.InvokeVoidAsync("console.error", $"Error retrieving role: {ex.Message}");
+                }
+
+                EHRRole HRRole = EHRRole.None;
+                try
+                {
+                    var hrroleResponse = hrroleTask.Result;
+                    HRRole = await hrroleResponse.Content.ReadFromJsonAsync<EHRRole>();
+                }
+                catch (Exception ex)
+                {
+                    await JS.InvokeVoidAsync("console.error", $"Error retrieving role: {ex.Message}");
+                }
+                MyUser.Role = departmentRole;
+                MyUser.Department = departmentRole.ToString();
+                MyUser.HRRole = HRRole;
+                if (JS != null)
+                {
+                    string jsonUser = System.Text.Json.JsonSerializer.Serialize(MyUser);
+                    await JS.InvokeVoidAsync("setCookie", "userKey", jsonUser, 1);
+                }
+
+                string SelectedCompanyUser = System.Text.Json.JsonSerializer.Serialize(SelectedCompany);
+                await JS.InvokeVoidAsync("setCookie", "SelectedCompany", SelectedCompanyUser, 1);
+            }
+
+        }
 
         static public Task<string> GetAccessTokenAsync(string accessToken,Uri uri, Dictionary<string, object>? context = null, CancellationToken token = default)
         {
