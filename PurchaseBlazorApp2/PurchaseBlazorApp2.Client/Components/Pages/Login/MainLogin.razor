@@ -255,6 +255,8 @@
                     int companyId = parsed;
                     CompanyInfo Info=await LoadReturnCompanyInfo(userID, companyId);
                     CompanyState.CurrentCompany = Info;
+
+                    await JS.InvokeVoidAsync("alert", $"setting company state id as:{CompanyState.CurrentCompany.ID}");
                     await GeneralLibrary.LoadCompanyInfo(Info, NavigationManager, Http, JS);
                 }
                 NavigationManager.NavigateTo(returnUrl, forceLoad: true);
