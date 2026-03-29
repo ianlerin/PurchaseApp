@@ -10,6 +10,7 @@ using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using Radzen;
+using SharedDataType.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,6 +31,7 @@ builder.Services.AddScoped<ContextMenuService>();
 builder.Services.AddScoped<LoginCookieService>();
 builder.Services.AddScoped<ClientStateStorage>();
 builder.Services.AddScoped<ClientGlobalVar>();
+builder.Services.AddScoped<CompanyState>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
 builder.Services.AddCascadingAuthenticationState();

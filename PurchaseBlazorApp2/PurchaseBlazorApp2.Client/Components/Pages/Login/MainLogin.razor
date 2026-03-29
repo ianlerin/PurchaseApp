@@ -8,7 +8,10 @@
 @using Radzen
 @using Radzen.Blazor
 @using System.Net.Http.Headers
+@using SharedDataType.Service
+
 @inject HttpClient Http
+@inject CompanyState CompanyState
 @inject IJSRuntime JS
 @inject IServiceProvider ServiceProvider
 @inject NavigationManager NavigationManager
@@ -244,12 +247,14 @@
 
             if (!string.IsNullOrEmpty(returnUrl))
             {
+                //await JS.InvokeVoidAsync("alert", $"return url available");
                 if (!returnUrl.StartsWith("/")) returnUrl = "/" + returnUrl;
                 var match = returnUrl.Split("companyId=").LastOrDefault();
                 if (match != null && int.TryParse(match.Split('&')[0], out var parsed))
                 {
                     int companyId = parsed;
                     CompanyInfo Info=await LoadReturnCompanyInfo(userID, companyId);
+                    CompanyState.CurrentCompany = Info;
                     await GeneralLibrary.LoadCompanyInfo(Info, NavigationManager, Http, JS);
                 }
                 NavigationManager.NavigateTo(returnUrl, forceLoad: true);
