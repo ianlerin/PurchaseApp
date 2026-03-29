@@ -75,7 +75,7 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadCompanies();
-
+        await JS.InvokeVoidAsync("alert", $"found company state id as:{CompanyState.CurrentCompany.ID}");
         if (CompanyState.CurrentCompany?.ID > 0)
         {
             NavigationManager.NavigateTo("/homepage");
