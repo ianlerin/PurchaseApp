@@ -20,7 +20,7 @@
                 <label class="form-label">Select Company</label>
 
                 <select class="form-select" @bind="SelectedCompanyId">
-                    <option value="">-- Select Company --</option>
+                    <option value=0>-- Select Company --</option>
 
                     @foreach (var company in Companies)
                     {
@@ -74,14 +74,23 @@
 
     protected override async Task OnInitializedAsync()
     {
+       
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
         await LoadCompanies();
-        await JS.InvokeVoidAsync("alert", $"found company state id as:{CompanyState.CurrentCompany.ID}");
+
+        await JS.InvokeVoidAsync("alert",
+            $"found company state id as:{CompanyState.CurrentCompany?.ID}");
+
         if (CompanyState.CurrentCompany?.ID > 0)
         {
             NavigationManager.NavigateTo("/homepage");
         }
     }
-
    
 
     private async Task LoadCompanies()
@@ -120,6 +129,7 @@
                 Companies = await response.Content
                     .ReadFromJsonAsync<List<CompanyInfo>>()
                     ?? new List<CompanyInfo>();
+                    StateHasChanged();
             }
             else
             {   await JS.InvokeVoidAsync("console.error", $"response error");
