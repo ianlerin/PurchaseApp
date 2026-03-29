@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
+using PurchaseBlazorApp2.Client;
 using PurchaseBlazorApp2.Client.Service;
 using PurchaseBlazorApp2.Components.Data;
 using System;
@@ -48,14 +49,14 @@ namespace Genesis.EmailService
                     mainList = await GetProcurementEmailsAsync(CompanyID);
                     if (!string.IsNullOrWhiteSpace(currentEmail))
                         ccList.Add(currentEmail);
-                    await SendPreApprovalEmailAsync(record, mainList, ccList);
+                    await SendPreApprovalEmailAsync(record, mainList, ccList, CompanyID);
                     break;
 
                 case EApprovalStatus.PendingApproval:
                     await _js.InvokeVoidAsync("console.log", "Status: PendingApproval");
                     mainList = await GetAllNeededForApprovalEmailsAsync(record, CompanyID);
                     ccList = await GetProcurementEmailsAsync(CompanyID);
-                    await SendEmailAsync(record, mainList, ccList);
+                    await SendEmailAsync(record, mainList, ccList, CompanyID);
                     break;
 
                 case EApprovalStatus.Approved:
@@ -64,7 +65,7 @@ namespace Genesis.EmailService
                     mainList = await GetProcurementEmailsAsync(CompanyID);
                     if (!string.IsNullOrWhiteSpace(currentEmail))
                         ccList.Add(currentEmail);
-                    await SendApprovalNotificationEmailAsync(record, mainList, ccList);
+                    await SendApprovalNotificationEmailAsync(record, mainList, ccList, CompanyID);
                     break;
             }
 
@@ -84,16 +85,16 @@ namespace Genesis.EmailService
             {
                 case (EPaymentStatus.PendingPayment):
                 mainList = await GetFinanceEmailsAsync(CompanyID);
-                await SendPaymentReadyEmailAsync(PORecord.PO_ID, mainList, ccList);
+                await SendPaymentReadyEmailAsync(PORecord.PO_ID, mainList, ccList, CompanyID);
                 break;
                 case (EPaymentStatus.Paid):
                     mainList = await GetProcurementEmailsAsync(CompanyID);
-                    await SendFinanceApprovalNotificationAsync(PORecord.PO_ID, mainList, ccList);
+                    await SendFinanceApprovalNotificationAsync(PORecord.PO_ID, mainList, ccList, CompanyID);
                     break;
             }
        }
 
-        private async Task SendFinanceApprovalNotificationAsync(string POID, List<string> mainEmailList, List<string> ccList)
+        private async Task SendFinanceApprovalNotificationAsync(string POID, List<string> mainEmailList, List<string> ccList, int CompanyId)
         {
             if (mainEmailList == null || !mainEmailList.Any(e => !string.IsNullOrWhiteSpace(e)))
             {
@@ -108,7 +109,8 @@ namespace Genesis.EmailService
             await _js.InvokeVoidAsync("console.log", $"Main Emails: {mainEmails}");
             await _js.InvokeVoidAsync("console.log", $"CC Emails: {ccEmails}");
 
-            string encodedReturnUrl = Uri.EscapeDataString($"finance-record/{POID}");
+            string returnPath = $"finance-record/{POID}?companyId={CompanyId}";
+            string encodedReturnUrl = Uri.EscapeDataString(returnPath);
             string approvalUrl = $"{_navigation.BaseUri}authentication/login?returnUrl={encodedReturnUrl}";
 
             var emailRequest = new EmailRequest
@@ -160,7 +162,7 @@ namespace Genesis.EmailService
             }
         }
 
-        private async Task SendPaymentReadyEmailAsync(string POID, List<string> mainEmailList, List<string> ccList)
+        private async Task SendPaymentReadyEmailAsync(string POID, List<string> mainEmailList, List<string> ccList,int CompanyID)
         {
             if (mainEmailList == null || !mainEmailList.Any(e => !string.IsNullOrWhiteSpace(e)))
             {
@@ -175,7 +177,8 @@ namespace Genesis.EmailService
             await _js.InvokeVoidAsync("console.log", $"Main Emails: {mainEmails}");
             await _js.InvokeVoidAsync("console.log", $"CC Emails: {ccEmails}");
 
-            string encodedReturnUrl = Uri.EscapeDataString($"finance-record/{POID}");
+            string returnPath = $"finance-record/{POID}?companyId={CompanyID}";
+            string encodedReturnUrl = Uri.EscapeDataString(returnPath);
             string paymentUrl = $"{_navigation.BaseUri}authentication/login?returnUrl={encodedReturnUrl}";
 
             var emailRequest = new EmailRequest
@@ -228,7 +231,7 @@ namespace Genesis.EmailService
         /// <summary>
         /// Sends a pre approval email with a generated link for approval.
         /// </summary>
-        private async Task SendPreApprovalEmailAsync(PurchaseRequisitionRecord record, List<string> mainEmailList, List<string> ccList)
+        private async Task SendPreApprovalEmailAsync(PurchaseRequisitionRecord record, List<string> mainEmailList, List<string> ccList, int CompanyID)
         {
             if (mainEmailList == null || !mainEmailList.Any(e => !string.IsNullOrWhiteSpace(e)))
             {
@@ -243,8 +246,9 @@ namespace Genesis.EmailService
             await _js.InvokeVoidAsync("console.log", $"Main Emails: {mainEmails}");
             await _js.InvokeVoidAsync("console.log", $"CC Emails: {ccEmails}");
 
-            string encodedReturnUrl = Uri.EscapeDataString(
-                $"pr-preapproval/{record.RequisitionNumber}");
+            string returnPath = $"pr-preapproval/{record.RequisitionNumber}?companyId={CompanyID}";
+
+            string encodedReturnUrl = Uri.EscapeDataString(returnPath);
 
             string requisitionUrl =
                 $"{_navigation.BaseUri}authentication/login?returnUrl={encodedReturnUrl}";
@@ -300,7 +304,7 @@ namespace Genesis.EmailService
         /// <summary>
         /// Sends an email with to notify approved
         /// </summary>
-        private async Task SendApprovalNotificationEmailAsync(PurchaseRequisitionRecord record, List<string> mainEmailList, List<string> ccList)
+        private async Task SendApprovalNotificationEmailAsync(PurchaseRequisitionRecord record, List<string> mainEmailList, List<string> ccList, int CompanyID)
         {
             if (mainEmailList == null || !mainEmailList.Any(e => !string.IsNullOrWhiteSpace(e)))
             {
@@ -316,8 +320,10 @@ namespace Genesis.EmailService
             await _js.InvokeVoidAsync("console.log", $"CC Emails: {ccEmails}");
 
             // URL to view requisition details
-            string encodedReturnUrl = Uri.EscapeDataString(
-                $"pr-preapproval/{record.RequisitionNumber}");
+            string returnPath = $"pr-preapproval/{record.RequisitionNumber}?companyId={CompanyID}";
+
+            string encodedReturnUrl = Uri.EscapeDataString(returnPath);
+
             string requisitionUrl = $"{_navigation.BaseUri}authentication/login?returnUrl={encodedReturnUrl}";
 
             // Determine email subject and body content
@@ -399,7 +405,7 @@ namespace Genesis.EmailService
         /// <summary>
         /// Sends an email with a generated link for approval.
         /// </summary>
-        private async Task SendEmailAsync(PurchaseRequisitionRecord record, List<string> mainEmailList, List<string> ccList)
+        private async Task SendEmailAsync(PurchaseRequisitionRecord record, List<string> mainEmailList, List<string> ccList, int CompanyID)
         {
             if (mainEmailList == null || !mainEmailList.Any(e => !string.IsNullOrWhiteSpace(e)))
             {
@@ -414,8 +420,11 @@ namespace Genesis.EmailService
             await _js.InvokeVoidAsync("console.log", $"Main Emails: {mainEmails}");
             await _js.InvokeVoidAsync("console.log", $"CC Emails: {ccEmails}");
 
+
+            string returnPath = $"purchaserequisitionrecords_client/create/{record.RequisitionNumber}?companyId={CompanyID}";
+
             string encodedReturnUrl = Uri.EscapeDataString(
-                $"purchaserequisitionrecords_client/create/{record.RequisitionNumber}");
+                returnPath);
 
             string requisitionUrl =
                 $"{_navigation.BaseUri}authentication/login?returnUrl={encodedReturnUrl}";

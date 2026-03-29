@@ -140,7 +140,46 @@ namespace PurchaseBlazorApp2.Components.Repository
 
             return companiesInfo;
         }
+        public async Task<CompanyInfo?> TryGetCompanyInfo(int userID, int companyId)
+        {
+            List<int> idToFind = await TryGetAllCompanyID(userID);
 
+            if (idToFind == null || idToFind.Count == 0)
+                return null;
+
+            try
+            {
+                await using var connection = new NpgsqlConnection(Connection.ConnectionString);
+                await connection.OpenAsync();
+
+                await using var cmd = new NpgsqlCommand(
+                @"SELECT company_id AS ID, display_name AS Name
+          FROM companies
+          WHERE company_id = ANY(@ids)
+          AND company_id = @companyId
+          LIMIT 1", connection);
+
+                cmd.Parameters.AddWithValue("ids", idToFind.ToArray());
+                cmd.Parameters.AddWithValue("companyId", companyId);
+
+                await using var reader = await cmd.ExecuteReaderAsync();
+
+                if (await reader.ReadAsync())
+                {
+                    return new CompanyInfo
+                    {
+                        ID = reader.GetInt32(0),
+                        Name = reader.GetString(1)
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error fetching company info: " + ex.Message);
+            }
+
+            return null;
+        }
         public async Task<string?> TryGetDatabaseNameByCompanyId(int companyId)
         {
 

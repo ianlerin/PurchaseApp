@@ -67,6 +67,11 @@ namespace PurchaseBlazorApp2.Controller
             List<CompanyInfo> CompanyInfo = await CredentialRepository.TryGetAllCompanyInfo(UserID);
             return Ok(CompanyInfo);
         }
-
+        [HttpPost("getcompany")]
+        public async Task<ActionResult<CompanyInfo>> TryGetCompanyInfo([FromBody] CompanyInquireInfo InquireInfo)
+        {
+           CompanyInfo CompanyInfo = await CredentialRepository.TryGetCompanyInfo(InquireInfo.UserID,InquireInfo.CompanyId);
+            return Ok(CompanyInfo);
+        }
     }
 }

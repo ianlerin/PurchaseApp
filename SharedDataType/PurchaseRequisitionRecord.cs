@@ -94,6 +94,11 @@ namespace PurchaseBlazorApp2.Components.Data
         public string Name { get; set; }
     }
 
+    public class CompanyInquireInfo
+    {
+        public int UserID { get; set; }
+        public int CompanyId { get; set; }
+    }
     public class DepartmentInfo
     {
         public List<EDepartment> Departments { get; set; }
