@@ -1,5 +1,9 @@
 # Database Change Log
 
+#29 March 2025 - Alex
+### MAJOR update
+- updated data from production
+
 #18 March 2025 - Alex
 ### Schema update
 - added inventory schema
