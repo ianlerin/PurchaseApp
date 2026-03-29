@@ -38,8 +38,8 @@ namespace PurchaseBlazorApp2.Service
             {
                 try
                 {
-                    await GatherandSendReminder("purchase_Freebitz",1);
-                    await GatherandSendReminder("purchase_LCDA",2);
+                    await GatherandSendReminder("purchase_fb",1);
+                    await GatherandSendReminder("purchase_lcda",2);
                    
                 }
                 catch (Exception ex)
