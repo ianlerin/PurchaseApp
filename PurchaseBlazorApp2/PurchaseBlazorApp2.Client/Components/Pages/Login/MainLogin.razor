@@ -147,7 +147,7 @@
     private async Task HandleLogInSucceeded(RemoteAuthenticationState state)
     {
         await JS.InvokeVoidAsync("console.log", "HandleLogInSucceeded triggered");
-
+        int userID = 0;
         try
         {
             // --- AUTH STATE ---
@@ -196,7 +196,7 @@
                 await JS.InvokeVoidAsync("alert", "unauthorized!");
                 return;
             }
-            int userID = 0;
+
             var response = await Http.PostAsJsonAsync(
           NavigationManager.ToAbsoluteUri("api/login/getuserid"),
           email
@@ -206,7 +206,7 @@
             {
                 userID = await response.Content.ReadFromJsonAsync<int>();
             }
-            
+
 
             // --- MICROSOFT GRAPH USER INFO ---
             var graph = graphTask.Result;
@@ -245,8 +245,13 @@
             if (!string.IsNullOrEmpty(returnUrl))
             {
                 if (!returnUrl.StartsWith("/")) returnUrl = "/" + returnUrl;
-                await JS.InvokeVoidAsync("console.log", $"Navigate to:{returnUrl}");
-
+                var match = returnUrl.Split("companyId=").LastOrDefault();
+                if (match != null && int.TryParse(match.Split('&')[0], out var parsed))
+                {
+                    int companyId = parsed;
+                    CompanyInfo Info=await LoadReturnCompanyInfo(userID, companyId);
+                    await GeneralLibrary.LoadCompanyInfo(Info, NavigationManager, Http, JS);
+                }
                 NavigationManager.NavigateTo(returnUrl, forceLoad: true);
             }
             else
@@ -263,6 +268,32 @@
         }
     }
 
+    private async Task<CompanyInfo> LoadReturnCompanyInfo(int CompanyID, int UserID)
+    {
+        CompanyInfo FoundCompanyInfo = new CompanyInfo();
+        CompanyInquireInfo inquireInfo = new CompanyInquireInfo();
+        inquireInfo.CompanyId = CompanyID;
+        inquireInfo.UserID = UserID;
+
+
+        var response = await Http.PostAsJsonAsync(
+             "api/login/getcompany",
+             inquireInfo
+         );
+
+        if (response.IsSuccessStatusCode)
+        {
+            await JS.InvokeVoidAsync("console.error", $"response success");
+            FoundCompanyInfo = await response.Content
+                .ReadFromJsonAsync<CompanyInfo>()
+                ?? new CompanyInfo();
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("console.error", $"response error");
+        }
+        return FoundCompanyInfo;
+    }
 
     private async Task<GraphUser?> GetGraphUserAsync(string token)
     {
