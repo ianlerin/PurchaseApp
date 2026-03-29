@@ -253,7 +253,7 @@
                 if (match != null && int.TryParse(match.Split('&')[0], out var parsed))
                 {
                     int companyId = parsed;
-                    CompanyInfo Info=await LoadReturnCompanyInfo(userID, companyId);
+                    CompanyInfo Info = await LoadReturnCompanyInfo(companyId, userID);
                     CompanyState.CurrentCompany = Info;
 
                     await JS.InvokeVoidAsync("alert", $"setting company state id as:{CompanyState.CurrentCompany.ID}");
