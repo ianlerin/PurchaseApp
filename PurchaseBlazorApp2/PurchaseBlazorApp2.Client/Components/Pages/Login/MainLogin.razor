@@ -247,7 +247,7 @@
 
             if (!string.IsNullOrEmpty(returnUrl))
             {
-               await JS.InvokeVoidAsync("alert", $"return url available");
+                await JS.InvokeVoidAsync("alert", $"return url available:{returnUrl}");
                 if (!returnUrl.StartsWith("/")) returnUrl = "/" + returnUrl;
                 var match = returnUrl.Split("companyId=").LastOrDefault();
                 if (match != null && int.TryParse(match.Split('&')[0], out var parsed))
