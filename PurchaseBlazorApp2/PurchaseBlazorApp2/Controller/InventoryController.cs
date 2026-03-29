@@ -119,12 +119,14 @@ namespace PurchaseBlazorApp2.Controller
         [HttpGet("get-customers")]
         public async Task<List<InventoryCustomerData>> GetCustomers()
         {
+            InventoryRepository _repo = await GetMyRepo();
             return await _repo.GetCustomersAsync();
         }
 
         [HttpPost("add-customer")]
         public async Task<IActionResult> AddCustomer([FromBody] InventoryCustomerData customer)
         {
+            InventoryRepository _repo = await GetMyRepo();
             if (customer == null)
                 return BadRequest("Customer data cannot be null");
 
