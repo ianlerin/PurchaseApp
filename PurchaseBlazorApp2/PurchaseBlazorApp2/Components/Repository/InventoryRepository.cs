@@ -120,7 +120,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                 {
                     // update
                     var updateCmd = new NpgsqlCommand(
-                        "UPDATE inventory.addproduct SET name=@name,skucode=@skucode,productname=@productname,flavour=@flavour,packsize=@packsize,costperunit=@costperunit,b2bprice=@b2bprice b2cprice=@b2cprice,cartonconfiguration=@cartonconfiguration, status=@status WHERE id=@id",
+                        "UPDATE inventory.addproduct SET name=@name,skucode=@skucode,productname=@productname,flavour=@flavour,packsize=@packsize,costperunit=@costperunit,b2bprice=@b2bprice ,b2cprice=@b2cprice,cartonconfiguration=@cartonconfiguration, status=@status WHERE id=@id",
                         Connection);
                     updateCmd.Parameters.AddWithValue("id", product.ID);
                     updateCmd.Parameters.AddWithValue("name", product.Name ?? "");
