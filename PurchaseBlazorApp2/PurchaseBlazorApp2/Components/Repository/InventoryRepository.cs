@@ -213,6 +213,7 @@ namespace PurchaseBlazorApp2.Components.Repository
 
         public async Task<List<InventoryItemData>> GetProductsAsync()
         {
+            List<InventoryItemData> dummy= new List<InventoryItemData>();
             await Connection.OpenAsync();
             try
             {
@@ -239,10 +240,16 @@ namespace PurchaseBlazorApp2.Components.Repository
                 }
                 return list;
             }
+            catch(Exception Ex)
+            {
+                Console.WriteLine(Ex.Message);
+
+            }
             finally
             {
                 await Connection.CloseAsync();
             }
+            return dummy;
         }
 
         public async Task AddRecordAsync(InventoryRecordData record)
