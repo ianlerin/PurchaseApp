@@ -59,6 +59,51 @@ else
                                       Width="150px" />
 
 
+                <RadzenDataGridColumn TItem="InventoryItemData"
+                                      Property="SKUCode"
+                                      Title="SKUCode"
+                                      Width="150px" />
+
+                <RadzenDataGridColumn TItem="InventoryItemData"
+                                      Property="ProductName"
+                                      Title="ProductName"
+                                      Width="150px" />
+
+                <RadzenDataGridColumn TItem="InventoryItemData"
+                                      Property="Flavour"
+                                      Title="Flavour"
+                                      Width="150px" />
+
+                <RadzenDataGridColumn TItem="InventoryItemData"
+                                      Property="PackSize"
+                                      Title="PackSize"
+                                      Width="150px" />
+
+                <RadzenDataGridColumn TItem="InventoryItemData"
+                                      Property="CostPerUnit"
+                                      Title="CostPerUnit"
+                                      Width="150px" />
+
+                <RadzenDataGridColumn TItem="InventoryItemData"
+                                      Property="B2BPrice"
+                                      Title="B2BPrice"
+                                      Width="150px" />
+
+                <RadzenDataGridColumn TItem="InventoryItemData"
+                                      Property="B2CPrice"
+                                      Title="B2CPrice"
+                                      Width="150px" />
+
+                <RadzenDataGridColumn TItem="InventoryItemData"
+                                      Property="CartonConfiguration"
+                                      Title="CartonConfiguration"
+                                      Width="150px" />
+
+                <RadzenDataGridColumn TItem="InventoryItemData"
+                                      Property="Status"
+                                      Title="Status"
+                                      Width="150px" />
+
                 <RadzenDataGridColumn TItem="InventoryItemData" Title="Actions" Width="120px">
                     <Template Context="data">
                         <div style="display:flex; gap:6px;">
@@ -105,6 +150,21 @@ else
                                       Property="Quantity"
                                       Title="Quantity"
                                       Width="200px" />
+
+                <RadzenDataGridColumn TItem="InventorySupplierData"
+                                      Property="SupplierName"
+                                      Title="SupplierName"
+                                      Width="150px" />
+
+                <RadzenDataGridColumn TItem="InventorySupplierData"
+                                      Property="ContactDetails"
+                                      Title="ContactDetails"
+                                      Width="150px" />
+
+                <RadzenDataGridColumn TItem="InventorySupplierData"
+                                      Property="PaymentTerms"
+                                      Title="PaymentTerms"
+                                      Width="150px" />
 
                 <RadzenDataGridColumn TItem="InventorySupplierData" Title="Actions" Width="120px">
                     <Template Context="data">
@@ -218,33 +278,42 @@ else
 
         try
         {
-            Product =
-                await Http.GetFromJsonAsync<List<InventoryItemData>>("api/inventory/get-products")
-                ?? new();
-
-            Supplier =
-                await Http.GetFromJsonAsync<List<InventorySupplierData>>("api/inventory/get-suppliers")
-                ?? new();
-
-            Customer =
-               await Http.GetFromJsonAsync<List<InventoryCustomerData>>("api/inventory/get-customers")
-               ?? new();
-
-            foreach (var p in Product)
-            {
-                p.Quantity = await Http.GetFromJsonAsync<int>($"api/inventory/get-quantity?productId={p.ID}");
-            }
-
-            foreach (var s in Supplier)
-            {
-                s.Quantity = await Http.GetFromJsonAsync<int>($"api/inventory/get-quantity?supplierId={s.ID}");
-            }
+            Product = await Http.GetFromJsonAsync<List<InventoryItemData>>("api/inventory/get-products") ?? new();
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine($"Failed to load products: {ex.Message}");
             Product = new();
-            Supplier= new();
+        }
+
+        try
+        {
+            Supplier = await Http.GetFromJsonAsync<List<InventorySupplierData>>("api/inventory/get-suppliers") ?? new();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to load suppliers: {ex.Message}");
+            Supplier = new();
+        }
+
+        try
+        {
+            Customer = await Http.GetFromJsonAsync<List<InventoryCustomerData>>("api/inventory/get-customers") ?? new();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to load customers: {ex.Message}");
             Customer = new();
+        }
+
+        foreach (var p in Product)
+        {
+            p.Quantity = await Http.GetFromJsonAsync<int>($"api/inventory/get-quantity?productId={p.ID}");
+        }
+
+        foreach (var s in Supplier)
+        {
+           s.Quantity = await Http.GetFromJsonAsync<int>($"api/inventory/get-quantity?supplierId={s.ID}");
         }
 
         IsLoading = false;
