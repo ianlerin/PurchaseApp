@@ -22,6 +22,53 @@
     <label class="form-label fw-bold">Quantity</label>
     <InputNumber class="form-control" @bind-Value="ItemData.Quantity" readonly />
 </div>
+<div>
+    <label class="form-label fw-bold">SKU Code</label>
+    <InputText class="form-control" @bind-Value="ItemData.SKUCode" />
+</div>
+
+<div>
+    <label class="form-label fw-bold">Product Name</label>
+    <InputText class="form-control" @bind-Value="ItemData.ProductName" />
+</div>
+
+<div>
+    <label class="form-label fw-bold">Flavour</label>
+    <InputText class="form-control" @bind-Value="ItemData.Flavour" />
+</div>
+
+<div>
+    <label class="form-label fw-bold">Pack Size</label>
+    <InputText class="form-control" @bind-Value="ItemData.PackSize" />
+</div>
+
+<div>
+    <label class="form-label fw-bold">Cost Per Unit</label>
+    <InputNumber class="form-control" @bind-Value="ItemData.CostPerUnit" Step="0.01" />
+</div>
+
+<div>
+    <label class="form-label fw-bold">B2B Price</label>
+    <InputNumber class="form-control" @bind-Value="ItemData.B2BPrice" Step="0.01" />
+</div>
+
+<div>
+    <label class="form-label fw-bold">B2C Price</label>
+    <InputNumber class="form-control" @bind-Value="ItemData.B2CPrice" Step="0.01" />
+</div>
+
+<div>
+    <label class="form-label fw-bold">Carton Configuration</label>
+    <InputText class="form-control" @bind-Value="ItemData.CartonConfiguration" />
+</div>
+
+<div>
+    <label class="form-label fw-bold">Status</label>
+    <InputSelect class="form-select" @bind-Value="ItemData.Status">
+        <option value="Active">Active</option>
+        <option value="Inactive">Inactive</option>
+    </InputSelect>
+</div>
 
 <div class="d-flex gap-2 mt-3">
     <button type="submit"

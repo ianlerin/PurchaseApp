@@ -25,6 +25,21 @@
     <InputText class="form-control"
                @bind-Value="SupplierData.Contact" />
 </div>
+<div>
+    <label class="form-label fw-bold">Supplier Name</label>
+    <InputText class="form-control"
+               @bind-Value="SupplierData.SupplierName" />
+</div>
+<div>
+    <label class="form-label fw-bold">Contact Details</label>
+    <InputText class="form-control"
+               @bind-Value="SupplierData.ContactDetails" />
+</div>
+<div>
+    <label class="form-label fw-bold">Payment Terms</label>
+    <InputText class="form-control"
+               @bind-Value="SupplierData.PaymentTerms" />
+</div>
 
 <div>
     <label class="form-label fw-bold">Quantity</label>
@@ -92,10 +107,7 @@
 
             await JS.InvokeVoidAsync("alert", $"SubmitSuccess! Supplier ID: {SupplierData.ID}");
 
-            SupplierData.ID = "";
-            SupplierData.Name = "";
-            SupplierData.Address = "";
-            SupplierData.Contact = "";
+            SupplierData = new InventorySupplierData();
         }
         catch (Exception ex)
         {
