@@ -151,8 +151,14 @@
                                         @onclick="SaveAsDraft">
                                     Save Draft
                                 </button>
+                             
                             }
-
+                            @if (!string.IsNullOrEmpty(PurchaseRequisitionRecord.RequisitionNumber))
+                            {
+                                <button @onclick="GoToPreApproval" class="btn btn-outline-secondary btn-lg">
+                                    Pre Approval
+                                </button>
+                            }
                             @if (bIsProcurementManager && !bCanEditApproval && IsSubmitted() &&
                                                     !string.IsNullOrEmpty(PurchaseRequisitionRecord.Rejectreason))
                             {
@@ -580,6 +586,10 @@
     {
         StateStorage.Set("PR", PurchaseRequisitionRecord);
 
+    }
+    private void GoToPreApproval()
+    {
+        NavigationManager.NavigateTo($"/pr-preapproval/{PurchaseRequisitionRecord.RequisitionNumber}");
     }
     /*
     private void LoadDraft()
