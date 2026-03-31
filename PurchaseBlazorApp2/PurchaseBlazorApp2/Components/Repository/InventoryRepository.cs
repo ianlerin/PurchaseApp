@@ -195,12 +195,12 @@ namespace PurchaseBlazorApp2.Components.Repository
                     list.Add(new InventorySupplierData
                     {
                         ID = reader.GetString(0),
-                        Name = reader.GetString(1),
-                        Address = reader.GetString(2),
-                        Contact = reader.GetString(3),
-                        SupplierName=reader.GetString(4),
-                        ContactDetails = reader.GetString(5),
-                        PaymentTerms = reader.GetString(6),
+                        Name = reader.IsDBNull(1) ? "" : reader.GetString(1),
+                        Address = reader.IsDBNull(2) ? "" : reader.GetString(2),
+                        Contact = reader.IsDBNull(3) ? "" : reader.GetString(3),
+                        SupplierName = reader.IsDBNull(4) ? "" : reader.GetString(4),
+                        ContactDetails = reader.IsDBNull(5) ? "" : reader.GetString(5),
+                        PaymentTerms = reader.IsDBNull(6) ? "" : reader.GetString(6),
                     });
                 }
                 return list;
@@ -226,16 +226,17 @@ namespace PurchaseBlazorApp2.Components.Repository
                     list.Add(new InventoryItemData
                     {
                         ID = reader.GetString(0),
-                        Name = reader.GetString(1),
-                        SKUCode = reader.GetString(2),
-                        ProductName = reader.GetString(3),
-                        Flavour = reader.GetString(4),
-                        PackSize = reader.GetString(5),
-                        CostPerUnit = reader.GetDecimal(6),
-                        B2BPrice = reader.GetDecimal(7),
-                        B2CPrice = reader.GetDecimal(8),
-                        CartonConfiguration = reader.GetString(9),
-                        Status = Enum.TryParse<InventoryStatus>(reader.GetString(10), out var status) ? status : InventoryStatus.Active
+                        Name = reader.IsDBNull(1) ? "" : reader.GetString(1),
+                        SKUCode = reader.IsDBNull(2) ? "" : reader.GetString(2),
+                        ProductName = reader.IsDBNull(3) ? "" : reader.GetString(3),
+                        Flavour = reader.IsDBNull(4) ? "" : reader.GetString(4),
+                        PackSize = reader.IsDBNull(5) ? "" : reader.GetString(5),
+                        CostPerUnit = reader.IsDBNull(6) ? 0 : reader.GetDecimal(6),
+                        B2BPrice = reader.IsDBNull(7) ? 0 : reader.GetDecimal(7),
+                        B2CPrice = reader.IsDBNull(8) ? 0 : reader.GetDecimal(8),
+                        CartonConfiguration = reader.IsDBNull(9) ? "" : reader.GetString(9),
+                        Status = reader.IsDBNull(10) ? InventoryStatus.Active : Enum.TryParse<InventoryStatus>(reader.GetString(10), out var status)? status : InventoryStatus.Active
+                  
                     });
                 }
                 return list;
@@ -403,12 +404,12 @@ namespace PurchaseBlazorApp2.Components.Repository
                     list.Add(new InventoryCustomerData
                     {
                         ID = reader.GetString(0),
-                        CompanyName = reader.GetString(1),
-                        ContactPerson = reader.GetString(2),
-                        Phone = reader.GetString(3),
-                        Address = reader.GetString(4),
-                        PaymentTerms = reader.GetString(5),
-                        CreditLimit = reader.GetString(6)
+                        CompanyName = reader.IsDBNull(1) ? "" : reader.GetString(1),
+                        ContactPerson = reader.IsDBNull(2) ? "" : reader.GetString(2),
+                        Phone = reader.IsDBNull(3) ? "" : reader.GetString(3),
+                        Address = reader.IsDBNull(4) ? "" : reader.GetString(4),
+                        PaymentTerms = reader.IsDBNull(5) ? "" : reader.GetString(5),
+                        CreditLimit = reader.IsDBNull(6) ? "0" : reader.GetString(6)
                     });
                 }
 

@@ -278,44 +278,35 @@ else
 
         try
         {
+            Product =
+                await Http.GetFromJsonAsync<List<InventoryItemData>>("api/inventory/get-products")
+                ?? new();
+
+            Supplier =
+                await Http.GetFromJsonAsync<List<InventorySupplierData>>("api/inventory/get-suppliers")
+                ?? new();
+
+            Customer =
+               await Http.GetFromJsonAsync<List<InventoryCustomerData>>("api/inventory/get-customers")
+               ?? new();
+
+            foreach (var p in Product)
+            {
+                p.Quantity = await Http.GetFromJsonAsync<int>($"api/inventory/get-quantity?productId={p.ID}");
+            }
+
+            foreach (var s in Supplier)
+            {
+                s.Quantity = await Http.GetFromJsonAsync<int>($"api/inventory/get-quantity?supplierId={s.ID}");
+            }
             Product = await Http.GetFromJsonAsync<List<InventoryItemData>>("api/inventory/get-products") ?? new();
         }
-        catch (Exception ex)
+        catch
         {
-            Console.WriteLine($"Failed to load products: {ex.Message}");
             Product = new();
-        }
-
-        try
-        {
-            Supplier = await Http.GetFromJsonAsync<List<InventorySupplierData>>("api/inventory/get-suppliers") ?? new();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Failed to load suppliers: {ex.Message}");
             Supplier = new();
-        }
-
-        try
-        {
-            Customer = await Http.GetFromJsonAsync<List<InventoryCustomerData>>("api/inventory/get-customers") ?? new();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Failed to load customers: {ex.Message}");
             Customer = new();
         }
-
-        foreach (var p in Product)
-        {
-            p.Quantity = await Http.GetFromJsonAsync<int>($"api/inventory/get-quantity?productId={p.ID}");
-        }
-
-        foreach (var s in Supplier)
-        {
-           s.Quantity = await Http.GetFromJsonAsync<int>($"api/inventory/get-quantity?supplierId={s.ID}");
-        }
-
         IsLoading = false;
     }
     private void OnViewProductClicked(InventoryItemData product)

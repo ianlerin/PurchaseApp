@@ -185,7 +185,7 @@
         var product = products?.FirstOrDefault(p => p.ID == ID);
         if (product != null)
         {
-           ItemData.Name = product.Name;
+            ItemData = product;
         }
 
         ItemData.Quantity = await Http.GetFromJsonAsync<int>($"api/inventory/get-quantity?productId={ID}");
