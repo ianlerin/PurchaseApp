@@ -82,9 +82,7 @@
         var supplier = suppliers?.FirstOrDefault(s => s.ID == ID);
         if (supplier != null)
         {
-            SupplierData.Name = supplier.Name;
-            SupplierData.Address = supplier.Address;
-            SupplierData.Contact = supplier.Contact;
+            SupplierData = supplier;
         }
         SupplierData.Quantity = await Http.GetFromJsonAsync<int>($"api/inventory/get-quantity?supplierId={ID}");
     }
