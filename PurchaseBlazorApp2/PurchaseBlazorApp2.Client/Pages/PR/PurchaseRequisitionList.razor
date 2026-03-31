@@ -234,6 +234,7 @@
             Records = response != null
                 ? (await ExtractPRListAsync(response))
                 .OrderByDescending(r => r.RequestDate)
+                .ThenByDescending(r => int.TryParse(r.RequisitionNumber?.Substring(3), out int num) ? num : 0)
                 .ToList()
                 : new List<PurchaseRequisitionRecord>();
         }
