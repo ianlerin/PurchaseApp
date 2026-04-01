@@ -158,8 +158,9 @@
 
             bProcurementOrFinance =
                 department == EDepartment.ProcurementManager ||
+                department == EDepartment.ManagingDirector ||
                 department == EDepartment.Finance;
-
+           
             await JS.InvokeVoidAsync(
                 "console.log",
                 $"ReloadList department = {department}"
@@ -175,7 +176,14 @@
                         );
                         break;
                     }
-
+                case EDepartment.ManagingDirector:
+                    {
+                      response = await HttpService.PostAsJsonAsync(
+                         NavigationManager.ToAbsoluteUri("api/pr/get-list-partial-all"),
+                         SearchFilterType
+                      );
+                      break;
+                    }
                 case EDepartment.Finance:
                     {
                         // ===== Finance-specific PR numbers =====
