@@ -18,18 +18,17 @@
 <div class="nav-scrollable">
     <nav class="flex-column">
 
-
-        <div class="nav-item px-3">
+        <div class="nav-item px-3 fw-bold">
             <NavLink class="nav-link" href="homepage" Match="NavLinkMatch.All">
                 <span class="bi bi-house-door-fill" aria-hidden="true"></span> Home
             </NavLink>
         </div>
         @if (bIsUserLoaded)
         {
-            <div class="nav-item px-3">
+            <div class="nav-item px-3 fw-bold">
                 <NavLink class="nav-link d-flex" style="cursor:pointer;"
                          @onclick="() => showPurchase = !showPurchase">
-                    <i class="bi @(showPurchase ? "bi-caret-down-fill" : "bi-caret-right-fill")"></i>
+                    <i class="bi @(showPurchase ? "bi-caret-down-fill" : "bi-caret-right-fill") text-primary me-2"></i> 
                     Purchase
                 </NavLink>
             </div>
@@ -66,10 +65,10 @@
             @if (bIsHRDepartment)
             {
 
-                <div class="nav-item px-3">
+                <div class="nav-item px-3 fw-bold">
                     <NavLink class="nav-link d-flex  text-nowrap" style="cursor:pointer;"
                        @onclick="() => showHR = !showHR">
-                       <i class="bi @(showHR ? "bi-caret-down-fill" : "bi-caret-right-fill")"></i>
+                       <i class="bi @(showHR ? "bi-caret-down-fill" : "bi-caret-right-fill") text-success me-2"></i> 
                       Human Resources   
                     </NavLink>
                 </div>
@@ -97,10 +96,10 @@
             }
             @if (bIsInventoryDepartment)
             {
-                <div class="nav-item px-3">
+                <div class="nav-item px-3 fw-bold">
                     <NavLink class="nav-link" style="cursor:pointer;" 
                       @onclick="() => showInventory = !showInventory">
-                      <i class="bi @(showInventory ? "bi-caret-down-fill" : "bi-caret-right-fill")"></i>
+                      <i class="bi @(showInventory ? "bi-caret-down-fill" : "bi-caret-right-fill") text-warning me-2"></i> 
                        Inventory
                     </NavLink>
                 </div>
