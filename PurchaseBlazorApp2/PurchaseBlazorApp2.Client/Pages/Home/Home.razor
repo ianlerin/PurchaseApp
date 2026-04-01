@@ -22,6 +22,7 @@
                 <p><b>JobTitle:</b> @MyUser.JobTitle</p>
                 <p><b>Department:</b> @MyUser.Department</p>
                 <p><b>Role:</b> @role</p>
+                <p><b>Company:</b> @SelectedCompanyName </p>
             </div>
         }
     </Authorized>
@@ -38,6 +39,7 @@
     private string? name;
     private string? role;
     private string? team;
+    private string? SelectedCompanyName;
     UserName? MyUser;
 
 
@@ -53,7 +55,13 @@
         {
             isLoading = false;
         }
-       
+
+        var company = await GeneralLibrary.GetCurrentCompanyInfo(JS);
+        if (!string.IsNullOrEmpty(company?.Name))
+        {
+            SelectedCompanyName = company.Name;
+        }
+
     }
 
 
