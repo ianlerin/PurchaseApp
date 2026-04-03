@@ -1,12 +1,13 @@
 ﻿@page "/Quotation_Client/{PrId}"
 @page "/Quotation_Client"
 @using PurchaseBlazorApp2.Client.Components.Helper
+@using PurchaseBlazorApp2.Client.Service
 @using PurchaseBlazorApp2.Components.Data;
 @using PurchaseBlazorApp2.Components.Global
 @using static PurchaseBlazorApp2.Client.Pages.Quotation.QuotationInfo
 @inject NavigationManager NavigationManager
 @inject ClientStateStorage StateStorage
-@inject HttpClient Http
+@inject MyHttpService Http
 <h3>Quotation</h3>
 
 <!-- Image Upload Component -->

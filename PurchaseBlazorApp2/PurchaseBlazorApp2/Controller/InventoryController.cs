@@ -8,16 +8,28 @@ namespace PurchaseBlazorApp2.Controller
     [ApiController]
     public class InventoryController : ControllerBase
     {
-        private readonly InventoryRepository _repo;
-
+        int MyCompanyID = 0;
+        string MyDB = "";
         public InventoryController()
         {
-            _repo = new InventoryRepository();
+           
+        }
+
+
+        private async Task<InventoryRepository> GetMyRepo()
+        {
+            int.TryParse(Request.Headers["CompanyID"], out MyCompanyID);
+            CredentialRepo CredentialRepo = new CredentialRepo();
+            string DBName = await CredentialRepo.TryGetDatabaseNameByCompanyId(MyCompanyID);
+            InventoryRepository MyRepo = new InventoryRepository(DBName);
+            return MyRepo;
+
         }
 
         [HttpPost("add-supplier")]
         public async Task<IActionResult> AddSupplier([FromBody] InventorySupplierData supplier)
         {
+            InventoryRepository _repo = await GetMyRepo();
             if (supplier == null)
                 return BadRequest("Supplier data cannot be null");
             if (string.IsNullOrWhiteSpace(supplier.Name))
@@ -37,6 +49,7 @@ namespace PurchaseBlazorApp2.Controller
         [HttpPost("add-product")]
         public async Task<IActionResult> AddProduct([FromBody] InventoryItemData product)
         {
+            InventoryRepository _repo = await GetMyRepo();
             if (product == null)
                 return BadRequest("Product data cannot be null");
             if (string.IsNullOrWhiteSpace(product.Name))
@@ -56,18 +69,21 @@ namespace PurchaseBlazorApp2.Controller
         [HttpGet("get-suppliers")]
         public async Task<List<InventorySupplierData>> GetSuppliers()
         {
+            InventoryRepository _repo = await GetMyRepo();
             return await _repo.GetSuppliersAsync();
         }
 
         [HttpGet("get-products")]
         public async Task<List<InventoryItemData>> GetProducts()
         {
+            InventoryRepository _repo = await GetMyRepo();
             return await _repo.GetProductsAsync();
         }
 
         [HttpPost("add-record")]
         public async Task<IActionResult> AddRecord([FromBody] InventoryRecordData record)
         {
+            InventoryRepository _repo = await GetMyRepo();
             if (record == null)
                 return BadRequest("Invalid record");
 
@@ -77,6 +93,7 @@ namespace PurchaseBlazorApp2.Controller
         [HttpGet("get-quantity")]
         public async Task<int> GetQuantity(string? productId, string? supplierId)
         {
+            InventoryRepository _repo = await GetMyRepo();
             if (!string.IsNullOrEmpty(productId) && !string.IsNullOrEmpty(supplierId))
                 return await _repo.GetQuantityAsync(productId, supplierId);
 
@@ -92,10 +109,39 @@ namespace PurchaseBlazorApp2.Controller
         [HttpGet("get-records")]
         public async Task<List<InventoryRecordData>> GetRecords(string productId)
         {
+            InventoryRepository _repo = await GetMyRepo();
             if (string.IsNullOrEmpty(productId))
                 return new List<InventoryRecordData>();
 
             return await _repo.GetRecordsByProductAsync(productId);
+        }
+
+        [HttpGet("get-customers")]
+        public async Task<List<InventoryCustomerData>> GetCustomers()
+        {
+            InventoryRepository _repo = await GetMyRepo();
+            return await _repo.GetCustomersAsync();
+        }
+
+        [HttpPost("add-customer")]
+        public async Task<IActionResult> AddCustomer([FromBody] InventoryCustomerData customer)
+        {
+            InventoryRepository _repo = await GetMyRepo();
+            if (customer == null)
+                return BadRequest("Customer data cannot be null");
+
+            if (string.IsNullOrWhiteSpace(customer.CompanyName))
+                return BadRequest("Company Name is required");
+
+            try
+            {
+                var newId = await _repo.AddCustomerAsync(customer);
+                return Ok(new { id = newId });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error adding customer: {ex.Message}");
+            }
         }
     }
 }

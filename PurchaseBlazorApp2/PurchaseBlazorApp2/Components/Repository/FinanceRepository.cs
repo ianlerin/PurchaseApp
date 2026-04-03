@@ -7,10 +7,14 @@ namespace PurchaseBlazorApp2.Components.Repository
 {
     public class FinanceRepository
     {
+        string MyDB = "";
         private NpgsqlConnection Connection;
-        public FinanceRepository()
+        public FinanceRepository(string DBName)
         {
-            Connection = new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432; User Id=postgres; Password=password; Database=purchase");
+            MyDB = DBName;
+            Connection = new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432; User Id=postgres; Password=password; Database={MyDB}");
+
+          
         }
 
         public async Task<bool> Submit(FinanceRecord info)
@@ -52,7 +56,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                     await transaction.CommitAsync();
 
 
-                    PORepository PORepository = new PORepository();
+                    PORepository PORepository = new PORepository(MyDB);
                     await PORepository.UpdatePaymentStatus(info.PO_ID, info.PaymentStatus);
                     return true;
                 }
@@ -133,9 +137,9 @@ namespace PurchaseBlazorApp2.Components.Repository
                         {
                             using (var insertCmd = new NpgsqlCommand(@"
             INSERT INTO finance_item 
-                (requisitionnumber, imagebyte, adddate, updatepercent, photoformat)
+                (requisitionnumber, imagebyte, adddate, updatepercent, photoformat,original_filename)
             VALUES 
-                (@req, @doc, @adddate, @updatepercent, @format);",
+                (@req, @doc, @adddate, @updatepercent, @format,@original_filename);",
                                 Connection, transaction))
                             {
                                 insertCmd.Parameters.AddWithValue("@req", info.PO_ID ?? string.Empty);
@@ -143,6 +147,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                                 insertCmd.Parameters.AddWithValue("@adddate", singleUpdate.AddDate);
                                 insertCmd.Parameters.AddWithValue("@updatepercent", updatePercent);
                                 insertCmd.Parameters.AddWithValue("@format", single.DataFormat ?? string.Empty);
+                                insertCmd.Parameters.AddWithValue("@original_filename", single.OriginalFileName ?? string.Empty);
 
                                 await insertCmd.ExecuteNonQueryAsync();
                             }
@@ -258,7 +263,7 @@ namespace PurchaseBlazorApp2.Components.Repository
                 }
 
                 var command = new NpgsqlCommand(
-                    @"SELECT imagebyte, photoformat, adddate, updatepercent 
+                    @"SELECT imagebyte, photoformat, adddate, updatepercent,original_filename
               FROM finance_item 
               WHERE requisitionnumber = @req",
                     MyConnection, externalTransaction);
@@ -273,7 +278,7 @@ namespace PurchaseBlazorApp2.Components.Repository
 
                     byte[] bytes = reader["imagebyte"] as byte[] ?? Array.Empty<byte>();
                     string format = reader["photoformat"]?.ToString() ?? "";
-
+                    string fileName= reader["original_filename"]?.ToString() ?? "";
                     // Always ensure this updatePercent exists
                     if (!result.TryGetValue(updatePercent, out var update))
                     {
@@ -292,7 +297,8 @@ namespace PurchaseBlazorApp2.Components.Repository
                         update.SupportDocuments.Add(new ImageUploadInfo
                         {
                             Data = bytes,
-                            DataFormat = format
+                            DataFormat = format,
+                            OriginalFileName = fileName,
                         });
                     }
                 }

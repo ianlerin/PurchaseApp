@@ -1,12 +1,14 @@
 ﻿using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
+using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Microsoft.Graph;
+using Microsoft.Graph.Models.Security;
+using Microsoft.JSInterop;
+using Microsoft.Kiota.Abstractions.Authentication;
+using PurchaseBlazorApp2.Client.Service;
 using PurchaseBlazorApp2.Components.Global;
 using Radzen;
-using Microsoft.Graph;
-using Microsoft.Kiota.Abstractions.Authentication;
-using Microsoft.JSInterop;
-using Microsoft.Graph.Models.Security;
+using SharedDataType.Service;
 
 
 
@@ -55,6 +57,8 @@ builder.Services.AddScoped<TooltipService>();
 builder.Services.AddScoped<ContextMenuService>();
 builder.Services.AddScoped<ClientGlobalVar>();
 builder.Services.AddScoped<ClientStateStorage>();
+builder.Services.AddScoped<MyHttpService>();
+builder.Services.AddScoped<CompanyState>();
 builder.Services.AddAuthorizationCore();
 builder.Services.AddApiAuthorization();
 builder.Services.AddCascadingAuthenticationState();

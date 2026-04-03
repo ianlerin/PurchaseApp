@@ -10,11 +10,23 @@ namespace PurchaseBlazorApp2.Controller
     [ApiController]
     public class SupplierController : ControllerBase
     {
+        int MyCompanyID = 0;
+
+        private async Task<SupplierRepository> GetMyRepo()
+        {
+            int.TryParse(Request.Headers["CompanyID"], out MyCompanyID);
+            CredentialRepo CredentialRepo = new CredentialRepo();
+            string DBName = await CredentialRepo.TryGetDatabaseNameByCompanyId(MyCompanyID);
+            SupplierRepository MyRepo = new SupplierRepository(DBName);
+            return MyRepo;
+
+        }
+
         [HttpPost("submit")]
         public async Task<ActionResult<bool>> SubmitSupplier([FromBody] IEnumerable<SupplierRecord> infoList)
         {
 
-            SupplierRepository Repo=new SupplierRepository();
+            SupplierRepository Repo=await GetMyRepo();
             bool bSubmit= await Repo.SubmitAsync(infoList);
             return Ok(bSubmit);
         }
@@ -23,7 +35,7 @@ namespace PurchaseBlazorApp2.Controller
         public async Task<ActionResult<List<SupplierRecord>>> GetAllSuppliers()
         {
 
-            SupplierRepository Repo = new SupplierRepository();
+            SupplierRepository Repo = await GetMyRepo();
             List<SupplierRecord> Suppliers = await Repo.GetAllSuppliersAsync();
             return Ok(Suppliers);
         }
@@ -32,7 +44,7 @@ namespace PurchaseBlazorApp2.Controller
         public async Task<ActionResult<List<SupplierLookUpInfo>>> GetAllSupplierName()
         {
 
-            SupplierRepository Repo = new SupplierRepository();
+            SupplierRepository Repo = await GetMyRepo();
             List<SupplierLookUpInfo> SupplierNames = await Repo.AsyncGetAllSupplierName();
             return Ok(SupplierNames);
         }
@@ -40,8 +52,8 @@ namespace PurchaseBlazorApp2.Controller
         [HttpGet("get/{sid}")]
         public async Task<ActionResult<SupplierRecord>> GetSupplierById(string sid)
         {
-            SupplierRepository repo = new SupplierRepository();
-            var supplier = await repo.GetSupplierByIdAsync(sid);
+            SupplierRepository Repo = await GetMyRepo();
+            var supplier = await Repo.GetSupplierByIdAsync(sid);
 
             if (supplier == null)
             {

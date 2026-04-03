@@ -1,11 +1,12 @@
 ﻿@page "/finance-record/{PO_ID}"
 @using Genesis.EmailService
+@using PurchaseBlazorApp2.Client.Service
 @using PurchaseBlazorApp2.Components.Data
 @using PurchaseBlazorApp2.Client.Components.Helper
 @using System.ComponentModel.DataAnnotations
 
 @inject NavigationManager NavigationManager
-@inject HttpClient Http
+@inject MyHttpService Http
 @inject IJSRuntime JS
 
 <h2 class="text-xl font-semibold mb-4">Finance Record Entry - @PO_ID</h2>
@@ -176,10 +177,10 @@ else
     private FinanceRecord FinanceRecord = new();
     private PurchaseOrderRecord PurchaseOrderRecord = new();
 
-   private decimal LatestPercentage => 
-    (FinanceRecord.FinanceRecordLists != null && FinanceRecord.FinanceRecordLists.Any())
-        ? FinanceRecord.FinanceRecordLists.Keys.Max() 
-        : 0m;
+    private decimal LatestPercentage => 
+     (FinanceRecord.FinanceRecordLists != null && FinanceRecord.FinanceRecordLists.Any())
+         ? FinanceRecord.FinanceRecordLists.Keys.Max() 
+         : 0m;
 
     protected async override void OnInitialized()
     {
@@ -297,7 +298,7 @@ else
             var item = FinanceRecord.FinanceRecordLists[oldKey];
             FinanceRecord.FinanceRecordLists.Remove(oldKey);
             FinanceRecord.FinanceRecordLists[newKey] = item;
-            
+
             // Force refresh to update the button status
             StateHasChanged();
         }
@@ -325,7 +326,8 @@ else
         FinanceRecord.PaymentStatus = EPaymentStatus.Paid;
         await SaveRecord();
         EmailWorkflowService MyEmailHelper = new EmailWorkflowService(Http, NavigationManager, JS);
-        await MyEmailHelper.SendEmailToRelevantPartyFinance(PurchaseOrderRecord);
+        CompanyInfo Info=await GeneralLibrary.GetCurrentCompanyInfo(JS);
+        await MyEmailHelper.SendEmailToRelevantPartyFinance(PurchaseOrderRecord, Info.ID);
     }
 
     private void SendEmailToPurchaseManager()

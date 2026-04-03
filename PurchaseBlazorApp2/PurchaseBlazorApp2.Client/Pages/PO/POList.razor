@@ -1,10 +1,11 @@
 ﻿@page "/PO/list"
+@using PurchaseBlazorApp2.Client.Service
 @using PurchaseBlazorApp2.Components.Data
 @using PurchaseBlazorApp2.Components.Global
 @using Radzen.Blazor
 @inject NavigationManager NavigationManager
 @inject ClientStateStorage StateStorage
-@inject HttpClient Http
+@inject MyHttpService Http
 
 @rendermode InteractiveAuto
 <h3>PO List</h3>

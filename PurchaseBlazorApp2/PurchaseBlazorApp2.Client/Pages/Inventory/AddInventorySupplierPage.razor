@@ -1,4 +1,5 @@
 ﻿@using InventoryRecord
+@using PurchaseBlazorApp2.Client.Service
 @inject NavigationManager NavigationManager
 @page "/add-supplier/{ID}"
 @page "/add-supplier"
@@ -24,6 +25,21 @@
     <InputText class="form-control"
                @bind-Value="SupplierData.Contact" />
 </div>
+<div>
+    <label class="form-label fw-bold">Supplier Name</label>
+    <InputText class="form-control"
+               @bind-Value="SupplierData.SupplierName" />
+</div>
+<div>
+    <label class="form-label fw-bold">Contact Details</label>
+    <InputText class="form-control"
+               @bind-Value="SupplierData.ContactDetails" />
+</div>
+<div>
+    <label class="form-label fw-bold">Payment Terms</label>
+    <InputText class="form-control"
+               @bind-Value="SupplierData.PaymentTerms" />
+</div>
 
 <div>
     <label class="form-label fw-bold">Quantity</label>
@@ -47,7 +63,7 @@
 
 @code {
     [Inject]
-    private HttpClient Http { get; set; }
+    private MyHttpService Http { get; set; }
     [Inject]
     private IJSRuntime JS { get; set; }
     [Parameter]
@@ -66,9 +82,7 @@
         var supplier = suppliers?.FirstOrDefault(s => s.ID == ID);
         if (supplier != null)
         {
-            SupplierData.Name = supplier.Name;
-            SupplierData.Address = supplier.Address;
-            SupplierData.Contact = supplier.Contact;
+            SupplierData = supplier;
         }
         SupplierData.Quantity = await Http.GetFromJsonAsync<int>($"api/inventory/get-quantity?supplierId={ID}");
     }
@@ -91,10 +105,7 @@
 
             await JS.InvokeVoidAsync("alert", $"SubmitSuccess! Supplier ID: {SupplierData.ID}");
 
-            SupplierData.ID = "";
-            SupplierData.Name = "";
-            SupplierData.Address = "";
-            SupplierData.Contact = "";
+            SupplierData = new InventorySupplierData();
         }
         catch (Exception ex)
         {

@@ -94,6 +94,7 @@
                 </div>
               }
             }
+
             @if (bIsInventoryDepartment)
             {
                 <div class="nav-item px-3 fw-bold">
@@ -124,16 +125,21 @@
                 </div>
 
                 <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="add-customer">
+                        <span class="bi bi-person-badge-fill"></span> AddCustomer
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
                     <NavLink class="nav-link" href="add-record">
                         <span class="bi bi-person-badge-fill"></span> Add Record
                     </NavLink>
                 </div>
               }
             }
-
-
-        }
-
+            
+        
+       }
         <div class="nav-item" style="padding: 0 1rem;">
             <button class="btn btn-danger w-100" @onclick="Logout">
                 <span class="bi bi-box-arrow-right" aria-hidden="true"></span> Logout
@@ -144,6 +150,7 @@
 
 @code {
     bool bIsProcurementManager { get; set; } =false;
+    bool bIsManagingDirector { get; set; } = false;
     bool bIsHRDepartment { get; set; } = false;
     bool bIsInventoryDepartment { get; set; } = true;
     bool bIsUserLoaded { get; set; } = false;
@@ -195,7 +202,7 @@
             {
                 EDepartment MyDepartment = await GeneralLibrary.GetCurrentDepartmentRole(JS);
                 bIsProcurementManager = (MyDepartment == EDepartment.ProcurementManager);
-
+                bIsManagingDirector = (MyDepartment == EDepartment.ManagingDirector);
                 EHRRole HRRole = await GeneralLibrary.GetCurrentHRRole(JS);
                 bIsHRDepartment = HRRole == EHRRole.Manager;
                 // request UI update

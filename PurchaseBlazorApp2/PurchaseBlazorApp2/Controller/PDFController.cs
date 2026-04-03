@@ -10,18 +10,49 @@ namespace PurchaseBlazorApp2.Controller
     [ApiController]
     public class PDFController : ControllerBase
     {
+        int MyCompanyID = 0;
+        public PDFController(int CompanyID)
+        {
+            MyCompanyID = CompanyID;
+        }
+        private async Task<HRRepository> GetHRRepo()
+        {
+            int.TryParse(Request.Headers["CompanyID"], out MyCompanyID);
+            CredentialRepo CredentialRepo = new CredentialRepo();
+            string DBName = await CredentialRepo.TryGetDatabaseNameByCompanyId(MyCompanyID);
+            HRRepository MyRepo = new HRRepository(DBName);
+            return MyRepo;
+
+        }
+        private async Task<PORepository> GetPORepo()
+        {
+            int.TryParse(Request.Headers["CompanyID"], out MyCompanyID);
+            CredentialRepo CredentialRepo = new CredentialRepo();
+            string DBName = await CredentialRepo.TryGetDatabaseNameByCompanyId(MyCompanyID);
+            PORepository MyRepo = new PORepository(DBName);
+            return MyRepo;
+
+        }
+        private async Task<PRRepository> GetPRRepo()
+        {
+            CredentialRepo CredentialRepo = new CredentialRepo();
+            string DBName = await CredentialRepo.TryGetDatabaseNameByCompanyId(MyCompanyID);
+            PRRepository MyRepo = new PRRepository(DBName);
+            return MyRepo;
+
+        }
         [HttpGet("purchase/{poId}")]
         public async Task<IActionResult> GeneratePurchasePdf(string poId)
         {
             // Fetch your PO from DB based on poId
-            PORepository Repo = new PORepository();
+            PORepository Repo = await GetPORepo();
             List<PurchaseOrderRecord> Records = await Repo.GetRecordsAsync(new List<string> { poId });
 
             if (Records.Count == 0) return NotFound();
             var PO = Records[0];
             if (PO == null) return NotFound();
 
-            PRRepository PRRepo = new PRRepository();
+            PRRepository PRRepo = await GetPRRepo();
             List<RequestItemInfo> RequestedItems = await PRRepo.GetRequestedItemByRequisitionNumber(PO.PR_ID, "pr_approved_requestitem_table");
 
             var pdfBytes = new POPDFHelper().GeneratePurchaseOrderPdf(PO, RequestedItems);
@@ -31,7 +62,7 @@ namespace PurchaseBlazorApp2.Controller
         public async Task<IActionResult> GenerateWagesPDF(GenerateWagesPdfRequest WagesRequest)
         {
             // Fetch your PO from DB based on poId
-            HRRepository Repo = new HRRepository();
+            HRRepository Repo = await GetHRRepo();
             WageRecord Record = await Repo.GetWageRecordAsync(WagesRequest.Year, WagesRequest.Month);
 
             if (Record.WageRecords.Count == 0) return NotFound();
@@ -42,7 +73,7 @@ namespace PurchaseBlazorApp2.Controller
         [HttpGet("hr/workers")]
         public async Task<IActionResult> GenerateWorkerPdf([FromQuery] string status = "All", [FromQuery] string nationality = "All")
         {
-            HRRepository repo = new HRRepository();
+            HRRepository repo = await GetHRRepo();
             List<WorkerRecord.WorkerRecord> workers;
 
             if (!Enum.TryParse<EWorkerStatus>(status, true, out var parsedStatus))

@@ -10,46 +10,43 @@ namespace PurchaseBlazorApp2.Components.Repository
     public class InventoryRepository
     {
         private NpgsqlConnection Connection;
-
-        public InventoryRepository()
+        string MyDB = "";
+        public InventoryRepository(string DBName)
         {
+            MyDB = DBName;
             Connection = GetConnection();
+   
         }
 
         private NpgsqlConnection GetConnection()
         {
-            return new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432;User Id=postgres;Password=password;Database=purchase");
+            return new NpgsqlConnection($"Server={StaticResources.ConnectionId};Port=5432;User Id=postgres;Password=password;Database={MyDB}");
         }
 
         private async Task EnsureSequenceAsync(string sequenceName, string tableName, string columnName)
         {
-            //Check sequence exists
-            var checkCmd = new NpgsqlCommand(
-                $"SELECT COUNT(*) FROM information_schema.sequences WHERE sequence_name = '{sequenceName}'",
+            // ✅ Let PostgreSQL handle existence safely
+            var createCmd = new NpgsqlCommand(
+                $"CREATE SEQUENCE IF NOT EXISTS {sequenceName} START 1;",
                 Connection);
-            var count = (long)await checkCmd.ExecuteScalarAsync();
 
-            if (count == 0)
-            {
-                var createCmd = new NpgsqlCommand($"CREATE SEQUENCE {sequenceName} START 1;", Connection);
-                await createCmd.ExecuteNonQueryAsync();
-            }
+            await createCmd.ExecuteNonQueryAsync();
 
+            // ✅ Sync sequence with existing data
             var setValCmd = new NpgsqlCommand(
-              $@"SELECT setval(
-               '{sequenceName}',
-                COALESCE(
-                (SELECT MAX(CAST(SUBSTRING({columnName} FROM '[0-9]+') AS BIGINT)) 
-                FROM {tableName}),
-                 0
-               ) + 1,
-                false
-            )",
+            $@"SELECT setval(
+        '{sequenceName}',
+        COALESCE(
+            (SELECT MAX(CAST(SUBSTRING({columnName} FROM '[0-9]+') AS BIGINT)) 
+             FROM {tableName}),
+            0
+        ) + 1,
+        false
+    )",
             Connection);
 
             await setValCmd.ExecuteNonQueryAsync();
         }
-
         public async Task<string> AddSupplierAsync(InventorySupplierData supplier)
         {
             await Connection.OpenAsync();
@@ -63,12 +60,15 @@ namespace PurchaseBlazorApp2.Components.Repository
                 {
                     // update
                     var updateCmd = new NpgsqlCommand(
-                        "UPDATE inventory.addsupplier SET name=@name, address=@address, contact=@contact WHERE id=@id",
+                        "UPDATE inventory.addsupplier SET name=@name, address=@address, contact=@contact, suppliername=@suppliername, contactdetails=@contactdetails, paymentterms=@paymentterms WHERE id=@id",
                         Connection);
                     updateCmd.Parameters.AddWithValue("id", supplier.ID);
                     updateCmd.Parameters.AddWithValue("name", supplier.Name ?? "");
                     updateCmd.Parameters.AddWithValue("address", supplier.Address ?? "");
                     updateCmd.Parameters.AddWithValue("contact", supplier.Contact ?? "");
+                    updateCmd.Parameters.AddWithValue("suppliername", supplier.SupplierName ?? "");
+                    updateCmd.Parameters.AddWithValue("contactdetails", supplier.ContactDetails ?? "");
+                    updateCmd.Parameters.AddWithValue("paymentterms", supplier.PaymentTerms ?? "");
                     await updateCmd.ExecuteNonQueryAsync();
 
                     return supplier.ID;
@@ -84,12 +84,18 @@ namespace PurchaseBlazorApp2.Components.Repository
 
 
                     var insertCmd = new NpgsqlCommand(
-                        "INSERT INTO inventory.addsupplier (id, name, address, contact) VALUES (@id, @name, @address, @contact)",
+                        @"INSERT INTO inventory.addsupplier 
+                        (id, name, address, contact,suppliername,contactdetails,paymentterms) 
+                        VALUES 
+                        (@id, @name, @address, @contact,@suppliername,@contactdetails,@paymentterms)",
                         Connection);
                     insertCmd.Parameters.AddWithValue("id", supplier.ID);
                     insertCmd.Parameters.AddWithValue("name", supplier.Name ?? "");
                     insertCmd.Parameters.AddWithValue("address", supplier.Address ?? "");
                     insertCmd.Parameters.AddWithValue("contact", supplier.Contact ?? "");
+                    insertCmd.Parameters.AddWithValue("suppliername", supplier.SupplierName ?? "");
+                    insertCmd.Parameters.AddWithValue("contactdetails", supplier.ContactDetails ?? "");
+                    insertCmd.Parameters.AddWithValue("paymentterms", supplier.PaymentTerms ?? "");
                     await insertCmd.ExecuteNonQueryAsync();
 
                     return supplier.ID;
@@ -114,10 +120,19 @@ namespace PurchaseBlazorApp2.Components.Repository
                 {
                     // update
                     var updateCmd = new NpgsqlCommand(
-                        "UPDATE inventory.addproduct SET name=@name WHERE id=@id",
+                        "UPDATE inventory.addproduct SET name=@name,skucode=@skucode,productname=@productname,flavour=@flavour,packsize=@packsize,costperunit=@costperunit,b2bprice=@b2bprice ,b2cprice=@b2cprice,cartonconfiguration=@cartonconfiguration, status=@status WHERE id=@id",
                         Connection);
                     updateCmd.Parameters.AddWithValue("id", product.ID);
                     updateCmd.Parameters.AddWithValue("name", product.Name ?? "");
+                    updateCmd.Parameters.AddWithValue("skucode", product.SKUCode ?? "");
+                    updateCmd.Parameters.AddWithValue("productname", product.ProductName ?? "");
+                    updateCmd.Parameters.AddWithValue("flavour", product.Flavour ?? "");
+                    updateCmd.Parameters.AddWithValue("packsize", product.PackSize ?? "");
+                    updateCmd.Parameters.AddWithValue("costperunit", product.CostPerUnit);
+                    updateCmd.Parameters.AddWithValue("b2bprice", product.B2BPrice);
+                    updateCmd.Parameters.AddWithValue("b2cprice", product.B2CPrice);
+                    updateCmd.Parameters.AddWithValue("cartonconfiguration", product.CartonConfiguration ?? "");
+                    updateCmd.Parameters.AddWithValue("status", product.Status.ToString());
                     await updateCmd.ExecuteNonQueryAsync();
 
                     return product.ID;
@@ -133,15 +148,32 @@ namespace PurchaseBlazorApp2.Components.Repository
 
 
                     var insertCmd = new NpgsqlCommand(
-                        "INSERT INTO inventory.addproduct (id, name) VALUES (@id, @name)",
+                        @"INSERT INTO inventory.addproduct
+                          (id, name, skucode, productname, flavour, packsize, costperunit, b2bprice, b2cprice, cartonconfiguration, status)
+                          VALUES
+                          (@id, @name, @skucode, @productname, @flavour, @packsize, @costperunit, @b2bprice, @b2cprice, @cartonconfiguration, @status)",
                         Connection);
                     insertCmd.Parameters.AddWithValue("id", product.ID);
                     insertCmd.Parameters.AddWithValue("name", product.Name ?? "");
+                    insertCmd.Parameters.AddWithValue("skucode", product.SKUCode ?? "");
+                    insertCmd.Parameters.AddWithValue("productname", product.ProductName ?? "");
+                    insertCmd.Parameters.AddWithValue("flavour", product.Flavour ?? "");
+                    insertCmd.Parameters.AddWithValue("packsize", product.PackSize ?? "");
+                    insertCmd.Parameters.AddWithValue("costperunit", product.CostPerUnit);
+                    insertCmd.Parameters.AddWithValue("b2bprice", product.B2BPrice);
+                    insertCmd.Parameters.AddWithValue("b2cprice", product.B2CPrice);
+                    insertCmd.Parameters.AddWithValue("cartonconfiguration", product.CartonConfiguration ?? "");
+                    insertCmd.Parameters.AddWithValue("status", product.Status.ToString());
                     await insertCmd.ExecuteNonQueryAsync();
 
                     return product.ID;
 
                 }
+            }
+            catch(Exception Ex)
+            {
+                Console.WriteLine(Ex);
+                return "-1";
             }
             finally
             {
@@ -154,7 +186,7 @@ namespace PurchaseBlazorApp2.Components.Repository
             await Connection.OpenAsync();
             try
             {
-                var cmd = new NpgsqlCommand("SELECT id, name, address, contact FROM inventory.addsupplier ORDER BY id", Connection);
+                var cmd = new NpgsqlCommand("SELECT id, name, address, contact, suppliername,contactdetails,paymentterms FROM inventory.addsupplier ORDER BY id", Connection);
                 var list = new List<InventorySupplierData>();
 
                 using var reader = await cmd.ExecuteReaderAsync();
@@ -163,9 +195,12 @@ namespace PurchaseBlazorApp2.Components.Repository
                     list.Add(new InventorySupplierData
                     {
                         ID = reader.GetString(0),
-                        Name = reader.GetString(1),
-                        Address = reader.GetString(2),
-                        Contact = reader.GetString(3)
+                        Name = reader.IsDBNull(1) ? "" : reader.GetString(1),
+                        Address = reader.IsDBNull(2) ? "" : reader.GetString(2),
+                        Contact = reader.IsDBNull(3) ? "" : reader.GetString(3),
+                        SupplierName = reader.IsDBNull(4) ? "" : reader.GetString(4),
+                        ContactDetails = reader.IsDBNull(5) ? "" : reader.GetString(5),
+                        PaymentTerms = reader.IsDBNull(6) ? "" : reader.GetString(6),
                     });
                 }
                 return list;
@@ -178,10 +213,11 @@ namespace PurchaseBlazorApp2.Components.Repository
 
         public async Task<List<InventoryItemData>> GetProductsAsync()
         {
+            List<InventoryItemData> dummy= new List<InventoryItemData>();
             await Connection.OpenAsync();
             try
             {
-                var cmd = new NpgsqlCommand("SELECT id, name FROM inventory.addproduct ORDER BY id", Connection);
+                var cmd = new NpgsqlCommand("SELECT id, name,skucode, productname, flavour, packsize, costperunit, b2bprice, b2cprice, cartonconfiguration, status FROM inventory.addproduct ORDER BY id", Connection);
                 var list = new List<InventoryItemData>();
 
                 using var reader = await cmd.ExecuteReaderAsync();
@@ -190,15 +226,31 @@ namespace PurchaseBlazorApp2.Components.Repository
                     list.Add(new InventoryItemData
                     {
                         ID = reader.GetString(0),
-                        Name = reader.GetString(1)
+                        Name = reader.IsDBNull(1) ? "" : reader.GetString(1),
+                        SKUCode = reader.IsDBNull(2) ? "" : reader.GetString(2),
+                        ProductName = reader.IsDBNull(3) ? "" : reader.GetString(3),
+                        Flavour = reader.IsDBNull(4) ? "" : reader.GetString(4),
+                        PackSize = reader.IsDBNull(5) ? "" : reader.GetString(5),
+                        CostPerUnit = reader.IsDBNull(6) ? 0 : reader.GetDecimal(6),
+                        B2BPrice = reader.IsDBNull(7) ? 0 : reader.GetDecimal(7),
+                        B2CPrice = reader.IsDBNull(8) ? 0 : reader.GetDecimal(8),
+                        CartonConfiguration = reader.IsDBNull(9) ? "" : reader.GetString(9),
+                        Status = reader.IsDBNull(10) ? InventoryStatus.Active : Enum.TryParse<InventoryStatus>(reader.GetString(10), out var status)? status : InventoryStatus.Active
+                  
                     });
                 }
                 return list;
+            }
+            catch(Exception Ex)
+            {
+                Console.WriteLine(Ex.Message);
+
             }
             finally
             {
                 await Connection.CloseAsync();
             }
+            return dummy;
         }
 
         public async Task AddRecordAsync(InventoryRecordData record)
@@ -333,6 +385,108 @@ namespace PurchaseBlazorApp2.Components.Repository
             }
 
             return records;
+        }
+
+        public async Task<List<InventoryCustomerData>> GetCustomersAsync()
+        {
+            await Connection.OpenAsync();
+            try
+            {
+                var cmd = new NpgsqlCommand(
+                    @"SELECT id, companyname, contactperson, phone, address, paymentterms, creditlimit 
+              FROM inventory.addcustomer ORDER BY id", Connection);
+
+                var list = new List<InventoryCustomerData>();
+
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    list.Add(new InventoryCustomerData
+                    {
+                        ID = reader.GetString(0),
+                        CompanyName = reader.IsDBNull(1) ? "" : reader.GetString(1),
+                        ContactPerson = reader.IsDBNull(2) ? "" : reader.GetString(2),
+                        Phone = reader.IsDBNull(3) ? "" : reader.GetString(3),
+                        Address = reader.IsDBNull(4) ? "" : reader.GetString(4),
+                        PaymentTerms = reader.IsDBNull(5) ? "" : reader.GetString(5),
+                        CreditLimit = reader.IsDBNull(6) ? "0" : reader.GetString(6)
+                    });
+                }
+
+                return list;
+            }
+            finally
+            {
+                await Connection.CloseAsync();
+            }
+        }
+
+        public async Task<string> AddCustomerAsync(InventoryCustomerData customer)
+        {
+            await Connection.OpenAsync();
+            try
+            {
+                var checkCmd = new NpgsqlCommand("SELECT COUNT(*) FROM inventory.addcustomer WHERE id=@id", Connection);
+                checkCmd.Parameters.AddWithValue("id", customer.ID ?? "");
+                var exists = (long)await checkCmd.ExecuteScalarAsync() > 0;
+
+                if (exists)
+                {
+               
+                    var updateCmd = new NpgsqlCommand(
+                        @"UPDATE inventory.addcustomer 
+                  SET companyname=@companyname,
+                      contactperson=@contactperson,
+                      phone=@phone,
+                      address=@address,
+                      paymentterms=@paymentterms,
+                      creditlimit=@creditlimit
+                  WHERE id=@id", Connection);
+
+                    updateCmd.Parameters.AddWithValue("id", customer.ID);
+                    updateCmd.Parameters.AddWithValue("companyname", customer.CompanyName ?? "");
+                    updateCmd.Parameters.AddWithValue("contactperson", customer.ContactPerson ?? "");
+                    updateCmd.Parameters.AddWithValue("phone", customer.Phone ?? "");
+                    updateCmd.Parameters.AddWithValue("address", customer.Address ?? "");
+                    updateCmd.Parameters.AddWithValue("paymentterms", customer.PaymentTerms ?? "");
+                    updateCmd.Parameters.AddWithValue("creditlimit", customer.CreditLimit);
+
+                    await updateCmd.ExecuteNonQueryAsync();
+                    return customer.ID;
+                }
+                else
+                {
+                   
+                    await EnsureSequenceAsync("inventory.addcustomer_seq", "inventory.addcustomer", "id");
+
+                    var seqCmd = new NpgsqlCommand("SELECT nextval('inventory.addcustomer_seq')", Connection);
+                    var seq = (long)await seqCmd.ExecuteScalarAsync();
+
+                    customer.ID = $"Customer_{seq}";
+
+                    var insertCmd = new NpgsqlCommand(
+                        @"INSERT INTO inventory.addcustomer 
+                  (id, companyname, contactperson, phone, address, paymentterms, creditlimit)
+                  VALUES (@id, @companyname, @contactperson, @phone, @address, @paymentterms, @creditlimit)",
+                        Connection);
+
+                    insertCmd.Parameters.AddWithValue("id", customer.ID);
+                    insertCmd.Parameters.AddWithValue("companyname", customer.CompanyName ?? "");
+                    insertCmd.Parameters.AddWithValue("contactperson", customer.ContactPerson ?? "");
+                    insertCmd.Parameters.AddWithValue("phone", customer.Phone ?? "");
+                    insertCmd.Parameters.AddWithValue("address", customer.Address ?? "");
+                    insertCmd.Parameters.AddWithValue("paymentterms", customer.PaymentTerms ?? "");
+                    insertCmd.Parameters.AddWithValue("creditlimit", customer.CreditLimit);
+
+                    await insertCmd.ExecuteNonQueryAsync();
+
+                    return customer.ID;
+                }
+            }
+            finally
+            {
+                await Connection.CloseAsync(); 
+            }
         }
 
     }

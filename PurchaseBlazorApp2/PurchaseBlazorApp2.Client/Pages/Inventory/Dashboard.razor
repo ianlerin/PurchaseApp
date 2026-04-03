@@ -1,8 +1,9 @@
 ﻿@page "/inventory-dashboard"
 @using InventoryRecord
+@using PurchaseBlazorApp2.Client.Service
 @using Radzen.Blazor
 @inject NavigationManager NavigationManager
-@inject HttpClient Http
+@inject MyHttpService Http
 
 <h3>Inventory Dashboard</h3>
 
@@ -16,6 +17,12 @@
             @onclick="@(() => activeTab = "Supplier")">
         Supplier
     </button>
+
+    <button class="tab-button @(activeTab == "Customer" ? "active" : "")"
+            @onclick="@(() => activeTab = "Customer")">
+        Customer
+    </button>
+
 </div>
 
 @if (IsLoading)
@@ -51,6 +58,51 @@ else
                                       Title="Quantity"
                                       Width="150px" />
 
+
+                <RadzenDataGridColumn TItem="InventoryItemData"
+                                      Property="SKUCode"
+                                      Title="SKUCode"
+                                      Width="150px" />
+
+                <RadzenDataGridColumn TItem="InventoryItemData"
+                                      Property="ProductName"
+                                      Title="ProductName"
+                                      Width="150px" />
+
+                <RadzenDataGridColumn TItem="InventoryItemData"
+                                      Property="Flavour"
+                                      Title="Flavour"
+                                      Width="150px" />
+
+                <RadzenDataGridColumn TItem="InventoryItemData"
+                                      Property="PackSize"
+                                      Title="PackSize"
+                                      Width="150px" />
+
+                <RadzenDataGridColumn TItem="InventoryItemData"
+                                      Property="CostPerUnit"
+                                      Title="CostPerUnit"
+                                      Width="150px" />
+
+                <RadzenDataGridColumn TItem="InventoryItemData"
+                                      Property="B2BPrice"
+                                      Title="B2BPrice"
+                                      Width="150px" />
+
+                <RadzenDataGridColumn TItem="InventoryItemData"
+                                      Property="B2CPrice"
+                                      Title="B2CPrice"
+                                      Width="150px" />
+
+                <RadzenDataGridColumn TItem="InventoryItemData"
+                                      Property="CartonConfiguration"
+                                      Title="CartonConfiguration"
+                                      Width="150px" />
+
+                <RadzenDataGridColumn TItem="InventoryItemData"
+                                      Property="Status"
+                                      Title="Status"
+                                      Width="150px" />
 
                 <RadzenDataGridColumn TItem="InventoryItemData" Title="Actions" Width="120px">
                     <Template Context="data">
@@ -99,7 +151,79 @@ else
                                       Title="Quantity"
                                       Width="200px" />
 
+                <RadzenDataGridColumn TItem="InventorySupplierData"
+                                      Property="SupplierName"
+                                      Title="SupplierName"
+                                      Width="150px" />
+
+                <RadzenDataGridColumn TItem="InventorySupplierData"
+                                      Property="ContactDetails"
+                                      Title="ContactDetails"
+                                      Width="150px" />
+
+                <RadzenDataGridColumn TItem="InventorySupplierData"
+                                      Property="PaymentTerms"
+                                      Title="PaymentTerms"
+                                      Width="150px" />
+
                 <RadzenDataGridColumn TItem="InventorySupplierData" Title="Actions" Width="120px">
+                    <Template Context="data">
+                        <div style="display:flex; gap:6px;">
+                            <RadzenButton Text="View"
+                                          Icon="visibility"
+                                          Click="@(() => OnViewProductClicked(data))"
+                                          Style="min-width:70px;" />
+                        </div>
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    }
+
+    @if (activeTab == "Customer")
+    {
+        <RadzenDataGrid Data="@Customer"
+                        TItem="InventoryCustomerData"
+                        AllowSorting="true"
+                        Class="shadow-sm border rounded p-3"
+                        Style="min-width:1000px;">
+            <Columns>
+                <RadzenDataGridColumn TItem="InventoryCustomerData"
+                                      Property="ID"
+                                      Title="Customer ID"
+                                      Width="150px" />
+
+                <RadzenDataGridColumn TItem="InventoryCustomerData"
+                                      Property="CompanyName"
+                                      Title="Company Name"
+                                      Width="200px" />
+
+                <RadzenDataGridColumn TItem="InventoryCustomerData"
+                                      Property="ContactPerson"
+                                      Title="Contact Person"
+                                      Width="300px" />
+
+                <RadzenDataGridColumn TItem="InventoryCustomerData"
+                                      Property="Phone"
+                                      Title="Phone"
+                                      Width="200px" />
+
+                <RadzenDataGridColumn TItem="InventoryCustomerData"
+                                      Property="Address"
+                                      Title="Address"
+                                      Width="200px" />
+
+                <RadzenDataGridColumn TItem="InventoryCustomerData"
+                                      Property="PaymentTerms"
+                                      Title="Payment Terms"
+                                      Width="200px" />
+
+                <RadzenDataGridColumn TItem="InventoryCustomerData"
+                                      Property="CreditLimit"
+                                      Title="Credit Limit"
+                                      Width="200px" />
+
+                <RadzenDataGridColumn TItem="InventoryCustomerData" Title="Actions" Width="120px">
                     <Template Context="data">
                         <div style="display:flex; gap:6px;">
                             <RadzenButton Text="View"
@@ -141,6 +265,7 @@ else
 
     private List<InventoryItemData> Product = new();
     private List<InventorySupplierData> Supplier = new();
+    private List<InventoryCustomerData> Customer = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -160,6 +285,11 @@ else
             Supplier =
                 await Http.GetFromJsonAsync<List<InventorySupplierData>>("api/inventory/get-suppliers")
                 ?? new();
+
+            Customer =
+               await Http.GetFromJsonAsync<List<InventoryCustomerData>>("api/inventory/get-customers")
+               ?? new();
+
             foreach (var p in Product)
             {
                 p.Quantity = await Http.GetFromJsonAsync<int>($"api/inventory/get-quantity?productId={p.ID}");
@@ -169,13 +299,14 @@ else
             {
                 s.Quantity = await Http.GetFromJsonAsync<int>($"api/inventory/get-quantity?supplierId={s.ID}");
             }
+            Product = await Http.GetFromJsonAsync<List<InventoryItemData>>("api/inventory/get-products") ?? new();
         }
         catch
         {
             Product = new();
-            Supplier= new();
+            Supplier = new();
+            Customer = new();
         }
-
         IsLoading = false;
     }
     private void OnViewProductClicked(InventoryItemData product)
@@ -186,5 +317,10 @@ else
     private void OnViewProductClicked(InventorySupplierData product)
     {
         NavigationManager.NavigateTo($"/add-supplier/{product.ID}");
+    }
+
+    private void OnViewProductClicked(InventoryCustomerData product)
+    {
+        NavigationManager.NavigateTo($"/add-customer/{product.ID}");
     }
 }

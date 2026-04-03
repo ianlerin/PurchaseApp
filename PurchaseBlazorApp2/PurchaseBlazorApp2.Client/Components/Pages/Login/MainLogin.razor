@@ -8,7 +8,10 @@
 @using Radzen
 @using Radzen.Blazor
 @using System.Net.Http.Headers
+@using SharedDataType.Service
+
 @inject HttpClient Http
+@inject CompanyState CompanyState
 @inject IJSRuntime JS
 @inject IServiceProvider ServiceProvider
 @inject NavigationManager NavigationManager
@@ -94,8 +97,8 @@
     protected override async Task OnInitializedAsync()
     {
         startLogin = false;
-        
-   
+
+
         // Safe check for AuthStateProvider
         try
         {
@@ -107,14 +110,14 @@
             authState = null;
         }
 
-   
+
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {    
         // Check if RemoteAuthenticationService is registered
         remoteAuthServiceAvailable = ServiceProvider.GetService<IRemoteAuthenticationService<RemoteAuthenticationState>>() != null;
-        
+
         if (firstRender)
         {
             try
@@ -127,14 +130,14 @@
                 await JS.InvokeVoidAsync("console.error", $"Error fetching auth state: {ex.Message}");
             }
         }
-        
+
         // Avoid rendering loop, force reload only if not in browser or no auth state
         if (!OperatingSystem.IsBrowser() || authState == null || !remoteAuthServiceAvailable)
         {
             await Task.Delay(1000);
             NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
         }
-      
+
     }
 
     private void StartLogin()
@@ -147,7 +150,7 @@
     private async Task HandleLogInSucceeded(RemoteAuthenticationState state)
     {
         await JS.InvokeVoidAsync("console.log", "HandleLogInSucceeded triggered");
-
+        int userID = 0;
         try
         {
             // --- AUTH STATE ---
@@ -185,15 +188,8 @@
             // ---------- START PARALLEL CALLS ----------
             var graphTask = GetGraphUserAsync(token.Value);
             var existsTask = Http.GetFromJsonAsync<bool>($"api/login/checkexist/{email}");
-            var roleTask = Http.PostAsJsonAsync(
-                NavigationManager.ToAbsoluteUri("api/login/getrole"),
-                email
-            );
-            var hrroleTask = Http.PostAsJsonAsync(
-               NavigationManager.ToAbsoluteUri("api/login/gethrrole"),
-               email
-           );
-            await Task.WhenAll(graphTask, existsTask, roleTask, hrroleTask);
+
+            await Task.WhenAll(graphTask, existsTask);
             // ---------- END PARALLEL ----------
 
             // --- HANDLE BACKEND EXISTENCE CHECK ---
@@ -204,28 +200,16 @@
                 return;
             }
 
-            // --- ROLE ---
-            EDepartment departmentRole = EDepartment.NotSpecified;
-            try
+            var response = await Http.PostAsJsonAsync(
+          NavigationManager.ToAbsoluteUri("api/login/getuserid"),
+          email
+      );
+
+            if (response.IsSuccessStatusCode)
             {
-                var roleResponse = roleTask.Result;
-                departmentRole = await roleResponse.Content.ReadFromJsonAsync<EDepartment>();
-            }
-            catch (Exception ex)
-            {
-                await JS.InvokeVoidAsync("console.error", $"Error retrieving role: {ex.Message}");
+                userID = await response.Content.ReadFromJsonAsync<int>();
             }
 
-            EHRRole HRRole = EHRRole.None;
-            try
-            {
-                var hrroleResponse = hrroleTask.Result;
-                HRRole = await hrroleResponse.Content.ReadFromJsonAsync<EHRRole>();
-            }
-            catch (Exception ex)
-            {
-                await JS.InvokeVoidAsync("console.error", $"Error retrieving role: {ex.Message}");
-            }
 
             // --- MICROSOFT GRAPH USER INFO ---
             var graph = graphTask.Result;
@@ -235,10 +219,9 @@
             // --- BUILD USER ---
             var MyUser = new UserName(displayName, "")
             {
-                Role = departmentRole,
+                ID=userID,
                 JobTitle = jobTitle,
                 Department = department,
-                HRRole=HRRole,
                 Email = email
 
             };
@@ -265,8 +248,14 @@
             if (!string.IsNullOrEmpty(returnUrl))
             {
                 if (!returnUrl.StartsWith("/")) returnUrl = "/" + returnUrl;
-                await JS.InvokeVoidAsync("console.log", $"Navigate to:{returnUrl}");
-
+                var match = returnUrl.Split("companyId=").LastOrDefault();
+                if (match != null && int.TryParse(match.Split('&')[0], out var parsed))
+                {
+                    int companyId = parsed;
+                    CompanyInfo Info = await LoadReturnCompanyInfo(companyId, userID);
+                    CompanyState.CurrentCompany = Info;
+                    await GeneralLibrary.LoadCompanyInfo(Info, NavigationManager, Http, JS);
+                }
                 NavigationManager.NavigateTo(returnUrl, forceLoad: true);
             }
             else
@@ -283,6 +272,32 @@
         }
     }
 
+    private async Task<CompanyInfo> LoadReturnCompanyInfo(int CompanyID, int UserID)
+    {
+        CompanyInfo FoundCompanyInfo = new CompanyInfo();
+        CompanyInquireInfo inquireInfo = new CompanyInquireInfo();
+        inquireInfo.CompanyId = CompanyID;
+        inquireInfo.UserID = UserID;
+
+
+        var response = await Http.PostAsJsonAsync(
+             "api/login/getcompany",
+             inquireInfo
+         );
+
+        if (response.IsSuccessStatusCode)
+        {
+            await JS.InvokeVoidAsync("console.error", $"response success");
+            FoundCompanyInfo = await response.Content
+                .ReadFromJsonAsync<CompanyInfo>()
+                ?? new CompanyInfo();
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("console.error", $"response error");
+        }
+        return FoundCompanyInfo;
+    }
 
     private async Task<GraphUser?> GetGraphUserAsync(string token)
     {

@@ -5,6 +5,7 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
 @using PurchaseBlazorApp2.Client.Pages.Quotation
+@using PurchaseBlazorApp2.Client.Service
 @using PurchaseBlazorApp2.Components.Data
 @using PurchaseBlazorApp2.Components.Global
 @using System.Globalization;
@@ -13,7 +14,7 @@
 @using static PurchaseBlazorApp2.Client.Pages.Quotation.QuotationInfo
 @inject ClientGlobalVar GlobalVar
 @inject AuthenticationStateProvider AuthStateProvider
-@inject HttpClient Http
+@inject MyHttpService Http
 @inject ClientStateStorage StateStorage
 @inject NavigationManager NavigationManager
 @inject IAccessTokenProvider TokenProvider
@@ -150,8 +151,14 @@
                                         @onclick="SaveAsDraft">
                                     Save Draft
                                 </button>
+                             
                             }
-
+                            @if (!string.IsNullOrEmpty(PurchaseRequisitionRecord.RequisitionNumber))
+                            {
+                                <button @onclick="GoToPreApproval" class="btn btn-outline-secondary btn-lg">
+                                    Pre Approval
+                                </button>
+                            }
                             @if (bIsProcurementManager && !bCanEditApproval && IsSubmitted() &&
                                                     !string.IsNullOrEmpty(PurchaseRequisitionRecord.Rejectreason))
                             {
@@ -338,6 +345,8 @@
                 PurchaseRequisitionRecord.Requestor = email ?? "Unknown";
             }
         }
+
+
         PurchaseRequisitionRecord.UpdateDate = DateTime.Now;
         var response = await Http.PostAsJsonAsync(
             NavigationManager.ToAbsoluteUri("api/pr/submit"),
@@ -350,8 +359,10 @@
             {
                 PurchaseRequisitionRecord.RequisitionNumber=PR_Ids[0];
             }
+            MyEmailHelper = new EmailWorkflowService(Http, NavigationManager, JS);
 
-            await MyEmailHelper.SendEmailToRelevantPartyAsync(PurchaseRequisitionRecord);
+            CompanyInfo MyCompanyInfo = await GeneralLibrary.GetCurrentCompanyInfo(JS);
+            await MyEmailHelper.SendEmailToRelevantPartyAsync(PurchaseRequisitionRecord, MyCompanyInfo.ID);
             StateStorage.Remove("PR");
 
             await JS.InvokeVoidAsync("alert", "Purchase Requisition submitted successfully!");
@@ -455,12 +466,10 @@
         bCanOpenPO = (PurchaseRequisitionRecord.prstatus == EPRStatus.ApprovedRequests);
         stopwatch.Stop();
         Console.WriteLine($"OnInitializedAsync took {stopwatch.ElapsedMilliseconds} ms");
-        MyEmailHelper = new EmailWorkflowService(Http, NavigationManager, JS);
 
         UpdatebCanEditApproval();
     }
-
-
+    
     private void UpdatebCanEditApproval()
     {
         if(PurchaseRequisitionRecord==null)
@@ -577,6 +586,10 @@
     {
         StateStorage.Set("PR", PurchaseRequisitionRecord);
 
+    }
+    private void GoToPreApproval()
+    {
+        NavigationManager.NavigateTo($"/pr-preapproval/{PurchaseRequisitionRecord.RequisitionNumber}");
     }
     /*
     private void LoadDraft()

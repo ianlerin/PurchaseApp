@@ -1,7 +1,8 @@
 ﻿@page "/purchaserequisitionrecords_client/list"
 @using Genesis.UserService
+@using PurchaseBlazorApp2.Client.Service
 @using PurchaseBlazorApp2.Components.Data
-@inject HttpClient Http
+@inject MyHttpService HttpService
 @using Radzen.Blazor
 @inject IJSRuntime JS
 @inject NavigationManager NavigationManager
@@ -157,8 +158,9 @@
 
             bProcurementOrFinance =
                 department == EDepartment.ProcurementManager ||
+                department == EDepartment.ManagingDirector ||
                 department == EDepartment.Finance;
-
+           
             await JS.InvokeVoidAsync(
                 "console.log",
                 $"ReloadList department = {department}"
@@ -168,17 +170,24 @@
             {
                 case EDepartment.ProcurementManager:
                     {
-                        response = await Http.PostAsJsonAsync(
+                        response = await HttpService.PostAsJsonAsync(
                             NavigationManager.ToAbsoluteUri("api/pr/get-list-partial-all"),
                             SearchFilterType
                         );
                         break;
                     }
-
+                case EDepartment.ManagingDirector:
+                    {
+                      response = await HttpService.PostAsJsonAsync(
+                         NavigationManager.ToAbsoluteUri("api/pr/get-list-partial-all"),
+                         SearchFilterType
+                      );
+                      break;
+                    }
                 case EDepartment.Finance:
                     {
                         // ===== Finance-specific PR numbers =====
-                        var financeResponse = await Http.PostAsJsonAsync(
+                        var financeResponse = await HttpService.PostAsJsonAsync(
                             NavigationManager.ToAbsoluteUri("api/pr/get-finance"),
                             new List<PurchaseRequisitionRecord>()
                         );
@@ -202,7 +211,7 @@
 
                         if (mergedRecords.Count > 0)
                         {
-                            response = await Http.PostAsJsonAsync(
+                            response = await HttpService.PostAsJsonAsync(
                                 NavigationManager.ToAbsoluteUri("api/pr/get-list-partial"),
                                 mergedRecords
                             );
@@ -221,7 +230,7 @@
 
                         if (recordsToView.Count > 0)
                         {
-                            response = await Http.PostAsJsonAsync(
+                            response = await HttpService.PostAsJsonAsync(
                                 NavigationManager.ToAbsoluteUri("api/pr/get-list-partial"),
                                 recordsToView
                             );
@@ -233,6 +242,7 @@
             Records = response != null
                 ? (await ExtractPRListAsync(response))
                 .OrderByDescending(r => r.RequestDate)
+                .ThenByDescending(r => int.TryParse(r.RequisitionNumber?.Substring(3), out int num) ? num : 0)
                 .ToList()
                 : new List<PurchaseRequisitionRecord>();
         }
@@ -321,7 +331,7 @@
         switch (FilterType)
         {
             case(EFilterPRType.Approval):
-                var ApprovalSearch = await Http.PostAsJsonAsync(
+                var ApprovalSearch = await HttpService.PostAsJsonAsync(
                        NavigationManager.ToAbsoluteUri("api/pr/get-needapproval"), MyDepartment
                        );
                 HashSet<string> ApprovalHashrecords = await ApprovalSearch.Content.ReadFromJsonAsync<HashSet<string>>();
@@ -330,7 +340,7 @@
 
             case (EFilterPRType.CreatedBy):
                 UserName name=await GetCurrentUser();
-                var CreatedBy = await Http.PostAsJsonAsync(
+                var CreatedBy = await HttpService.PostAsJsonAsync(
                           NavigationManager.ToAbsoluteUri("api/pr/get-createdby"), name.Email
                           );
                 HashSet<string> FilterHashrecords = await CreatedBy.Content.ReadFromJsonAsync<HashSet<string>>();
